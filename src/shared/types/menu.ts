@@ -21,6 +21,11 @@ export interface MenuItem {
   sort_order: number;
   created_at: string;
   updated_at: string;
+  // New fields for kiosk enhancements
+  is_popular?: boolean;
+  is_new?: boolean;
+  available_from?: string | null;
+  available_until?: string | null;
   // Joined fields
   category?: Category;
 }

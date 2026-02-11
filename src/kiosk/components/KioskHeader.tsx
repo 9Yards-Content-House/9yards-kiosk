@@ -1,12 +1,14 @@
 import { ArrowLeft } from "lucide-react";
+import type { ReactNode } from "react";
 
 interface KioskHeaderProps {
   title: string;
   showBack?: boolean;
   onBack?: () => void;
+  rightElement?: ReactNode;
 }
 
-export default function KioskHeader({ title, showBack, onBack }: KioskHeaderProps) {
+export default function KioskHeader({ title, showBack, onBack, rightElement }: KioskHeaderProps) {
   return (
     <header className="flex items-center gap-4 px-4 py-3 bg-white border-b shrink-0 shadow-sm">
       {showBack && (
@@ -25,6 +27,11 @@ export default function KioskHeader({ title, showBack, onBack }: KioskHeaderProp
         />
         <h1 className="text-xl font-bold text-primary">{title}</h1>
       </div>
+      {rightElement && (
+        <div className="shrink-0">
+          {rightElement}
+        </div>
+      )}
     </header>
   );
 }

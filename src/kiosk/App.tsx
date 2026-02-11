@@ -1,13 +1,19 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { KioskCartProvider } from "./context/KioskCartContext";
+import { LanguageProvider } from "@shared/context/LanguageContext";
 import { useInactivityTimer } from "./hooks/useInactivityTimer";
+import ErrorBoundary from "@shared/components/ErrorBoundary";
 import InactivityOverlay from "./components/InactivityOverlay";
+
+// Pages
 import Welcome from "./pages/Welcome";
-import Menu from "./pages/Menu";
-import Cart from "./pages/Cart";
+import MenuNew from "./pages/MenuNew";
+import CartNew from "./pages/CartNew";
 import Details from "./pages/Details";
 import Payment from "./pages/Payment";
-import Confirmation from "./pages/Confirmation";
+import ConfirmationNew from "./pages/ConfirmationNew";
+import TrackOrders from "./pages/TrackOrders";
+import OrderLookup from "./pages/OrderLookup";
 
 function KioskRoutes() {
   const { isInactive, resetTimer } = useInactivityTimer();
@@ -17,11 +23,14 @@ function KioskRoutes() {
       {isInactive && <InactivityOverlay onResume={resetTimer} />}
       <Routes>
         <Route path="/" element={<Welcome />} />
-        <Route path="/menu" element={<Menu />} />
-        <Route path="/cart" element={<Cart />} />
+        <Route path="/menu" element={<MenuNew />} />
+        <Route path="/cart" element={<CartNew />} />
         <Route path="/details" element={<Details />} />
         <Route path="/payment" element={<Payment />} />
-        <Route path="/confirmation" element={<Confirmation />} />
+        <Route path="/confirmation" element={<ConfirmationNew />} />
+        <Route path="/track" element={<TrackOrders />} />
+        <Route path="/lookup" element={<OrderLookup />} />
+        <Route path="/lookup/:orderNumber" element={<OrderLookup />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>
@@ -30,8 +39,12 @@ function KioskRoutes() {
 
 export default function App() {
   return (
-    <KioskCartProvider>
-      <KioskRoutes />
-    </KioskCartProvider>
+    <ErrorBoundary>
+      <LanguageProvider>
+        <KioskCartProvider>
+          <KioskRoutes />
+        </KioskCartProvider>
+      </LanguageProvider>
+    </ErrorBoundary>
   );
 }

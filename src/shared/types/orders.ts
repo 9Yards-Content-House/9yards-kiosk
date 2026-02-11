@@ -25,8 +25,9 @@ export interface Order {
   prepared_at: string | null;
   ready_at: string | null;
   delivered_at: string | null;
-  // Joined
+  // Joined (Supabase returns as order_items, we alias as items)
   items?: OrderItem[];
+  order_items?: OrderItem[];
 }
 
 export interface OrderItem {

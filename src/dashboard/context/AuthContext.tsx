@@ -13,6 +13,7 @@ import type { User, Session } from "@supabase/supabase-js";
 // Dev mode credentials for local testing
 const DEV_EMAIL = "dev@test.com";
 const DEV_PASSWORD = "devtest123";
+const DEV_PIN = "1234";
 const IS_DEV = import.meta.env.DEV;
 
 // Mock user for dev mode
@@ -40,6 +41,7 @@ interface AuthContextValue {
   role: UserRole | null;
   loading: boolean;
   signIn: (email: string, password: string) => Promise<void>;
+  signInWithPin: (pin: string) => Promise<void>;
   signOut: () => Promise<void>;
 }
 
@@ -119,6 +121,50 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     if (error) throw error;
   };
 
+  const signInWithPin = async (pin: string) => {
+    // Dev mode bypass for local testing
+    if (IS_DEV && pin === DEV_PIN) {
+      console.log("🔧 Dev mode PIN login activated");
+      localStorage.setItem("dev_mode", "true");
+      setUser(DEV_USER);
+      setProfile(DEV_PROFILE);
+      setIsDevMode(true);
+      return;
+    }
+
+    // Look up the profile by PIN hash (store PIN as bcrypt hash in DB)
+    // For simplicity, we'll use a basic lookup - in production use proper hashing
+    const { data: profileData, error: profileError } = await supabase
+      .from("profiles")
+      .select("*")
+      .eq("pin_hash", pin) // In production, this should compare hashed values
+      .eq("active", true)
+      .single();
+
+    if (profileError || !profileData) {
+      throw new Error("Invalid PIN");
+    }
+
+    // Update last_login_at
+    await supabase
+      .from("profiles")
+      .update({ last_login_at: new Date().toISOString() })
+      .eq("id", profileData.id);
+
+    // Create a pseudo-user from the profile for PIN-based auth
+    const pinUser: User = {
+      id: profileData.id,
+      email: profileData.email || `staff-${profileData.id}@9yards.local`,
+      app_metadata: { provider: "pin" },
+      user_metadata: { full_name: profileData.full_name },
+      aud: "authenticated",
+      created_at: profileData.created_at,
+    } as User;
+
+    setUser(pinUser);
+    setProfile(profileData);
+  };
+
   const signOut = async () => {
     // Handle dev mode signout
     if (isDevMode) {
@@ -142,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         role: profile?.role ?? null,
         loading,
         signIn,
+        signInWithPin,
         signOut,
       }}
     >

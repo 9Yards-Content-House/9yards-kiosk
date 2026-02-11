@@ -1,8 +1,10 @@
-import { useState } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, ArrowRight } from "lucide-react";
+import { ArrowLeft, ArrowRight, AlertCircle } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
-import { formatPrice } from "@shared/lib/utils";
+import { useTranslation } from "@shared/context/LanguageContext";
+import { formatPrice, vibrate } from "@shared/lib/utils";
+import { orderDetailsSchema, normalizePhone } from "@shared/lib/validation";
 import KioskHeader from "../components/KioskHeader";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import { Button } from "@shared/components/ui/button";
@@ -11,6 +13,7 @@ import type { PaymentMethod } from "@shared/types/orders";
 
 export default function Details() {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { subtotal, itemCount } = useKioskCart();
 
   const [name, setName] = useState("");
@@ -18,29 +21,62 @@ export default function Details() {
   const [location, setLocation] = useState("");
   const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>("pay_at_counter");
   const [specialInstructions, setSpecialInstructions] = useState("");
+  const [errors, setErrors] = useState<Record<string, string>>({});
 
   const needsPhone = paymentMethod === "mobile_money";
+
+  // Validate form using Zod
+  const validateForm = useCallback(() => {
+    const result = orderDetailsSchema.safeParse({
+      customer_name: name.trim(),
+      customer_phone: phone.trim() || undefined,
+      customer_location: location.trim() || undefined,
+      payment_method: paymentMethod,
+      special_instructions: specialInstructions.trim() || undefined,
+    });
+
+    if (!result.success) {
+      const fieldErrors: Record<string, string> = {};
+      result.error.errors.forEach((err) => {
+        const field = err.path[0] as string;
+        fieldErrors[field] = err.message;
+      });
+      setErrors(fieldErrors);
+      return false;
+    }
+
+    // Additional check: phone required for MoMo
+    if (needsPhone && !phone.trim()) {
+      setErrors({ customer_phone: t('details.phoneRequired') });
+      return false;
+    }
+
+    setErrors({});
+    return true;
+  }, [name, phone, location, paymentMethod, specialInstructions, needsPhone, t]);
+
   const isValid = name.trim().length >= 2 && (!needsPhone || phone.trim().length >= 10);
 
   const handleContinue = () => {
+    vibrate();
+    if (!validateForm()) return;
+
+    // Format phone number for storage
+    const formattedPhone = phone.trim() ? normalizePhone(phone.trim()) : null;
+
     // Store details in sessionStorage for the next step
     sessionStorage.setItem(
       "kiosk_order_details",
       JSON.stringify({
         customer_name: name.trim(),
-        customer_phone: phone.trim() || null,
+        customer_phone: formattedPhone,
         customer_location: location.trim() || null,
         payment_method: paymentMethod,
         special_instructions: specialInstructions.trim() || null,
       })
     );
 
-    if (paymentMethod === "mobile_money") {
-      navigate("/payment");
-    } else {
-      // Skip payment screen for cash / pay_at_counter
-      navigate("/payment");
-    }
+    navigate("/payment");
   };
 
   return (
@@ -55,11 +91,17 @@ export default function Details() {
           </label>
           <Input
             value={name}
-            onChange={(e) => setName(e.target.value)}
-            placeholder="Enter your name"
-            className="h-14 text-lg"
+            onChange={(e) => { setName(e.target.value); setErrors((prev) => ({ ...prev, customer_name: '' })); }}
+            placeholder={t('details.namePlaceholder')}
+            className={`h-14 text-lg ${errors.customer_name ? 'border-red-500' : ''}`}
             autoFocus
           />
+          {errors.customer_name && (
+            <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {errors.customer_name}
+            </p>
+          )}
         </div>
 
         {/* Phone */}
@@ -69,14 +111,22 @@ export default function Details() {
           </label>
           <Input
             value={phone}
-            onChange={(e) => setPhone(e.target.value)}
+            onChange={(e) => { setPhone(e.target.value); setErrors((prev) => ({ ...prev, customer_phone: '' })); }}
             placeholder="07XX XXX XXX"
             type="tel"
-            className="h-14 text-lg"
+            inputMode="numeric"
+            className={`h-14 text-lg ${errors.customer_phone ? 'border-red-500' : ''}`}
           />
-          <p className="text-sm text-muted-foreground mt-1">
-            {needsPhone ? "Required for Mobile Money payment" : "Optional — for order updates"}
-          </p>
+          {errors.customer_phone ? (
+            <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
+              <AlertCircle className="w-4 h-4" />
+              {errors.customer_phone}
+            </p>
+          ) : (
+            <p className="text-sm text-muted-foreground mt-1">
+              {needsPhone ? t('details.phoneRequired') : t('details.phoneOptional')}
+            </p>
+          )}
         </div>
 
         {/* Location */}

@@ -52,7 +52,7 @@ serve(async (req) => {
       .update({
         payment_method: "mobile_money",
         payment_status: "pending",
-        phone: formattedPhone,
+        customer_phone: formattedPhone,
       })
       .eq("id", orderId);
 
