@@ -28,7 +28,7 @@ export default function Menu() {
   if (isLoading) {
     return (
       <div className="kiosk-screen flex items-center justify-center">
-        <div className="animate-spin w-12 h-12 border-4 border-yards-orange border-t-transparent rounded-full" />
+        <div className="animate-spin w-12 h-12 border-4 border-secondary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -39,7 +39,7 @@ export default function Menu() {
         <p className="text-xl text-red-500 mb-4">Failed to load menu</p>
         <button
           onClick={() => window.location.reload()}
-          className="px-8 py-4 bg-yards-orange text-white rounded-xl text-lg"
+          className="px-8 py-4 bg-secondary text-white rounded-xl text-lg font-bold shadow-cta"
         >
           Try Again
         </button>

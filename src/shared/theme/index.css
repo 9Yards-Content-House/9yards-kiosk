@@ -1,4 +1,4 @@
-/* 9Yards Kiosk — Shared Theme (copied from main site) */
+/* 9Yards Kiosk — Shared Theme (synced from main site) */
 /* Font loaded via HTML <link> for Inter */
 
 @tailwind base;
@@ -44,6 +44,7 @@
     /* Custom tokens */
     --gradient-hero: linear-gradient(135deg, hsl(240, 60%, 32%) 0%, hsl(240, 50%, 25%) 100%);
     --gradient-cta: linear-gradient(135deg, hsl(12, 82%, 55%) 0%, hsl(12, 82%, 45%) 100%);
+    --gradient-warm: linear-gradient(180deg, hsl(30, 40%, 96%) 0%, hsl(30, 30%, 98%) 100%);
     --shadow-soft: 0 4px 20px -4px hsl(240 60% 32% / 0.15);
     --shadow-cta: 0 8px 30px -8px hsl(12 82% 50% / 0.4);
     --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.08);
@@ -96,6 +97,21 @@
     @apply outline-2 outline-offset-2 outline-secondary;
   }
 
+  /* Enhanced focus styles for interactive elements */
+  a:focus-visible,
+  button:focus-visible,
+  [role="button"]:focus-visible,
+  input:focus-visible,
+  textarea:focus-visible,
+  select:focus-visible {
+    @apply ring-2 ring-secondary ring-offset-2 ring-offset-background outline-none;
+  }
+
+  /* Card/container focus for keyboard navigation */
+  [tabindex="0"]:focus-visible {
+    @apply ring-2 ring-secondary ring-offset-2 ring-offset-background outline-none rounded-lg;
+  }
+
   @media (prefers-reduced-motion: reduce) {
     *, *::before, *::after {
       animation-duration: 0.01ms !important;
@@ -107,11 +123,18 @@
 }
 
 @layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
   .gradient-hero {
     background: var(--gradient-hero);
   }
   .gradient-cta {
     background: var(--gradient-cta);
+  }
+  .gradient-warm {
+    background: var(--gradient-warm);
   }
   .shadow-soft {
     box-shadow: var(--shadow-soft);
@@ -125,6 +148,8 @@
   .shadow-elevated {
     box-shadow: var(--shadow-elevated);
   }
+
+  /* Scrollbar styling */
   .scrollbar-hide {
     -ms-overflow-style: none;
     scrollbar-width: none;
@@ -132,25 +157,144 @@
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
+
+  /* Custom thin scrollbar */
+  .scrollbar-thin {
+    scrollbar-width: thin;
+    scrollbar-color: #cbd5e0 #f1f1f1;
+  }
+  .scrollbar-thin::-webkit-scrollbar {
+    width: 6px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-track {
+    background: #f1f1f1;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb {
+    background: #cbd5e0;
+    border-radius: 3px;
+  }
+  .scrollbar-thin::-webkit-scrollbar-thumb:hover {
+    background: #a0aec0;
+  }
+
+  /* Food card hover effect */
+  .food-card-hover {
+    @apply border border-transparent transition-all duration-300 ease-out;
+  }
+  .food-card-hover:hover {
+    @apply border-secondary/30 bg-secondary/5;
+  }
+  .food-card-hover:active {
+    @apply scale-[0.98];
+  }
+
+  /* Floating animation for hero image */
+  .animate-float {
+    animation: float 6s ease-in-out infinite;
+  }
+
+  @keyframes float {
+    0%, 100% {
+      transform: translateY(0);
+    }
+    50% {
+      transform: translateY(-12px);
+    }
+  }
+
+  /* Safe area utilities for notched devices */
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top, 0);
+  }
+
+  .safe-area-inset-bottom {
+    margin-bottom: env(safe-area-inset-bottom, 0);
+  }
+
+  /* Image loading states */
+  .img-loading {
+    @apply bg-muted animate-pulse;
+  }
+
+  .img-loaded {
+    @apply bg-transparent;
+  }
 }
 
 @layer components {
+  /* Premium button styles */
   .btn-primary {
     @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-200;
-    @apply hover:bg-primary/90 active:scale-[0.98];
+    @apply hover:bg-primary/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
   }
+
   .btn-secondary {
     @apply bg-secondary text-secondary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-200;
-    @apply hover:bg-secondary/90 active:scale-[0.98];
+    @apply hover:bg-secondary/90 active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2;
   }
+
+  .btn-outline {
+    @apply border-2 border-primary text-primary font-semibold px-5 py-2.5 rounded-xl transition-colors duration-200;
+    @apply hover:bg-primary hover:text-primary-foreground focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2;
+  }
+
+  .btn-ghost {
+    @apply bg-white/20 backdrop-blur-sm text-white font-semibold px-5 py-2.5 rounded-xl transition-colors duration-200;
+    @apply hover:bg-white/30 focus-visible:ring-2 focus-visible:ring-white/50 focus-visible:ring-offset-2;
+    @apply border border-white/30;
+  }
+
+  /* Card styles */
   .card-premium {
     @apply bg-card rounded-2xl border border-border/40 overflow-hidden transition-all duration-300;
     @apply hover:border-primary/20 hover:bg-muted/30 active:scale-[0.99];
   }
+
+  /* Badge styles */
   .badge-available {
     @apply bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full;
   }
+
   .badge-soldout {
     @apply bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+
+  .badge-free {
+    @apply bg-secondary/10 text-secondary text-xs font-bold px-2 py-0.5 rounded-full;
+  }
+
+  /* Section styling */
+  .section-padding {
+    @apply py-16 md:py-24 px-4 md:px-8;
+  }
+
+  .container-custom {
+    @apply max-w-7xl mx-auto;
+  }
+
+  /* Skip link for accessibility */
+  .skip-link {
+    @apply absolute -top-10 left-4 z-[100] bg-primary text-primary-foreground px-4 py-2 rounded-lg transition-all;
+    @apply focus:top-4;
+  }
+}
+
+@layer utilities {
+  .animate-progress-shrink {
+    animation: progress-shrink 3s linear forwards;
+  }
+}
+
+@keyframes progress-shrink {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
   }
 }

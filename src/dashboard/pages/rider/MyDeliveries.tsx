@@ -46,7 +46,7 @@ export default function MyDeliveries() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-yards-orange border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full" />
       </div>
     );
   }

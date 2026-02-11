@@ -26,7 +26,7 @@ export default function MobileNav() {
               className={({ isActive }) =>
                 cn(
                   "flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs font-medium transition-colors",
-                  isActive ? "text-yards-orange" : "text-muted-foreground"
+                  isActive ? "text-secondary" : "text-muted-foreground"
                 )
               }
             >

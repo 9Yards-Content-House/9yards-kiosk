@@ -43,10 +43,14 @@ export default function Login() {
         className="w-full max-w-md"
       >
         <div className="text-center mb-8">
-          <div className="w-16 h-16 rounded-full bg-yards-blue/10 flex items-center justify-center mx-auto mb-4">
-            <span className="text-2xl font-bold text-yards-orange">9Y</span>
+          <div className="w-20 h-20 rounded-2xl bg-white flex items-center justify-center mx-auto mb-4 shadow-card border border-gray-100 p-2">
+            <img
+              src="/images/logo/9Yards-Food-White-Logo-colored.png"
+              alt="9Yards Food"
+              className="w-full h-full object-contain"
+            />
           </div>
-          <h1 className="text-2xl font-bold">Kitchen Dashboard</h1>
+          <h1 className="text-2xl font-bold text-primary">Kitchen Dashboard</h1>
           <p className="text-muted-foreground mt-1">Sign in to manage orders</p>
         </div>
 

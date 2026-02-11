@@ -71,7 +71,7 @@ export default function Confirmation() {
 
         <Button
           size="touch"
-          className="bg-yards-blue hover:bg-yards-blue/90 text-white px-12"
+          className="bg-primary hover:bg-primary/90 text-white px-12"
           onClick={handleNewOrder}
         >
           Start New Order

@@ -124,7 +124,7 @@ export default function Details() {
       <div className="border-t bg-card p-4 space-y-3">
         <div className="flex justify-between text-xl font-bold">
           <span>Total ({itemCount} items)</span>
-          <span className="text-yards-orange">{formatPrice(subtotal)}</span>
+          <span className="text-secondary">{formatPrice(subtotal)}</span>
         </div>
         <div className="flex gap-3">
           <Button
@@ -138,7 +138,7 @@ export default function Details() {
           </Button>
           <Button
             size="touch"
-            className="flex-1 bg-yards-orange hover:bg-yards-orange/90"
+            className="flex-1 bg-secondary hover:bg-secondary/90"
             disabled={!isValid}
             onClick={handleContinue}
           >

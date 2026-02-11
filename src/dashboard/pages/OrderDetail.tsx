@@ -25,7 +25,7 @@ export default function OrderDetail() {
   if (isLoading) {
     return (
       <div className="flex items-center justify-center h-64">
-        <div className="animate-spin w-8 h-8 border-4 border-yards-orange border-t-transparent rounded-full" />
+        <div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full" />
       </div>
     );
   }
@@ -156,7 +156,7 @@ export default function OrderDetail() {
         )}
         <div className="flex justify-between py-3 mt-2 font-bold text-lg border-t">
           <span>Total</span>
-          <span className="text-yards-orange">{formatPrice(order.total)}</span>
+          <span className="text-secondary">{formatPrice(order.total)}</span>
         </div>
       </div>
 
@@ -165,7 +165,7 @@ export default function OrderDetail() {
         <div className="flex gap-3">
           {nextStatus && (
             <Button
-              className="flex-1 bg-yards-orange hover:bg-yards-orange/90"
+              className="flex-1 bg-secondary hover:bg-secondary/90"
               onClick={handleAdvance}
               disabled={updateStatus.isPending}
             >

@@ -27,7 +27,7 @@ export default function OrderTimeline({ order }: OrderTimelineProps) {
               <div
                 className={`w-8 h-8 rounded-full flex items-center justify-center ${
                   isActive
-                    ? "bg-yards-orange text-white"
+                    ? "bg-secondary text-white"
                     : "bg-muted text-muted-foreground"
                 }`}
               >
@@ -36,7 +36,7 @@ export default function OrderTimeline({ order }: OrderTimelineProps) {
               {!isLast && (
                 <div
                   className={`w-0.5 h-6 ${
-                    isActive ? "bg-yards-orange" : "bg-muted"
+                    isActive ? "bg-secondary" : "bg-muted"
                   }`}
                 />
               )}

@@ -149,7 +149,7 @@ export default function Staff() {
 
       {isLoading ? (
         <div className="flex items-center justify-center h-32">
-          <div className="animate-spin w-8 h-8 border-4 border-yards-orange border-t-transparent rounded-full" />
+          <div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full" />
         </div>
       ) : (
         <StaffTable

@@ -17,7 +17,7 @@ export default function OrderCard({ order, isNew }: OrderCardProps) {
       onClick={() => navigate(`/orders/${order.order_number}`)}
       className={cn(
         "bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow",
-        isNew && "new-order-pulse border-yards-orange"
+        isNew && "new-order-pulse border-secondary"
       )}
     >
       <div className="flex items-start justify-between mb-2">

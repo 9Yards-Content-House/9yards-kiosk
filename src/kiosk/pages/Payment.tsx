@@ -77,7 +77,7 @@ export default function Payment() {
           animate={{ scale: 1, opacity: 1 }}
           className="text-center"
         >
-          <Loader2 className="w-16 h-16 animate-spin text-yards-orange mx-auto mb-6" />
+          <Loader2 className="w-16 h-16 animate-spin text-secondary mx-auto mb-6" />
           <h2 className="text-2xl font-bold mb-2">Placing Your Order...</h2>
           <p className="text-muted-foreground text-lg">Just a moment</p>
         </motion.div>
@@ -104,7 +104,7 @@ export default function Payment() {
           </Button>
           <Button
             size="touch"
-            className="bg-yards-orange hover:bg-yards-orange/90"
+            className="bg-secondary hover:bg-secondary/90"
             onClick={handlePlaceOrder}
           >
             Try Again
@@ -146,7 +146,7 @@ export default function Payment() {
           ))}
           <div className="flex justify-between py-3 font-bold text-xl mt-2">
             <span>Total</span>
-            <span className="text-yards-orange">{formatPrice(subtotal)}</span>
+            <span className="text-secondary">{formatPrice(subtotal)}</span>
           </div>
         </div>
 
@@ -172,7 +172,7 @@ export default function Payment() {
           </Button>
           <Button
             size="touch"
-            className="flex-1 bg-yards-orange hover:bg-yards-orange/90"
+            className="flex-1 bg-secondary hover:bg-secondary/90"
             onClick={isMoMo ? () => setStep("momo") : handlePlaceOrder}
           >
             <CheckCircle2 className="w-5 h-5 mr-2" />

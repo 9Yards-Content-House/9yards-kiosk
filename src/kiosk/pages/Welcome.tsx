@@ -13,7 +13,7 @@ export default function Welcome() {
 
   return (
     <motion.div
-      className="kiosk-screen flex flex-col items-center justify-center bg-gradient-to-br from-yards-blue to-yards-blue/90 text-white p-8 cursor-pointer"
+      className="kiosk-screen flex flex-col items-center justify-center gradient-hero text-white p-8 cursor-pointer"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       onClick={handleStart}
@@ -25,8 +25,12 @@ export default function Welcome() {
         transition={{ delay: 0.2, type: "spring", stiffness: 200 }}
         className="mb-12"
       >
-        <div className="w-32 h-32 rounded-full bg-white/10 flex items-center justify-center backdrop-blur-sm border border-white/20">
-          <span className="text-5xl font-bold text-yards-orange">9Y</span>
+        <div className="w-36 h-36 rounded-full bg-white flex items-center justify-center shadow-elevated p-4">
+          <img
+            src="/images/logo/9Yards-Food-White-Logo-colored.png"
+            alt="9Yards Food"
+            className="w-full h-full object-contain"
+          />
         </div>
       </motion.div>
 
@@ -35,7 +39,7 @@ export default function Welcome() {
         initial={{ y: 20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
         transition={{ delay: 0.4 }}
-        className="text-4xl md:text-5xl font-bold text-center mb-4"
+        className="text-4xl md:text-5xl font-extrabold text-center mb-4 tracking-tight"
       >
         9Yards Food
       </motion.h1>
@@ -59,7 +63,7 @@ export default function Welcome() {
         <motion.div
           animate={{ scale: [1, 1.05, 1] }}
           transition={{ repeat: Infinity, duration: 2, ease: "easeInOut" }}
-          className="bg-yards-orange text-white rounded-2xl px-12 py-6 text-2xl font-semibold shadow-lg"
+          className="bg-secondary text-white rounded-2xl px-12 py-6 text-2xl font-bold shadow-cta"
         >
           Tap to Start Your Order
         </motion.div>

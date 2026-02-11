@@ -35,8 +35,12 @@ export default function Sidebar() {
     <aside className="dashboard-sidebar">
       {/* Logo */}
       <div className="p-4 border-b flex items-center gap-3">
-        <span className="text-xl font-bold text-yards-orange">9Y</span>
-        <span className="font-semibold text-sm">Kitchen Dashboard</span>
+        <img
+          src="/images/logo/9Yards-Food-Coloured-favicon.jpg"
+          alt="9Yards Food"
+          className="w-10 h-10 rounded-lg object-contain"
+        />
+        <span className="font-bold text-sm text-primary">Kitchen Dashboard</span>
         <div className="ml-auto">
           <NotificationBell />
         </div>
@@ -54,7 +58,7 @@ export default function Sidebar() {
                 cn(
                   "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                   isActive
-                    ? "bg-yards-blue text-white"
+                    ? "bg-primary text-white"
                     : "text-muted-foreground hover:bg-muted hover:text-foreground"
                 )
               }
@@ -69,7 +73,7 @@ export default function Sidebar() {
       {/* Footer */}
       <div className="p-4 border-t">
         <div className="flex items-center gap-3 mb-3">
-          <div className="w-8 h-8 rounded-full bg-yards-blue/10 flex items-center justify-center text-sm font-bold text-yards-blue">
+          <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
             {profile?.full_name?.charAt(0) || "?"}
           </div>
           <div className="flex-1 min-w-0">

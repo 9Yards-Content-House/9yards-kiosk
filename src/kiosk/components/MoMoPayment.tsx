@@ -69,8 +69,8 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
           animate={{ scale: 1, opacity: 1 }}
           className="text-center"
         >
-          <Smartphone className="w-16 h-16 text-yards-blue mx-auto mb-6" />
-          <Loader2 className="w-10 h-10 animate-spin text-yards-orange mx-auto mb-6" />
+          <Smartphone className="w-16 h-16 text-primary mx-auto mb-6" />
+          <Loader2 className="w-10 h-10 animate-spin text-secondary mx-auto mb-6" />
           <h2 className="text-2xl font-bold mb-2">Check Your Phone</h2>
           <p className="text-lg text-muted-foreground mb-2">
             A payment prompt has been sent to
@@ -116,7 +116,7 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
           </Button>
           <Button
             size="touch"
-            className="bg-yards-orange hover:bg-yards-orange/90"
+            className="bg-secondary hover:bg-secondary/90"
             onClick={() => setStep("enter")}
           >
             Try Again
@@ -131,10 +131,10 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
     <div className="kiosk-screen flex flex-col bg-background">
       <KioskHeader title="Mobile Money" showBack onBack={onCancel} />
       <div className="flex-1 flex flex-col items-center justify-center px-4 max-w-md mx-auto w-full">
-        <Smartphone className="w-16 h-16 text-yards-blue mb-6" />
+        <Smartphone className="w-16 h-16 text-primary mb-6" />
         <h2 className="text-2xl font-bold mb-2">Pay with {network === "Unknown" ? "Mobile Money" : network}</h2>
         <p className="text-lg text-muted-foreground mb-8">
-          Amount: <span className="font-bold text-yards-orange">{formatPrice(amount)}</span>
+          Amount: <span className="font-bold text-secondary">{formatPrice(amount)}</span>
         </p>
 
         <div className="w-full mb-6">
@@ -161,7 +161,7 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
           </Button>
           <Button
             size="touch"
-            className="flex-1 bg-yards-orange hover:bg-yards-orange/90"
+            className="flex-1 bg-secondary hover:bg-secondary/90"
             disabled={momoPhone.replace(/\D/g, "").length < 10}
             onClick={handleSubmit}
           >

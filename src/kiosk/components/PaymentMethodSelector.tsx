@@ -49,14 +49,14 @@ export default function PaymentMethodSelector({
             className={cn(
               "w-full p-4 rounded-xl border-2 flex items-center gap-4 text-left transition-colors",
               isActive
-                ? "border-yards-orange bg-yards-orange/10"
+                ? "border-secondary bg-secondary/10"
                 : "border-muted hover:border-muted-foreground/30"
             )}
           >
             <div
               className={cn(
                 "w-12 h-12 rounded-full flex items-center justify-center",
-                isActive ? "bg-yards-orange text-white" : "bg-muted"
+                isActive ? "bg-secondary text-white" : "bg-muted"
               )}
             >
               <Icon className="w-6 h-6" />
