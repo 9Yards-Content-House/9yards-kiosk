@@ -60,10 +60,17 @@ export default function Payment() {
 
     try {
       const order = await createOrder.mutateAsync(payload);
-      sessionStorage.setItem("kiosk_order_number", order.order_number);
       sessionStorage.removeItem("kiosk_order_details");
       clearCart();
-      navigate("/confirmation", { replace: true });
+      navigate("/confirmation", { 
+        replace: true,
+        state: {
+          orderNumber: order.order_number,
+          total: order.total,
+          customerName: order.customer_name,
+          customerPhone: order.customer_phone,
+        }
+      });
     } catch {
       setStep("error");
     }

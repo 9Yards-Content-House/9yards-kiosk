@@ -52,7 +52,7 @@ export default function ComboBuilder({
   editingItemId,
 }: ComboBuilderProps) {
   const { t } = useTranslation();
-  const { data: menu } = useGroupedMenu();
+  const { data: groupedMenu = [] } = useGroupedMenu();
   const { addItem, removeItem, items } = useKioskCart();
 
   const [currentStep, setCurrentStep] = useState(0);
@@ -67,12 +67,18 @@ export default function ComboBuilder({
   });
   const [showSuccess, setShowSuccess] = useState(false);
 
+  // Helper to get items by category slug
+  const getItemsBySlug = (slug: string): MenuItem[] => {
+    const group = groupedMenu.find((g) => g.category.slug === slug);
+    return group?.items.filter((item) => item.available) || [];
+  };
+
   // Get items by category
-  const mainDishes = menu?.['main-dishes'] || [];
-  const sauces = menu?.['sauces'] || [];
-  const sideDishes = menu?.['side-dishes'] || [];
-  const juices = menu?.['juices'] || [];
-  const desserts = menu?.['desserts'] || [];
+  const mainDishes = getItemsBySlug('main-dishes');
+  const sauces = getItemsBySlug('sauces');
+  const sideDishes = getItemsBySlug('side-dishes');
+  const juices = getItemsBySlug('juices');
+  const desserts = getItemsBySlug('desserts');
   const extrasItems = [...juices, ...desserts];
 
   // Load editing item if provided
