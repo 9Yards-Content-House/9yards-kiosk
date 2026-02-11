@@ -1,0 +1,57 @@
+/* Dashboard-specific styles */
+
+/* Sidebar navigation */
+.dashboard-layout {
+  display: flex;
+  min-height: 100dvh;
+}
+
+.dashboard-sidebar {
+  width: 260px;
+  border-right: 1px solid hsl(var(--border));
+  background: hsl(var(--card));
+  display: flex;
+  flex-direction: column;
+  position: sticky;
+  top: 0;
+  height: 100dvh;
+  overflow-y: auto;
+}
+
+.dashboard-main {
+  flex: 1;
+  overflow-x: hidden;
+}
+
+/* Kanban board */
+.kanban-board {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(280px, 1fr));
+  gap: 1rem;
+  overflow-x: auto;
+  padding: 1rem;
+}
+
+/* New order pulse */
+@keyframes order-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(237, 72, 33, 0.4);
+  }
+  50% {
+    box-shadow: 0 0 0 12px rgba(237, 72, 33, 0);
+  }
+}
+
+.new-order-pulse {
+  animation: order-pulse 2s ease-in-out infinite;
+}
+
+/* Mobile bottom nav */
+@media (max-width: 768px) {
+  .dashboard-sidebar {
+    display: none;
+  }
+  .dashboard-main {
+    padding-bottom: 5rem;
+  }
+}

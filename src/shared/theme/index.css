@@ -1,0 +1,156 @@
+/* 9Yards Kiosk — Shared Theme (copied from main site) */
+/* Font loaded via HTML <link> for Inter */
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 9Yards Brand Colors */
+    --background: 30 30% 98%;
+    --foreground: 240 60% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 240 60% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 60% 15%;
+
+    /* Primary - 9Yards Blue #212282 */
+    --primary: 240 60% 32%;
+    --primary-foreground: 0 0% 100%;
+
+    /* Secondary - 9Yards Orange #E6411C */
+    --secondary: 12 82% 50%;
+    --secondary-foreground: 0 0% 100%;
+
+    --muted: 30 20% 94%;
+    --muted-foreground: 240 10% 45%;
+
+    /* Accent - Cyan tint */
+    --accent: 190 70% 45%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 30 15% 88%;
+    --input: 30 15% 88%;
+    --ring: 12 82% 50%;
+
+    --radius: 1rem;
+
+    /* Custom tokens */
+    --gradient-hero: linear-gradient(135deg, hsl(240, 60%, 32%) 0%, hsl(240, 50%, 25%) 100%);
+    --gradient-cta: linear-gradient(135deg, hsl(12, 82%, 55%) 0%, hsl(12, 82%, 45%) 100%);
+    --shadow-soft: 0 4px 20px -4px hsl(240 60% 32% / 0.15);
+    --shadow-cta: 0 8px 30px -8px hsl(12 82% 50% / 0.4);
+    --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.08);
+    --shadow-elevated: 0 12px 40px -12px hsl(0 0% 0% / 0.15);
+  }
+
+  .dark {
+    --background: 240 30% 8%;
+    --foreground: 30 20% 96%;
+    --card: 240 25% 12%;
+    --card-foreground: 30 20% 96%;
+    --popover: 240 25% 12%;
+    --popover-foreground: 30 20% 96%;
+    --primary: 240 60% 65%;
+    --primary-foreground: 240 60% 10%;
+    --secondary: 12 82% 55%;
+    --secondary-foreground: 0 0% 100%;
+    --muted: 240 20% 18%;
+    --muted-foreground: 30 15% 65%;
+    --accent: 190 60% 55%;
+    --accent-foreground: 0 0% 100%;
+    --destructive: 0 70% 50%;
+    --destructive-foreground: 0 0% 100%;
+    --border: 240 20% 20%;
+    --input: 240 20% 20%;
+    --ring: 12 82% 55%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  body {
+    @apply bg-background text-foreground font-sans antialiased;
+    font-family: "Inter", sans-serif;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  a, button, input, textarea, select, [role="button"] {
+    touch-action: manipulation;
+  }
+
+  :focus-visible {
+    @apply outline-2 outline-offset-2 outline-secondary;
+  }
+
+  @media (prefers-reduced-motion: reduce) {
+    *, *::before, *::after {
+      animation-duration: 0.01ms !important;
+      animation-iteration-count: 1 !important;
+      transition-duration: 0.01ms !important;
+      scroll-behavior: auto !important;
+    }
+  }
+}
+
+@layer utilities {
+  .gradient-hero {
+    background: var(--gradient-hero);
+  }
+  .gradient-cta {
+    background: var(--gradient-cta);
+  }
+  .shadow-soft {
+    box-shadow: var(--shadow-soft);
+  }
+  .shadow-cta {
+    box-shadow: var(--shadow-cta);
+  }
+  .shadow-card {
+    box-shadow: var(--shadow-card);
+  }
+  .shadow-elevated {
+    box-shadow: var(--shadow-elevated);
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+@layer components {
+  .btn-primary {
+    @apply bg-primary text-primary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-200;
+    @apply hover:bg-primary/90 active:scale-[0.98];
+  }
+  .btn-secondary {
+    @apply bg-secondary text-secondary-foreground font-semibold px-6 py-3 rounded-lg transition-all duration-200;
+    @apply hover:bg-secondary/90 active:scale-[0.98];
+  }
+  .card-premium {
+    @apply bg-card rounded-2xl border border-border/40 overflow-hidden transition-all duration-300;
+    @apply hover:border-primary/20 hover:bg-muted/30 active:scale-[0.99];
+  }
+  .badge-available {
+    @apply bg-green-100 text-green-700 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+  .badge-soldout {
+    @apply bg-red-100 text-red-600 text-xs font-semibold px-2 py-0.5 rounded-full;
+  }
+}

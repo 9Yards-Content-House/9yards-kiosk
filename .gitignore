@@ -1,0 +1,39 @@
+# Dependencies
+node_modules/
+
+# Build output
+dist-kiosk/
+dist-dashboard/
+dist/
+
+# Environment
+.env
+.env.local
+.env.production
+.env.*.local
+
+# Supabase
+supabase/.branches
+supabase/.temp
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# Logs
+*.log
+npm-debug.log*
+
+# TypeScript
+*.tsbuildinfo
+
+# Netlify
+.netlify/

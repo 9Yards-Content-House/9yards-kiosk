@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build:dashboard"
+  publish = "dist-dashboard"
+
+[[redirects]]
+  from = "/*"
+  to = "/index-dashboard.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index-dashboard.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

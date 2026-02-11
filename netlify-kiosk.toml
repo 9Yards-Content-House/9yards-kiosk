@@ -1,0 +1,21 @@
+[build]
+  command = "npm run build:kiosk"
+  publish = "dist-kiosk"
+
+[[redirects]]
+  from = "/*"
+  to = "/index-kiosk.html"
+  status = 200
+
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
+
+[[headers]]
+  for = "/index-kiosk.html"
+  [headers.values]
+    Cache-Control = "no-cache, no-store, must-revalidate"
+    X-Frame-Options = "DENY"
+    X-Content-Type-Options = "nosniff"
+    Referrer-Policy = "strict-origin-when-cross-origin"

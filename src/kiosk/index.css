@@ -1,0 +1,53 @@
+/* Kiosk-specific styles */
+
+/* Prevent text selection on the kiosk (touch screen) */
+body {
+  -webkit-user-select: none;
+  user-select: none;
+  overflow: hidden;
+  touch-action: manipulation;
+}
+
+/* Allow selection only in input fields */
+input,
+textarea {
+  -webkit-user-select: text;
+  user-select: text;
+}
+
+/* Touch-friendly scrollbars */
+::-webkit-scrollbar {
+  width: 8px;
+}
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--muted-foreground) / 0.3);
+  border-radius: 4px;
+}
+
+/* Kiosk fullscreen utility */
+.kiosk-screen {
+  width: 100vw;
+  height: 100dvh;
+  overflow: hidden;
+}
+
+/* Cart bar at bottom */
+.cart-bar {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 40;
+}
+
+/* Inactivity overlay */
+.inactivity-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 50;
+  background: hsl(var(--background) / 0.95);
+  backdrop-filter: blur(8px);
+}
