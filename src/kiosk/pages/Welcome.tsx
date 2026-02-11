@@ -1,20 +1,22 @@
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
+import { useCallback } from "react";
 
 export default function Welcome() {
   const navigate = useNavigate();
 
-  const handleStart = () => {
+  const handleStart = useCallback((e: React.MouseEvent | React.TouchEvent) => {
+    e.preventDefault();
+    e.stopPropagation();
     navigate("/menu");
-  };
+  }, [navigate]);
 
   return (
     <motion.div
-      className="kiosk-screen flex flex-col items-center justify-center bg-gradient-to-br from-yards-blue to-yards-blue/90 text-white p-8"
+      className="kiosk-screen flex flex-col items-center justify-center bg-gradient-to-br from-yards-blue to-yards-blue/90 text-white p-8 cursor-pointer"
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       onClick={handleStart}
-      onTouchStart={handleStart}
     >
       {/* Logo */}
       <motion.div

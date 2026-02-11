@@ -1,13 +1,29 @@
-import { defineConfig } from "vite";
+import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+
+// Plugin to serve index-dashboard.html for root URL
+function serveDashboardHtml(): Plugin {
+  return {
+    name: "serve-dashboard-html",
+    configureServer(server) {
+      server.middlewares.use((req, res, next) => {
+        // Serve index-dashboard.html for root and all non-asset routes
+        if (req.url === "/" || (req.url && !req.url.includes(".") && !req.url.startsWith("/@") && !req.url.startsWith("/src") && !req.url.startsWith("/node_modules"))) {
+          req.url = "/index-dashboard.html";
+        }
+        next();
+      });
+    },
+  };
+}
 
 export default defineConfig({
   server: {
     host: "::",
     port: 3001,
   },
-  plugins: [react()],
+  plugins: [serveDashboardHtml(), react()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
