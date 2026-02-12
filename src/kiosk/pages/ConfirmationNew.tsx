@@ -9,7 +9,7 @@ import {
   UtensilsCrossed,
   MessageCircle,
 } from 'lucide-react';
-import { useTranslation } from '@shared/context/LanguageContext';
+import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
@@ -20,6 +20,7 @@ export default function ConfirmationNew() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
+  const { setLanguage } = useLanguage();
   const { data: waitTime } = useWaitTime();
 
   const [copied, setCopied] = useState(false);
@@ -36,6 +37,7 @@ export default function ConfirmationNew() {
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
+          setLanguage('en');
           navigate('/');
           return 0;
         }
@@ -55,8 +57,9 @@ export default function ConfirmationNew() {
   }, [orderNumber]);
 
   const handleNewOrder = useCallback(() => {
+    setLanguage('en');
     navigate('/');
-  }, [navigate]);
+  }, [navigate, setLanguage]);
 
   const handleTrackOrder = useCallback(() => {
     navigate(`/lookup/${orderNumber}`);

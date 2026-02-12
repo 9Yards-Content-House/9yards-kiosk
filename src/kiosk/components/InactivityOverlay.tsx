@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Hand, RotateCcw } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
-import { useTranslation } from "@shared/context/LanguageContext";
+import { useTranslation, useLanguage } from "@shared/context/LanguageContext";
 import { Button } from "@shared/components/ui/button";
 
 interface InactivityOverlayProps {
@@ -16,6 +16,7 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
   const navigate = useNavigate();
   const { clearCart, itemCount } = useKioskCart();
   const { t } = useTranslation();
+  const { setLanguage } = useLanguage();
   const [countdown, setCountdown] = useState(COUNTDOWN_SECONDS);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
       setCountdown((prev) => {
         if (prev <= 1) {
           clearCart();
+          setLanguage('en');
           sessionStorage.removeItem("kiosk_order_details");
           sessionStorage.removeItem("kiosk_order_number");
           navigate("/", { replace: true });
@@ -41,10 +43,11 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
 
   const handleStartOver = useCallback(() => {
     clearCart();
+    setLanguage('en');
     sessionStorage.removeItem("kiosk_order_details");
     sessionStorage.removeItem("kiosk_order_number");
     navigate("/", { replace: true });
-  }, [clearCart, navigate]);
+  }, [clearCart, setLanguage, navigate]);
 
   // Calculate progress for the circular timer
   const progress = countdown / COUNTDOWN_SECONDS;
