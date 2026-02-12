@@ -1,6 +1,6 @@
 import { useEffect, useRef } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 type TableName = "orders" | "order_items" | "notifications" | "menu_items";
@@ -20,6 +20,7 @@ interface UseRealtimeOptions<T = Record<string, unknown>> {
 /**
  * Subscribe to Supabase Realtime Postgres Changes.
  * Automatically invalidates TanStack Query caches on changes.
+ * In mock mode, this is a no-op (polling handles updates).
  */
 export function useRealtime<T = Record<string, unknown>>(
   options: UseRealtimeOptions<T>
@@ -29,6 +30,12 @@ export function useRealtime<T = Record<string, unknown>>(
   optionsRef.current = options;
 
   useEffect(() => {
+    // Skip realtime in mock mode - rely on polling instead
+    if (USE_MOCK_DATA) {
+      console.log("📦 Mock mode: Realtime subscription disabled, using polling");
+      return;
+    }
+
     const { table, event = "*", filter } = optionsRef.current;
 
     const channelConfig: {

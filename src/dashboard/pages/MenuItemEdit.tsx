@@ -1,9 +1,9 @@
 import { useState, useEffect } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Loader2 } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@shared/lib/supabase";
 import { useCategories } from "@shared/hooks/useMenu";
+import { useCreateMenuItem, useUpdateMenuItem } from "@shared/hooks/useMenuMutations";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Switch } from "@shared/components/ui/switch";
@@ -13,9 +13,11 @@ import type { MenuItem } from "@shared/types/menu";
 export default function MenuItemEdit() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const { data: categories } = useCategories();
   const isNew = id === "new";
+
+  const createMenuItem = useCreateMenuItem();
+  const updateMenuItem = useUpdateMenuItem();
 
   const [form, setForm] = useState({
     name: "",
@@ -29,7 +31,7 @@ export default function MenuItemEdit() {
 
   // Fetch existing item
   useEffect(() => {
-    if (isNew) return;
+    if (isNew || USE_MOCK_DATA) return;
     supabase
       .from("menu_items")
       .select("*")
@@ -50,28 +52,21 @@ export default function MenuItemEdit() {
       });
   }, [id, isNew]);
 
-  const saveMutation = useMutation({
-    mutationFn: async () => {
+  const handleSave = async () => {
+    try {
       if (isNew) {
-        const { error } = await supabase.from("menu_items").insert(form);
-        if (error) throw error;
+        await createMenuItem.mutateAsync(form);
       } else {
-        const { error } = await supabase
-          .from("menu_items")
-          .update({ ...form, updated_at: new Date().toISOString() })
-          .eq("id", id);
-        if (error) throw error;
+        await updateMenuItem.mutateAsync({ id: id!, ...form });
       }
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["menu_items"] });
       toast.success(isNew ? "Item created" : "Item updated");
       navigate("/menu");
-    },
-    onError: () => {
+    } catch {
       toast.error("Failed to save item");
-    },
-  });
+    }
+  };
+
+  const isPending = createMenuItem.isPending || updateMenuItem.isPending;
 
   const update = (field: string, value: unknown) =>
     setForm((prev) => ({ ...prev, [field]: value }));
@@ -173,11 +168,11 @@ export default function MenuItemEdit() {
             Cancel
           </Button>
           <Button
-            onClick={() => saveMutation.mutate()}
-            disabled={saveMutation.isPending || !form.name || !form.category_id}
+            onClick={handleSave}
+            disabled={isPending || !form.name || !form.category_id}
             className="flex-1"
           >
-            {saveMutation.isPending ? (
+            {isPending ? (
               <Loader2 className="w-4 h-4 animate-spin mr-2" />
             ) : (
               <Save className="w-4 h-4 mr-2" />

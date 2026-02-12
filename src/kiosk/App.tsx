@@ -1,6 +1,7 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { KioskCartProvider } from "./context/KioskCartContext";
 import { LanguageProvider } from "@shared/context/LanguageContext";
+import { AccessibilityProvider } from "./context/AccessibilityContext";
 import { useInactivityTimer } from "./hooks/useInactivityTimer";
 import ErrorBoundary from "@shared/components/ErrorBoundary";
 import InactivityOverlay from "./components/InactivityOverlay";
@@ -40,11 +41,13 @@ function KioskRoutes() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <LanguageProvider>
-        <KioskCartProvider>
-          <KioskRoutes />
-        </KioskCartProvider>
-      </LanguageProvider>
+      <AccessibilityProvider>
+        <LanguageProvider>
+          <KioskCartProvider>
+            <KioskRoutes />
+          </KioskCartProvider>
+        </LanguageProvider>
+      </AccessibilityProvider>
     </ErrorBoundary>
   );
 }

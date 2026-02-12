@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
@@ -24,14 +24,33 @@ import {
 import SwipeableItem from '@shared/components/SwipeableItem';
 import KioskHeader from '../components/KioskHeader';
 import ComboBuilderNew from '../components/ComboBuilderNew';
+import UpsellModal from '../components/UpsellModal';
+import { saveOrderToHistory } from '../components/QuickReorder';
+import { useAllMenuItems, useCategories } from '@shared/hooks/useMenu';
+import { getUpsellSuggestions } from '@shared/lib/recommendations';
 
 export default function CartNew() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { items, removeItem, updateQuantity, clearCart, subtotal, itemCount } = useKioskCart();
+  const { items, removeItem, updateQuantity, clearCart, subtotal, itemCount, addItem } = useKioskCart();
+  const { data: allMenuItems = [] } = useAllMenuItems();
+  const { data: categories = [] } = useCategories();
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
+  const [showUpsell, setShowUpsell] = useState(false);
+
+  // Get upsell suggestions based on cart
+  const upsellSuggestions = useMemo(() => {
+    if (items.length === 0 || allMenuItems.length === 0 || categories.length === 0) return [];
+    // Convert cart items to MenuItem format for the recommendation engine
+    const cartMenuItems = items.map(item => {
+      const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
+      return menuItem;
+    }).filter(Boolean) as any[];
+    
+    return getUpsellSuggestions(allMenuItems, categories, cartMenuItems);
+  }, [items, allMenuItems, categories]);
 
   const handleQuantityChange = useCallback(
     (id: string, delta: number) => {
@@ -68,8 +87,51 @@ export default function CartNew() {
   }, []);
 
   const handleCheckout = useCallback(() => {
+    // Show upsell if we have suggestions and user hasn't seen it
+    if (upsellSuggestions.length > 0) {
+      setShowUpsell(true);
+    } else {
+      // Save order to history for quick reorder feature
+      const orderItems = items.map(item => {
+        const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
+        return menuItem ? { menuItem, quantity: item.quantity } : null;
+      }).filter(Boolean) as any[];
+      if (orderItems.length > 0) {
+        saveOrderToHistory(orderItems, subtotal);
+      }
+      navigate('/details');
+    }
+  }, [navigate, upsellSuggestions, items, allMenuItems, subtotal]);
+
+  const handleSkipUpsell = useCallback(() => {
+    setShowUpsell(false);
+    // Save order to history
+    const orderItems = items.map(item => {
+      const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
+      return menuItem ? { menuItem, quantity: item.quantity } : null;
+    }).filter(Boolean) as any[];
+    if (orderItems.length > 0) {
+      saveOrderToHistory(orderItems, subtotal);
+    }
     navigate('/details');
-  }, [navigate]);
+  }, [items, allMenuItems, subtotal, navigate]);
+
+  const handleAddUpsellItem = useCallback((item: any) => {
+    vibrate([30, 30]);
+    addItem({
+      id: crypto.randomUUID(),
+      type: 'single',
+      sauceName: item.name,
+      saucePreparation: '',
+      sauceSize: '',
+      mainDishes: [],
+      sideDish: '',
+      extras: [],
+      quantity: 1,
+      unitPrice: item.price,
+      label: item.name,
+    });
+  }, [addItem]);
 
   // Empty cart state
   if (items.length === 0) {
@@ -310,6 +372,15 @@ export default function CartNew() {
         open={!!editingItemId}
         onClose={() => setEditingItemId(null)}
         editingItemId={editingItemId || undefined}
+      />
+
+      {/* Upsell Modal - shown before checkout */}
+      <UpsellModal
+        isOpen={showUpsell}
+        onClose={() => setShowUpsell(false)}
+        suggestions={upsellSuggestions.map(s => ({ item: s.suggestedItem, promptText: s.promptText }))}
+        onAddItem={handleAddUpsellItem}
+        onSkip={handleSkipUpsell}
       />
     </div>
   );

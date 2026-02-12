@@ -51,3 +51,111 @@ textarea {
   background: hsl(var(--background) / 0.95);
   backdrop-filter: blur(8px);
 }
+
+/* ==========================================
+   ACCESSIBILITY MODE STYLES
+   ========================================== */
+
+/* High Contrast Mode */
+:root.high-contrast {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 100%;
+  --card: 0 0% 5%;
+  --card-foreground: 0 0% 100%;
+  --primary: 45 100% 60%;
+  --primary-foreground: 0 0% 0%;
+  --secondary: 160 100% 50%;
+  --secondary-foreground: 0 0% 0%;
+  --muted: 0 0% 15%;
+  --muted-foreground: 0 0% 80%;
+  --accent: 45 100% 60%;
+  --accent-foreground: 0 0% 0%;
+  --border: 0 0% 30%;
+}
+
+.high-contrast {
+  font-weight: 500;
+}
+
+.high-contrast button,
+.high-contrast a {
+  border: 2px solid currentColor !important;
+}
+
+.high-contrast img {
+  filter: contrast(1.2);
+}
+
+/* Large Text Mode */
+:root.large-text {
+  font-size: 125%;
+}
+
+.large-text h1 { font-size: 2.5rem !important; }
+.large-text h2 { font-size: 2rem !important; }
+.large-text h3 { font-size: 1.75rem !important; }
+.large-text p, 
+.large-text span,
+.large-text button { font-size: 1.25rem !important; }
+
+/* Reduced Motion */
+.reduced-motion *,
+.reduced-motion *::before,
+.reduced-motion *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+}
+
+/* Touch Target Sizes */
+.touch-normal button,
+.touch-normal a,
+.touch-normal [role="button"] {
+  min-height: 44px;
+  min-width: 44px;
+}
+
+.touch-large button,
+.touch-large a,
+.touch-large [role="button"] {
+  min-height: 56px;
+  min-width: 56px;
+  padding: 12px 20px;
+}
+
+.touch-extra-large button,
+.touch-extra-large a,
+.touch-extra-large [role="button"] {
+  min-height: 72px;
+  min-width: 72px;
+  padding: 16px 24px;
+  font-size: 1.25rem;
+}
+
+/* Focus indicators for accessibility */
+:root.high-contrast :focus-visible {
+  outline: 4px solid hsl(45, 100%, 60%) !important;
+  outline-offset: 4px !important;
+}
+
+/* Screen reader only text */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border-width: 0;
+}
+
+/* Hide scrollbar utility */
+.scrollbar-hide {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+.scrollbar-hide::-webkit-scrollbar {
+  display: none;
+}

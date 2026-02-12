@@ -1,5 +1,5 @@
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Category, MenuItem, GroupedMenu } from "@shared/types/menu";
 
 // Mock data for development/testing when Supabase has no data
@@ -50,22 +50,24 @@ export function useCategories() {
   return useQuery<Category[]>({
     queryKey: ["categories"],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock categories");
+        return MOCK_CATEGORIES;
+      }
+      
       try {
         const { data, error } = await supabase
           .from("categories")
           .select("*")
           .order("sort_order");
         if (error) throw error;
-        if (data && data.length > 0) return data;
-        // Return mock data if empty
-        console.log("📦 Using mock categories (no data in Supabase)");
-        return MOCK_CATEGORIES;
+        return data && data.length > 0 ? data : MOCK_CATEGORIES;
       } catch (err) {
         console.warn("Failed to fetch categories, using mock data:", err);
         return MOCK_CATEGORIES;
       }
     },
-    staleTime: 5 * 60 * 1000, // 5 minutes
+    staleTime: 5 * 60 * 1000,
   });
 }
 
@@ -73,6 +75,13 @@ export function useMenuItems(categoryId?: string) {
   return useQuery<MenuItem[]>({
     queryKey: ["menu_items", categoryId],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock menu items");
+        return categoryId 
+          ? MOCK_MENU_ITEMS.filter(i => i.category_id === categoryId)
+          : MOCK_MENU_ITEMS;
+      }
+      
       try {
         let query = supabase
           .from("menu_items")
@@ -87,7 +96,6 @@ export function useMenuItems(categoryId?: string) {
         const { data, error } = await query;
         if (error) throw error;
         if (data && data.length > 0) return data;
-        // Return mock data if empty
         const mockItems = categoryId 
           ? MOCK_MENU_ITEMS.filter(i => i.category_id === categoryId)
           : MOCK_MENU_ITEMS;
@@ -108,15 +116,18 @@ export function useAllMenuItems() {
   return useQuery<MenuItem[]>({
     queryKey: ["menu_items", "all"],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning all mock menu items");
+        return MOCK_MENU_ITEMS;
+      }
+      
       try {
         const { data, error } = await supabase
           .from("menu_items")
           .select("*, category:categories(*)")
           .order("sort_order");
         if (error) throw error;
-        if (data && data.length > 0) return data;
-        console.log("📦 Using mock menu items (no data in Supabase)");
-        return MOCK_MENU_ITEMS;
+        return data && data.length > 0 ? data : MOCK_MENU_ITEMS;
       } catch (err) {
         console.warn("Failed to fetch all menu items, using mock data:", err);
         return MOCK_MENU_ITEMS;
@@ -130,6 +141,14 @@ export function useGroupedMenu() {
   return useQuery<GroupedMenu[]>({
     queryKey: ["grouped_menu"],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock grouped menu");
+        return MOCK_CATEGORIES.map((category) => ({
+          category,
+          items: MOCK_MENU_ITEMS.filter((item) => item.category_id === category.id),
+        }));
+      }
+      
       try {
         const [categoriesRes, itemsRes] = await Promise.all([
           supabase.from("categories").select("*").order("sort_order"),
@@ -143,7 +162,6 @@ export function useGroupedMenu() {
         if (categoriesRes.error) throw categoriesRes.error;
         if (itemsRes.error) throw itemsRes.error;
 
-        // Check if we have data
         if (categoriesRes.data.length > 0 && itemsRes.data.length > 0) {
           return categoriesRes.data.map((category) => ({
             category,
@@ -151,8 +169,6 @@ export function useGroupedMenu() {
           }));
         }
 
-        // Fall back to mock data
-        console.log("📦 Using mock grouped menu (no data in Supabase)");
         return MOCK_CATEGORIES.map((category) => ({
           category,
           items: MOCK_MENU_ITEMS.filter((item) => item.category_id === category.id),

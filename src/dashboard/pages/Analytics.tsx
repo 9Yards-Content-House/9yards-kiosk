@@ -14,11 +14,12 @@ import {
   ArrowUp,
   ArrowDown,
 } from 'lucide-react';
-import { supabase } from '@shared/lib/supabase';
+import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { formatPrice, cn } from '@shared/lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '@shared/types/auth';
 import RevenueChart from '../components/RevenueChart';
+import AIInsightsPanel from '../components/AIInsightsPanel';
 import { Button } from '@shared/components/ui/button';
 import {
   Select,
@@ -30,6 +31,68 @@ import {
 import type { Order } from '@shared/types/orders';
 
 type TimeRange = '7d' | '30d' | '90d' | 'all';
+
+// Generate mock analytics data for development
+function generateMockAnalyticsOrders(): Order[] {
+  const orders: Order[] = [];
+  const now = Date.now();
+  const menuItems = [
+    "G-Nuts", "Chicken Stew", "Beef Stew", "Fish", "Cowpeas", "Liver",
+    "Matooke", "White Rice", "Pilao", "Posho", "Passion Fruit Juice",
+    "Mango Juice", "Chapati", "Samosa"
+  ];
+  const paymentMethods: Array<"cash" | "mobile_money" | "pay_at_counter"> = ["cash", "mobile_money", "pay_at_counter"];
+  const customers = ["John Doe", "Jane Smith", "Peter Otieno", "Mary Nakato", "Moses Ocheng", "Sarah Namugalu"];
+  
+  // Generate 50 orders over the past 30 days
+  for (let i = 0; i < 50; i++) {
+    const daysAgo = Math.floor(Math.random() * 30);
+    const hoursAgo = Math.floor(Math.random() * 24);
+    const orderDate = new Date(now - (daysAgo * 24 * 60 * 60 * 1000) - (hoursAgo * 60 * 60 * 1000));
+    const numItems = Math.floor(Math.random() * 3) + 1;
+    const itemsTotal = (Math.floor(Math.random() * 40) + 15) * 1000; // 15k-55k
+    
+    orders.push({
+      id: `analytics-order-${i}`,
+      order_number: `9Y-${String(i + 100).padStart(3, '0')}`,
+      status: "delivered",
+      customer_name: customers[Math.floor(Math.random() * customers.length)],
+      customer_phone: `+25670${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`,
+      customer_location: `Office ${Math.floor(Math.random() * 500)}`,
+      payment_method: paymentMethods[Math.floor(Math.random() * paymentMethods.length)],
+      payment_status: "paid",
+      momo_transaction_id: null,
+      subtotal: itemsTotal,
+      total: itemsTotal,
+      special_instructions: null,
+      source: "kiosk",
+      created_at: orderDate.toISOString(),
+      updated_at: orderDate.toISOString(),
+      prepared_at: orderDate.toISOString(),
+      ready_at: orderDate.toISOString(),
+      delivered_at: orderDate.toISOString(),
+      items: Array.from({ length: numItems }, (_, j) => ({
+        id: `item-${i}-${j}`,
+        order_id: `analytics-order-${i}`,
+        type: "single" as const,
+        main_dishes: [],
+        sauce_name: menuItems[Math.floor(Math.random() * menuItems.length)],
+        sauce_preparation: null,
+        sauce_size: null,
+        side_dish: null,
+        extras: null,
+        quantity: 1,
+        unit_price: Math.floor(itemsTotal / numItems),
+        total_price: Math.floor(itemsTotal / numItems),
+        menu_item: { name: menuItems[Math.floor(Math.random() * menuItems.length)], category_id: "cat-1" },
+      })),
+    });
+  }
+  
+  return orders.sort((a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime());
+}
+
+const MOCK_ANALYTICS_ORDERS = generateMockAnalyticsOrders();
 
 export default function Analytics() {
   const { role } = useAuth();
@@ -48,6 +111,13 @@ export default function Analytics() {
     queryKey: ['analytics', 'orders', timeRange],
     queryFn: async () => {
       const startDate = getDateRange(timeRange);
+      
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock analytics orders");
+        if (!startDate) return MOCK_ANALYTICS_ORDERS;
+        return MOCK_ANALYTICS_ORDERS.filter(o => new Date(o.created_at) >= startDate);
+      }
+      
       let query = supabase
         .from('orders')
         .select('*, order_items(*, menu_item:menu_items(name, category_id))')
@@ -339,7 +409,10 @@ export default function Analytics() {
       </div>
 
       {/* Top Items & Payment Breakdown */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* AI Insights Panel */}
+        <AIInsightsPanel orders={orders || []} />
+
         {/* Top selling items */}
         <div className="bg-card rounded-xl border p-4">
           <h3 className="font-semibold text-lg mb-4">Top Selling Items</h3>

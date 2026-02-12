@@ -46,11 +46,11 @@ export const specialInstructionsSchema = z
 export const paymentMethodSchema = z.enum(['pay_at_counter', 'cash', 'mobile_money']);
 
 export const orderDetailsSchema = z.object({
-  name: nameSchema,
-  phone: phoneSchema.optional(),
-  location: locationSchema,
-  specialInstructions: specialInstructionsSchema,
-  paymentMethod: paymentMethodSchema,
+  customer_name: nameSchema,
+  customer_phone: phoneSchema.optional(),
+  customer_location: locationSchema.optional(),
+  special_instructions: specialInstructionsSchema.optional(),
+  payment_method: paymentMethodSchema,
 });
 
 export type OrderDetailsInput = z.input<typeof orderDetailsSchema>;

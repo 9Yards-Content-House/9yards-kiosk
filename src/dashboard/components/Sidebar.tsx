@@ -7,6 +7,7 @@ import {
   Settings,
   Truck,
   LogOut,
+  ChefHat,
 } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "../context/AuthContext";
@@ -24,6 +25,7 @@ export default function Sidebar() {
 
   const links = [
     { to: "/orders", label: "Orders", icon: LayoutDashboard, permission: "orders:read" },
+    { to: "/kitchen", label: "Kitchen Display", icon: ChefHat, permission: "orders:read" },
     { to: "/menu", label: "Menu", icon: UtensilsCrossed, permission: "menu:read" },
     { to: "/staff", label: "Staff", icon: Users, permission: "staff:read" },
     { to: "/analytics", label: "Analytics", icon: BarChart3, permission: "analytics:read" },

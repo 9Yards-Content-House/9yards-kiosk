@@ -1,6 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { Package, MapPin, CheckCircle2 } from "lucide-react";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { useUpdateOrderStatus } from "@shared/hooks/useOrders";
 import { formatPrice, timeAgo } from "@shared/lib/utils";
@@ -9,6 +9,83 @@ import StatusBadge from "../../components/StatusBadge";
 import { toast } from "sonner";
 import type { Order } from "@shared/types/orders";
 
+// Mock delivery orders for development
+const MOCK_DELIVERIES: Order[] = [
+  {
+    id: "delivery-1",
+    order_number: "9Y-010",
+    status: "ready",
+    customer_name: "Grace Auma",
+    customer_phone: "+256700123456",
+    customer_location: "3rd Floor, Office 302",
+    payment_method: "cash",
+    payment_status: "pending",
+    momo_transaction_id: null,
+    subtotal: 35000,
+    total: 35000,
+    special_instructions: null,
+    source: "kiosk",
+    created_at: new Date(Date.now() - 20 * 60000).toISOString(),
+    updated_at: new Date(Date.now() - 5 * 60000).toISOString(),
+    prepared_at: new Date(Date.now() - 10 * 60000).toISOString(),
+    ready_at: new Date(Date.now() - 5 * 60000).toISOString(),
+    delivered_at: null,
+    items: [
+      { id: "d1-item-1", order_id: "delivery-1", type: "combo", main_dishes: ["Matooke", "Rice"], sauce_name: "Chicken Stew", sauce_preparation: null, sauce_size: "Regular", side_dish: "Cabbage", extras: null, quantity: 1, unit_price: 35000, total_price: 35000 },
+    ],
+  },
+  {
+    id: "delivery-2",
+    order_number: "9Y-011",
+    status: "ready",
+    customer_name: "David Ochieng",
+    customer_phone: "+256700789012",
+    customer_location: "Reception Desk",
+    payment_method: "mobile_money",
+    payment_status: "paid",
+    momo_transaction_id: "TXN789012",
+    subtotal: 22000,
+    total: 22000,
+    special_instructions: "Call when at reception",
+    source: "kiosk",
+    created_at: new Date(Date.now() - 30 * 60000).toISOString(),
+    updated_at: new Date(Date.now() - 8 * 60000).toISOString(),
+    prepared_at: new Date(Date.now() - 15 * 60000).toISOString(),
+    ready_at: new Date(Date.now() - 8 * 60000).toISOString(),
+    delivered_at: null,
+    items: [
+      { id: "d2-item-1", order_id: "delivery-2", type: "single", main_dishes: [], sauce_name: "G-Nuts", sauce_preparation: null, sauce_size: "Regular", side_dish: null, extras: null, quantity: 1, unit_price: 15000, total_price: 15000 },
+      { id: "d2-item-2", order_id: "delivery-2", type: "single", main_dishes: [], sauce_name: null, sauce_preparation: null, sauce_size: null, side_dish: null, extras: null, quantity: 1, unit_price: 5000, total_price: 5000 },
+    ],
+  },
+  {
+    id: "delivery-3",
+    order_number: "9Y-008",
+    status: "delivered",
+    customer_name: "Fatuma Nantongo",
+    customer_phone: "+256700345678",
+    customer_location: "2nd Floor, Room 210",
+    payment_method: "pay_at_counter",
+    payment_status: "paid",
+    momo_transaction_id: null,
+    subtotal: 28000,
+    total: 28000,
+    special_instructions: null,
+    source: "kiosk",
+    created_at: new Date(Date.now() - 90 * 60000).toISOString(),
+    updated_at: new Date(Date.now() - 60 * 60000).toISOString(),
+    prepared_at: new Date(Date.now() - 80 * 60000).toISOString(),
+    ready_at: new Date(Date.now() - 70 * 60000).toISOString(),
+    delivered_at: new Date(Date.now() - 60 * 60000).toISOString(),
+    items: [
+      { id: "d3-item-1", order_id: "delivery-3", type: "combo", main_dishes: ["Posho"], sauce_name: "Beef Stew", sauce_preparation: "Fried", sauce_size: "Regular", side_dish: "Beans", extras: null, quantity: 1, unit_price: 28000, total_price: 28000 },
+    ],
+  },
+];
+
+// In-memory store for mock mode
+let mockDeliveriesStore = [...MOCK_DELIVERIES];
+
 export default function MyDeliveries() {
   const { user } = useAuth();
   const updateStatus = useUpdateOrderStatus();
@@ -16,6 +93,11 @@ export default function MyDeliveries() {
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ["deliveries"],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock deliveries");
+        return mockDeliveriesStore;
+      }
+      
       const { data, error } = await supabase
         .from("orders")
         .select("*, items:order_items(*)")
@@ -25,7 +107,7 @@ export default function MyDeliveries() {
       if (error) throw error;
       return data;
     },
-    refetchInterval: 15_000,
+    refetchInterval: USE_MOCK_DATA ? 5_000 : 15_000,
   });
 
   const readyOrders = orders?.filter((o) => o.status === "ready") || [];
@@ -37,6 +119,16 @@ export default function MyDeliveries() {
         orderId: order.id,
         status: "delivered",
       });
+      
+      // Update mock store in mock mode
+      if (USE_MOCK_DATA) {
+        const mockOrder = mockDeliveriesStore.find(o => o.id === order.id);
+        if (mockOrder) {
+          mockOrder.status = "delivered";
+          mockOrder.delivered_at = new Date().toISOString();
+        }
+      }
+      
       toast.success(`${order.order_number} marked as delivered`);
     } catch {
       toast.error("Failed to update");

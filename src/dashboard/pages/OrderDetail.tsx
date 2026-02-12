@@ -53,8 +53,9 @@ export default function OrderDetail() {
         status: nextStatus,
       });
       toast.success(`Order moved to ${ORDER_STATUS_LABELS[nextStatus]}`);
-    } catch {
-      toast.error("Failed to update order status");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to update order status";
+      toast.error(message);
     }
   };
 
@@ -62,8 +63,9 @@ export default function OrderDetail() {
     try {
       await cancelOrder.mutateAsync(order.id);
       toast.success("Order cancelled");
-    } catch {
-      toast.error("Failed to cancel order");
+    } catch (err) {
+      const message = err instanceof Error ? err.message : "Failed to cancel order";
+      toast.error(message);
     }
   };
 

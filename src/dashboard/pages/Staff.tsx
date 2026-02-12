@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Plus, Loader2, UserX, UserCheck } from "lucide-react";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Profile, UserRole } from "@shared/types/auth";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
@@ -17,6 +17,37 @@ import {
 } from "@shared/components/ui/dialog";
 import { toast } from "sonner";
 
+// Mock staff data for development
+const MOCK_STAFF: Profile[] = [
+  {
+    id: "user-1",
+    full_name: "John Katende",
+    phone: "+256700111222",
+    role: "kitchen",
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "user-2",
+    full_name: "Sarah Namugalu",
+    phone: "+256700333444",
+    role: "rider",
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+  {
+    id: "user-3",
+    full_name: "Moses Ocheng",
+    phone: "+256700555666",
+    role: "admin",
+    active: true,
+    created_at: new Date().toISOString(),
+  },
+];
+
+// In-memory store for mock mode
+let mockStaffStore = [...MOCK_STAFF];
+
 export default function Staff() {
   const { role } = useAuth();
   const queryClient = useQueryClient();
@@ -25,6 +56,11 @@ export default function Staff() {
   const { data: staff, isLoading } = useQuery<Profile[]>({
     queryKey: ["staff"],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock staff");
+        return mockStaffStore;
+      }
+      
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
@@ -37,10 +73,26 @@ export default function Staff() {
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
   const [inviteName, setInviteName] = useState("");
+  const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>("kitchen");
 
   const inviteMutation = useMutation({
     mutationFn: async () => {
+      if (USE_MOCK_DATA) {
+        // Mock: just add to local store
+        const newStaff: Profile = {
+          id: `user-${Date.now()}`,
+          full_name: inviteName,
+          phone: invitePhone || null,
+          role: inviteRole,
+          active: true,
+          created_at: new Date().toISOString(),
+        };
+        mockStaffStore = [newStaff, ...mockStaffStore];
+        console.log("📦 Mock: Added staff member:", inviteName);
+        return;
+      }
+      
       // Create auth user via Supabase admin function (Edge Function)
       const { error } = await supabase.functions.invoke("invite-staff", {
         body: {
@@ -57,6 +109,7 @@ export default function Staff() {
       setShowInvite(false);
       setInviteEmail("");
       setInviteName("");
+      setInvitePhone("");
     },
     onError: () => {
       toast.error("Failed to invite staff member");
@@ -65,6 +118,15 @@ export default function Staff() {
 
   const toggleActive = useMutation({
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
+      if (USE_MOCK_DATA) {
+        const member = mockStaffStore.find(s => s.id === id);
+        if (member) {
+          member.active = active;
+        }
+        console.log(`📦 Mock: Toggled staff ${id} active to: ${active}`);
+        return;
+      }
+      
       const { error } = await supabase
         .from("profiles")
         .update({ active })
@@ -100,7 +162,7 @@ export default function Staff() {
           </DialogTrigger>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>Invite Staff Member</DialogTitle>
+              <DialogTitle>{USE_MOCK_DATA ? "Add Staff Member" : "Invite Staff Member"}</DialogTitle>
             </DialogHeader>
             <div className="space-y-4 pt-2">
               <div>
@@ -111,15 +173,27 @@ export default function Staff() {
                   placeholder="John Doe"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="john@9yards.co.ug"
-                />
-              </div>
+              {USE_MOCK_DATA ? (
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Phone</label>
+                  <Input
+                    type="tel"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                    placeholder="+256700123456"
+                  />
+                </div>
+              ) : (
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Email</label>
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="john@9yards.co.ug"
+                  />
+                </div>
+              )}
               <div>
                 <label className="block text-sm font-medium mb-1.5">Role</label>
                 <select
@@ -134,13 +208,13 @@ export default function Staff() {
               </div>
               <Button
                 onClick={() => inviteMutation.mutate()}
-                disabled={inviteMutation.isPending || !inviteEmail || !inviteName}
+                disabled={inviteMutation.isPending || !inviteName || (!USE_MOCK_DATA && !inviteEmail)}
                 className="w-full"
               >
                 {inviteMutation.isPending && (
                   <Loader2 className="w-4 h-4 animate-spin mr-2" />
                 )}
-                Send Invite
+                {USE_MOCK_DATA ? "Add Member" : "Send Invite"}
               </Button>
             </div>
           </DialogContent>

@@ -1,16 +1,20 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCallback, useState, useEffect } from 'react';
-import { UtensilsCrossed, Search, LayoutGrid, Globe } from 'lucide-react';
+import { UtensilsCrossed, Search, LayoutGrid, Globe, Accessibility } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { Button } from '@shared/components/ui/button';
 import { cn } from '@shared/lib/utils';
+import AccessibilityPanel from '../components/AccessibilityPanel';
+import { useAccessibility } from '../context/AccessibilityContext';
 
 export default function Welcome() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { language, setLanguage } = useLanguage();
+  const { isAccessibilityMode } = useAccessibility();
   const [currentTime, setCurrentTime] = useState(new Date());
+  const [showAccessibility, setShowAccessibility] = useState(false);
 
   useEffect(() => {
     const timer = setInterval(() => setCurrentTime(new Date()), 1000);
@@ -70,16 +74,35 @@ export default function Welcome() {
         <div className="text-white/80 text-lg font-medium">
           {formatTime(currentTime)}
         </div>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={toggleLanguage}
-          className="text-white hover:bg-white/10 gap-2"
-        >
-          <Globe className="w-4 h-4" />
-          {language === 'en' ? 'Luganda' : 'English'}
-        </Button>
+        <div className="flex items-center gap-2">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setShowAccessibility(true)}
+            className={cn(
+              "text-white hover:bg-white/10",
+              isAccessibilityMode && "bg-white/20"
+            )}
+          >
+            <Accessibility className="w-5 h-5" />
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={toggleLanguage}
+            className="text-white hover:bg-white/10 gap-2"
+          >
+            <Globe className="w-4 h-4" />
+            {language === 'en' ? 'Luganda' : 'English'}
+          </Button>
+        </div>
       </div>
+
+      {/* Accessibility Panel */}
+      <AccessibilityPanel 
+        isOpen={showAccessibility} 
+        onClose={() => setShowAccessibility(false)} 
+      />
 
       {/* Main content */}
       <div className="relative z-10 flex-1 flex flex-col items-center justify-center px-8 pb-8">

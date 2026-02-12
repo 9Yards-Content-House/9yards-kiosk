@@ -1,6 +1,9 @@
 import { Edit2, Clock, Star, Sparkles, Image as ImageIcon } from "lucide-react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { supabase } from "@shared/lib/supabase";
+import { 
+  useToggleMenuItemAvailability,
+  useToggleMenuItemPopular,
+  useToggleMenuItemNew,
+} from "@shared/hooks/useMenuMutations";
 import { formatPrice, cn } from "@shared/lib/utils";
 import { Switch } from "@shared/components/ui/switch";
 import { Badge } from "@shared/components/ui/badge";
@@ -20,46 +23,9 @@ interface MenuItemRowProps {
 }
 
 export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuItemRowProps) {
-  const queryClient = useQueryClient();
-
-  const toggleAvailability = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("menu_items")
-        .update({ available: !item.available, updated_at: new Date().toISOString() })
-        .eq("id", item.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["menu_items"] });
-    },
-  });
-
-  const togglePopular = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("menu_items")
-        .update({ is_popular: !(item as any).is_popular })
-        .eq("id", item.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["menu_items"] });
-    },
-  });
-
-  const toggleNew = useMutation({
-    mutationFn: async () => {
-      const { error } = await supabase
-        .from("menu_items")
-        .update({ is_new: !(item as any).is_new })
-        .eq("id", item.id);
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["menu_items"] });
-    },
-  });
+  const toggleAvailability = useToggleMenuItemAvailability();
+  const togglePopular = useToggleMenuItemPopular();
+  const toggleNew = useToggleMenuItemNew();
 
   // Check if item is scheduled
   const isScheduled = (item as any).available_from || (item as any).available_until;
@@ -130,7 +96,7 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
               variant={isPopular ? "default" : "ghost"}
               size="icon"
               className={cn("h-8 w-8", isPopular && "bg-amber-500 hover:bg-amber-600")}
-              onClick={() => togglePopular.mutate()}
+              onClick={() => togglePopular.mutate({ id: item.id, is_popular: !isPopular })}
               disabled={!canEdit || togglePopular.isPending}
             >
               <Star className="w-4 h-4" />
@@ -145,7 +111,7 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
               variant={isNew ? "default" : "ghost"}
               size="icon"
               className={cn("h-8 w-8", isNew && "bg-green-500 hover:bg-green-600")}
-              onClick={() => toggleNew.mutate()}
+              onClick={() => toggleNew.mutate({ id: item.id, is_new: !isNew })}
               disabled={!canEdit || toggleNew.isPending}
             >
               <Sparkles className="w-4 h-4" />
@@ -159,7 +125,7 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
       <div className="flex items-center gap-2">
         <Switch
           checked={item.available}
-          onCheckedChange={() => toggleAvailability.mutate()}
+          onCheckedChange={() => toggleAvailability.mutate({ id: item.id, available: !item.available })}
           disabled={!canEdit || toggleAvailability.isPending}
         />
         {canEdit && (

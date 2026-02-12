@@ -3,6 +3,7 @@ import { motion } from 'framer-motion';
 import { Plus, Minus, Flame, Sparkles, ShoppingBag } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { MenuItem } from '@shared/types';
+import { FavoriteButton } from './QuickReorder';
 import { cn, formatPrice, vibrate } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
 import OptimizedImage from '@shared/components/OptimizedImage';
@@ -122,14 +123,15 @@ export default function MenuItemCardNew({
           )}
         </div>
 
-        {/* Category pill */}
-        {categorySlug && (
-          <div className="absolute top-3 right-3">
+        {/* Category pill & Favorite */}
+        <div className="absolute top-3 right-3 flex items-center gap-2">
+          {categorySlug && (
             <span className="bg-black/60 text-white px-2 py-1 rounded-full text-xs capitalize">
               {categorySlug.replace('-', ' ')}
             </span>
-          </div>
-        )}
+          )}
+          <FavoriteButton itemId={item.id} size="sm" />
+        </div>
       </div>
 
       {/* Content */}

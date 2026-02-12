@@ -14,6 +14,9 @@ import CategoryTabsNew from '../components/CategoryTabsNew';
 import MenuItemCardNew from '../components/MenuItemCardNew';
 import ComboBuilderNew from '../components/ComboBuilderNew';
 import CartBar from '../components/CartBar';
+import RecommendationSection from '../components/RecommendationSection';
+import { QuickReorderPanel } from '../components/QuickReorder';
+import { getRecommendations } from '@shared/lib/recommendations';
 
 export default function MenuNew() {
   const navigate = useNavigate();
@@ -27,6 +30,13 @@ export default function MenuNew() {
   const [searchQuery, setSearchQuery] = useState('');
   const [comboBuilderOpen, setComboBuilderOpen] = useState(false);
   const [selectedSauce, setSelectedSauce] = useState<MenuItem | null>(null);
+  const [showQuickReorder, setShowQuickReorder] = useState(false);
+
+  // Get AI recommendations
+  const recommendations = useMemo(() => {
+    if (allItems.length === 0 || categories.length === 0) return [];
+    return getRecommendations(allItems, categories, [], 4);
+  }, [allItems, categories]);
 
   // Filter items based on search and category
   const filteredItems = useMemo(() => {
@@ -140,6 +150,30 @@ export default function MenuNew() {
         </div>
       </div>
 
+      {/* Quick Reorder Button */}
+      <div className="px-4 pt-3 flex gap-2">
+        <motion.button
+          whileTap={{ scale: 0.98 }}
+          onClick={() => setShowQuickReorder(true)}
+          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary/10 text-secondary font-semibold border border-secondary/20 hover:bg-secondary/20 transition-colors"
+        >
+          ⭐ Favorites & Reorder
+        </motion.button>
+      </div>
+
+      {/* AI Recommendations */}
+      {recommendations.length > 0 && !searchQuery && !activeCategory && (
+        <div className="px-4 pt-4">
+          <RecommendationSection
+            recommendations={recommendations}
+            onAddToCart={(itemId) => {
+              const item = allItems.find(i => i.id === itemId);
+              if (item) handleAddToCart(item, 1);
+            }}
+          />
+        </div>
+      )}
+
       {/* Build Combo CTA Banner */}
       <div className="px-4 py-3">
         <motion.button
@@ -238,6 +272,19 @@ export default function MenuNew() {
         open={comboBuilderOpen}
         onClose={handleCloseComboBuilder}
         initialSauce={selectedSauce || undefined}
+      />
+
+      {/* Quick Reorder Panel */}
+      <QuickReorderPanel
+        isOpen={showQuickReorder}
+        onClose={() => setShowQuickReorder(false)}
+        menuItems={allItems}
+        onAddToCart={(items) => {
+          items.forEach(({ menuItem, quantity }) => {
+            handleAddToCart(menuItem, quantity);
+          });
+          setShowQuickReorder(false);
+        }}
       />
     </div>
   );

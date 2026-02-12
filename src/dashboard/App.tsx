@@ -9,6 +9,7 @@ import Staff from "./pages/Staff";
 import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import MyDeliveries from "./pages/rider/MyDeliveries";
+import KitchenDisplay from "./pages/KitchenDisplay";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
 
@@ -113,6 +114,11 @@ export default function App() {
             <MyDeliveries />
           </ProtectedRoute>
         }
+      />
+      {/* Kitchen Display - Full screen, no sidebar */}
+      <Route
+        path="/kitchen"
+        element={<KitchenDisplay />}
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
