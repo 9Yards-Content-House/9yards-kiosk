@@ -26,6 +26,8 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
     resetToDefaults 
   } = useAccessibility();
 
+  const hasChanges = settings.highContrast || settings.largeText || settings.reducedMotion || settings.touchTargetSize !== "normal";
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -33,90 +35,90 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-4"
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-[clamp(1rem,4vmin,2rem)]"
           onClick={onClose}
         >
           <motion.div
-            initial={{ scale: 0.9, opacity: 0, y: 20 }}
-            animate={{ scale: 1, opacity: 1, y: 0 }}
-            exit={{ scale: 0.9, opacity: 0, y: 20 }}
-            transition={{ type: "spring", stiffness: 300, damping: 25 }}
-            className="bg-white rounded-3xl shadow-2xl max-w-md w-full overflow-hidden"
+            initial={{ scale: 0.95, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            exit={{ scale: 0.95, opacity: 0 }}
+            transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            className="bg-white rounded-[clamp(1.25rem,3vmin,2rem)] shadow-2xl w-full max-w-[clamp(20rem,60vmin,30rem)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-gradient-to-r from-blue-600 to-blue-500 p-6 text-white">
+            <div className="gradient-hero p-[clamp(1rem,3vmin,1.5rem)] text-white">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-                    <Accessibility className="w-6 h-6" />
+                <div className="flex items-center gap-[clamp(0.5rem,1.5vmin,0.75rem)]">
+                  <div className="w-[clamp(2.25rem,5vmin,3rem)] h-[clamp(2.25rem,5vmin,3rem)] bg-white/15 rounded-full flex items-center justify-center">
+                    <Accessibility className="w-[clamp(1.125rem,2.5vmin,1.5rem)] h-[clamp(1.125rem,2.5vmin,1.5rem)]" />
                   </div>
                   <div>
-                    <h2 className="text-2xl font-bold">Accessibility</h2>
-                    <p className="text-white/80 text-sm">Customize your experience</p>
+                    <h2 className="text-[clamp(1.125rem,3vmin,1.5rem)] font-bold">Accessibility</h2>
+                    <p className="text-white/70 text-[clamp(0.7rem,1.5vmin,0.8rem)]">Adjust display settings</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
-                  className="w-10 h-10 rounded-full bg-white/20 flex items-center justify-center hover:bg-white/30 transition-colors"
+                  className="w-[clamp(2.25rem,5vmin,3rem)] h-[clamp(2.25rem,5vmin,3rem)] rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 active:bg-white/30 transition-colors"
                 >
-                  <X className="w-5 h-5" />
+                  <X className="w-[clamp(1rem,2.2vmin,1.25rem)] h-[clamp(1rem,2.2vmin,1.25rem)]" />
                 </button>
               </div>
             </div>
 
             {/* Options */}
-            <div className="p-6 space-y-4">
+            <div className="p-[clamp(0.75rem,2.5vmin,1.5rem)] space-y-[clamp(0.5rem,1.5vmin,0.75rem)]">
               {/* High Contrast */}
-              <AccessibilityOption
-                icon={<Sun className="w-6 h-6" />}
+              <ToggleOption
+                icon={<Sun />}
                 title="High Contrast"
-                description="Increase color contrast for better visibility"
+                description="Bolder colours, easier to see"
                 enabled={settings.highContrast}
                 onToggle={toggleHighContrast}
               />
 
               {/* Large Text */}
-              <AccessibilityOption
-                icon={<Type className="w-6 h-6" />}
-                title="Large Text"
-                description="Make text bigger and easier to read"
+              <ToggleOption
+                icon={<Type />}
+                title="Larger Text"
+                description="Bigger text across all screens"
                 enabled={settings.largeText}
                 onToggle={toggleLargeText}
               />
 
               {/* Reduced Motion */}
-              <AccessibilityOption
-                icon={<Zap className="w-6 h-6" />}
-                title="Reduced Motion"
-                description="Minimize animations and transitions"
+              <ToggleOption
+                icon={<Zap />}
+                title="Reduce Motion"
+                description="Less movement on screen"
                 enabled={settings.reducedMotion}
                 onToggle={toggleReducedMotion}
               />
 
               {/* Touch Target Size */}
-              <div className="p-4 bg-gray-50 rounded-2xl">
-                <div className="flex items-center gap-3 mb-3">
-                  <div className="w-10 h-10 bg-blue-100 text-blue-600 rounded-xl flex items-center justify-center">
-                    <Hand className="w-5 h-5" />
+              <div className="p-[clamp(0.625rem,2vmin,1rem)] bg-gray-50 rounded-[clamp(0.75rem,2vmin,1.25rem)]">
+                <div className="flex items-center gap-[clamp(0.5rem,1.2vmin,0.75rem)] mb-[clamp(0.5rem,1.2vmin,0.75rem)]">
+                  <div className="w-[clamp(2rem,4.5vmin,2.75rem)] h-[clamp(2rem,4.5vmin,2.75rem)] bg-primary/10 text-primary rounded-[clamp(0.5rem,1.2vmin,0.75rem)] flex items-center justify-center">
+                    <Hand className="w-[clamp(1rem,2vmin,1.25rem)] h-[clamp(1rem,2vmin,1.25rem)]" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900">Touch Target Size</h3>
-                    <p className="text-sm text-gray-500">Size of buttons and controls</p>
+                    <h3 className="font-semibold text-gray-900 text-[clamp(0.8rem,1.8vmin,1rem)]">Button Size</h3>
+                    <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-gray-500">Make buttons easier to tap</p>
                   </div>
                 </div>
-                <div className="flex gap-2">
+                <div className="flex gap-[clamp(0.375rem,1vmin,0.5rem)]">
                   {(["normal", "large", "extra-large"] as const).map((size) => (
                     <button
                       key={size}
                       onClick={() => updateSetting("touchTargetSize", size)}
-                      className={`flex-1 py-3 px-4 rounded-xl font-medium transition-all capitalize ${
+                      className={`flex-1 py-[clamp(0.5rem,1.5vmin,0.75rem)] px-[clamp(0.375rem,1vmin,0.625rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] font-medium transition-colors text-[clamp(0.7rem,1.5vmin,0.875rem)] capitalize ${
                         settings.touchTargetSize === size
-                          ? "bg-blue-600 text-white"
-                          : "bg-white border border-gray-200 text-gray-700 hover:border-blue-300"
+                          ? "bg-primary text-white"
+                          : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 active:bg-gray-100"
                       }`}
                     >
-                      {size.replace("-", " ")}
+                      {size === "extra-large" ? "Extra Large" : size.charAt(0).toUpperCase() + size.slice(1)}
                     </button>
                   ))}
                 </div>
@@ -124,19 +126,20 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
             </div>
 
             {/* Footer */}
-            <div className="p-6 pt-0 flex gap-3">
+            <div className="px-[clamp(0.75rem,2.5vmin,1.5rem)] pb-[clamp(0.75rem,2.5vmin,1.5rem)] flex gap-[clamp(0.5rem,1.2vmin,0.75rem)]">
               <button
-                onClick={resetToDefaults}
-                className="flex-1 py-4 px-6 rounded-2xl border-2 border-gray-200 text-gray-600 font-semibold flex items-center justify-center gap-2 hover:border-gray-300 hover:bg-gray-50 transition-all"
+                onClick={() => { resetToDefaults(); }}
+                disabled={!hasChanges}
+                className="flex-1 py-[clamp(0.75rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] border-2 border-gray-200 text-gray-500 font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-40 disabled:pointer-events-none text-[clamp(0.8rem,1.7vmin,1rem)]"
               >
-                <RotateCcw className="w-5 h-5" />
+                <RotateCcw className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
                 Reset
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 py-4 px-6 rounded-2xl bg-blue-600 text-white font-semibold flex items-center justify-center gap-2 hover:bg-blue-700 transition-all"
+                className="flex-1 py-[clamp(0.75rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] bg-primary text-white font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:bg-primary/90 active:bg-primary/80 transition-colors text-[clamp(0.8rem,1.7vmin,1rem)]"
               >
-                <Check className="w-5 h-5" />
+                <Check className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
                 Done
               </button>
             </div>
@@ -147,7 +150,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
   );
 }
 
-interface AccessibilityOptionProps {
+interface ToggleOptionProps {
   icon: React.ReactNode;
   title: string;
   description: string;
@@ -155,32 +158,32 @@ interface AccessibilityOptionProps {
   onToggle: () => void;
 }
 
-function AccessibilityOption({ icon, title, description, enabled, onToggle }: AccessibilityOptionProps) {
+function ToggleOption({ icon, title, description, enabled, onToggle }: ToggleOptionProps) {
   return (
     <button
       onClick={onToggle}
-      className={`w-full p-4 rounded-2xl flex items-center gap-4 transition-all ${
+      className={`w-full p-[clamp(0.625rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] flex items-center gap-[clamp(0.5rem,1.5vmin,0.875rem)] transition-colors ${
         enabled 
-          ? "bg-blue-50 border-2 border-blue-200" 
-          : "bg-gray-50 border-2 border-transparent hover:border-gray-200"
+          ? "bg-primary/5 border-2 border-primary/20" 
+          : "bg-gray-50 border-2 border-transparent hover:border-gray-200 active:bg-gray-100"
       }`}
     >
-      <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
-        enabled ? "bg-blue-600 text-white" : "bg-gray-200 text-gray-600"
+      <div className={`w-[clamp(2rem,4.5vmin,2.75rem)] h-[clamp(2rem,4.5vmin,2.75rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] flex items-center justify-center flex-shrink-0 [&>svg]:w-[clamp(1rem,2vmin,1.25rem)] [&>svg]:h-[clamp(1rem,2vmin,1.25rem)] ${
+        enabled ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
       }`}>
         {icon}
       </div>
-      <div className="flex-1 text-left">
-        <h3 className="font-semibold text-gray-900">{title}</h3>
-        <p className="text-sm text-gray-500">{description}</p>
+      <div className="flex-1 text-left min-w-0">
+        <h3 className="font-semibold text-gray-900 text-[clamp(0.8rem,1.8vmin,1rem)]">{title}</h3>
+        <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-gray-400">{description}</p>
       </div>
-      <div className={`w-12 h-7 rounded-full p-1 transition-colors ${
-        enabled ? "bg-blue-600" : "bg-gray-300"
+      <div className={`w-[clamp(2.75rem,6vmin,3.25rem)] h-[clamp(1.625rem,3.5vmin,1.875rem)] rounded-full p-[2px] transition-colors flex-shrink-0 ${
+        enabled ? "bg-primary" : "bg-gray-300"
       }`}>
         <motion.div
           layout
-          className="w-5 h-5 bg-white rounded-full shadow"
-          animate={{ x: enabled ? 20 : 0 }}
+          className="h-full aspect-square bg-white rounded-full shadow-sm"
+          animate={{ x: enabled ? "100%" : "0%" }}
           transition={{ type: "spring", stiffness: 500, damping: 30 }}
         />
       </div>

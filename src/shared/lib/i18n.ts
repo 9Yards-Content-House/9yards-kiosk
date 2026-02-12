@@ -26,11 +26,12 @@ export interface TranslationKeys {
   'common.optional': string;
   
   // Welcome page
-  'welcome.title': string;
+  'welcome.greeting.morning': string;
+  'welcome.greeting.afternoon': string;
+  'welcome.greeting.evening': string;
   'welcome.subtitle': string;
   'welcome.startOrder': string;
   'welcome.trackOrder': string;
-  'welcome.viewBoard': string;
   'welcome.tapAnywhere': string;
   'welcome.poweredBy': string;
   'welcome.wereOpen': string;
@@ -212,11 +213,12 @@ const translations: Record<Language, TranslationKeys> = {
     'common.optional': 'Optional',
     
     // Welcome page
-    'welcome.title': '9Yards Food',
+    'welcome.greeting.morning': 'Good Morning',
+    'welcome.greeting.afternoon': 'Good Afternoon',
+    'welcome.greeting.evening': 'Good Evening',
     'welcome.subtitle': 'Order fresh Ugandan meals, ready in minutes',
     'welcome.startOrder': 'Place Your Order',
-    'welcome.trackOrder': 'Find My Order',
-    'welcome.viewBoard': 'Live Orders',
+    'welcome.trackOrder': 'Track My Order',
     'welcome.tapAnywhere': 'Touch anywhere to begin',
     'welcome.poweredBy': 'Powered by 9Yards',
     'welcome.wereOpen': "We're Open!",
@@ -397,11 +399,12 @@ const translations: Record<Language, TranslationKeys> = {
     'common.optional': 'Kyeyagalidde',
     
     // Welcome page
-    'welcome.title': '9Yards Food',
+    'welcome.greeting.morning': 'Wasuze Otya',
+    'welcome.greeting.afternoon': 'Osiibye Otya',
+    'welcome.greeting.evening': 'Olwidde Otya',
     'welcome.subtitle': 'Funa emmere ennungi eya Uganda, eneetegekebwa mangu',
     'welcome.startOrder': 'Teekawo Order Yo',
-    'welcome.trackOrder': 'Zuula Order Yange',
-    'welcome.viewBoard': 'Orders Eziriwo',
+    'welcome.trackOrder': 'Goberera Order Yange',
     'welcome.tapAnywhere': 'Koma wonna okutandika',
     'welcome.poweredBy': 'Eteekebwawo 9Yards',
     'welcome.wereOpen': 'Tuli Bbawo!',
