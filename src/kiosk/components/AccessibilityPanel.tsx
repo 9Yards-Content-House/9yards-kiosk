@@ -61,23 +61,23 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="gradient-hero p-[clamp(1rem,3vmin,1.5rem)] text-white">
+            <div className="bg-primary p-[clamp(1.25rem,3.5vmin,1.75rem)] text-white">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-[clamp(0.5rem,1.5vmin,0.75rem)]">
-                  <div className="w-[clamp(2.25rem,5vmin,3rem)] h-[clamp(2.25rem,5vmin,3rem)] bg-white/15 rounded-full flex items-center justify-center">
-                    <Accessibility className="w-[clamp(1.125rem,2.5vmin,1.5rem)] h-[clamp(1.125rem,2.5vmin,1.5rem)]" />
+                  <div className="w-[clamp(2.5rem,5.5vmin,3.25rem)] h-[clamp(2.5rem,5.5vmin,3.25rem)] bg-white/15 rounded-full flex items-center justify-center">
+                    <Accessibility className="w-[clamp(1.25rem,2.8vmin,1.625rem)] h-[clamp(1.25rem,2.8vmin,1.625rem)]" />
                   </div>
                   <div>
                     <h2 className="text-[clamp(1.125rem,3vmin,1.5rem)] font-bold">Accessibility</h2>
-                    <p className="text-white/70 text-[clamp(0.7rem,1.5vmin,0.8rem)]">Adjust display settings</p>
+                    <p className="text-white/70 text-[clamp(0.7rem,1.5vmin,0.85rem)]">Adjust display settings</p>
                   </div>
                 </div>
                 <button
                   onClick={onClose}
                   aria-label="Close accessibility settings"
-                  className="w-[clamp(2.25rem,5vmin,3rem)] h-[clamp(2.25rem,5vmin,3rem)] rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 active:bg-white/30 transition-colors"
+                  className="w-[clamp(2.75rem,6vmin,3.5rem)] h-[clamp(2.75rem,6vmin,3.5rem)] rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 active:bg-white/30 active:scale-95 transition-all"
                 >
-                  <X className="w-[clamp(1rem,2.2vmin,1.25rem)] h-[clamp(1rem,2.2vmin,1.25rem)]" />
+                  <X className="w-[clamp(1.125rem,2.5vmin,1.375rem)] h-[clamp(1.125rem,2.5vmin,1.375rem)]" />
                 </button>
               </div>
             </div>
@@ -112,10 +112,10 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
               />
 
               {/* Touch Target Size */}
-              <div className="p-[clamp(0.625rem,2vmin,1rem)] bg-gray-50 rounded-[clamp(0.75rem,2vmin,1.25rem)]">
-                <div className="flex items-center gap-[clamp(0.5rem,1.2vmin,0.75rem)] mb-[clamp(0.5rem,1.2vmin,0.75rem)]">
-                  <div className="w-[clamp(2rem,4.5vmin,2.75rem)] h-[clamp(2rem,4.5vmin,2.75rem)] bg-primary/10 text-primary rounded-[clamp(0.5rem,1.2vmin,0.75rem)] flex items-center justify-center">
-                    <Hand className="w-[clamp(1rem,2vmin,1.25rem)] h-[clamp(1rem,2vmin,1.25rem)]" />
+              <div className="p-[clamp(0.75rem,2.5vmin,1.125rem)] bg-gray-50 rounded-[clamp(0.75rem,2vmin,1.25rem)]">
+                <div className="flex items-center gap-[clamp(0.5rem,1.2vmin,0.75rem)] mb-[clamp(0.625rem,1.5vmin,0.875rem)]">
+                  <div className="w-[clamp(2.25rem,5vmin,2.75rem)] h-[clamp(2.25rem,5vmin,2.75rem)] bg-primary/10 text-primary rounded-[clamp(0.5rem,1.2vmin,0.75rem)] flex items-center justify-center">
+                    <Hand className="w-[clamp(1.125rem,2.2vmin,1.375rem)] h-[clamp(1.125rem,2.2vmin,1.375rem)]" />
                   </div>
                   <div>
                     <h3 className="font-semibold text-gray-900 text-[clamp(0.8rem,1.8vmin,1rem)]">Button Size</h3>
@@ -127,7 +127,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                     <button
                       key={size}
                       onClick={() => updateSetting("touchTargetSize", size)}
-                      className={`flex-1 py-[clamp(0.5rem,1.5vmin,0.75rem)] px-[clamp(0.375rem,1vmin,0.625rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] font-medium transition-colors text-[clamp(0.7rem,1.5vmin,0.875rem)] capitalize ${
+                      className={`flex-1 py-[clamp(0.625rem,2vmin,0.875rem)] px-[clamp(0.5rem,1.2vmin,0.75rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] font-medium transition-all text-[clamp(0.75rem,1.6vmin,0.9375rem)] capitalize active:scale-[0.97] ${
                         settings.touchTargetSize === size
                           ? "bg-primary text-white"
                           : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 active:bg-gray-100"
@@ -145,14 +145,14 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
               <button
                 onClick={() => { resetToDefaults(); }}
                 disabled={!hasChanges}
-                className="flex-1 py-[clamp(0.75rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] border-2 border-gray-200 text-gray-500 font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100 transition-colors disabled:opacity-40 disabled:pointer-events-none text-[clamp(0.8rem,1.7vmin,1rem)]"
+                className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] border-2 border-gray-200 text-gray-500 font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none text-[clamp(0.8rem,1.7vmin,1rem)]"
               >
                 <RotateCcw className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
                 Reset
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 py-[clamp(0.75rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] bg-primary text-white font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:bg-primary/90 active:bg-primary/80 transition-colors text-[clamp(0.8rem,1.7vmin,1rem)]"
+                className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] bg-primary text-white font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] transition-all text-[clamp(0.8rem,1.7vmin,1rem)]"
               >
                 <Check className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
                 Done
@@ -180,13 +180,13 @@ function ToggleOption({ icon, title, description, enabled, onToggle }: ToggleOpt
       role="switch"
       aria-checked={enabled}
       aria-label={title}
-      className={`w-full p-[clamp(0.625rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] flex items-center gap-[clamp(0.5rem,1.5vmin,0.875rem)] transition-colors ${
+      className={`w-full p-[clamp(0.75rem,2.5vmin,1.125rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] flex items-center gap-[clamp(0.5rem,1.5vmin,0.875rem)] transition-all active:scale-[0.98] ${
         enabled 
           ? "bg-primary/5 border-2 border-primary/20" 
           : "bg-gray-50 border-2 border-transparent hover:border-gray-200 active:bg-gray-100"
       }`}
     >
-      <div className={`w-[clamp(2rem,4.5vmin,2.75rem)] h-[clamp(2rem,4.5vmin,2.75rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] flex items-center justify-center flex-shrink-0 [&>svg]:w-[clamp(1rem,2vmin,1.25rem)] [&>svg]:h-[clamp(1rem,2vmin,1.25rem)] ${
+      <div className={`w-[clamp(2.25rem,5vmin,2.75rem)] h-[clamp(2.25rem,5vmin,2.75rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] flex items-center justify-center flex-shrink-0 [&>svg]:w-[clamp(1.125rem,2.2vmin,1.375rem)] [&>svg]:h-[clamp(1.125rem,2.2vmin,1.375rem)] ${
         enabled ? "bg-primary text-white" : "bg-gray-200 text-gray-500"
       }`}>
         {icon}
