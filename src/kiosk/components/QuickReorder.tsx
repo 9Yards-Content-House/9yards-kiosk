@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Heart, Clock, Plus, Trash2, History, Star } from "lucide-react";
-import { MenuItem } from "@shared/types/database";
+import type { MenuItem } from "@shared/types";
 import { formatPrice } from "@shared/lib/utils";
 
 const FAVORITES_KEY = "kiosk-favorites";

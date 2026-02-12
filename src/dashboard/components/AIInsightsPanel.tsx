@@ -11,7 +11,7 @@ import {
   Zap,
   Calendar,
 } from "lucide-react";
-import { Order } from "@shared/types/database";
+import type { Order } from "@shared/types";
 import { formatPrice } from "@shared/lib/utils";
 
 interface Insight {
@@ -107,19 +107,23 @@ export function generateInsights(orders: Order[]): Insight[] {
     });
   }
 
-  // 3. Order type distribution
-  const dineInCount = orders.filter(o => o.order_type === "dine-in").length;
-  const takeawayCount = orders.filter(o => o.order_type === "takeaway").length;
-  const deliveryCount = orders.filter(o => o.order_type === "delivery").length;
-  
-  if (takeawayCount > dineInCount && takeawayCount > deliveryCount) {
+  // 3. Order source distribution (kiosk / website / app)
+  const sourceCounts: Record<string, number> = {};
+  orders.forEach((o) => {
+    const key = o.source || "unknown";
+    sourceCounts[key] = (sourceCounts[key] || 0) + 1;
+  });
+
+  const topSource = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0];
+  if (topSource && orders.length > 0) {
+    const [source, count] = topSource;
     insights.push({
-      id: "takeaway-popular",
+      id: "top-source",
       type: "info",
       icon: Users,
-      title: "Takeaway is Popular",
-      description: "Most customers prefer takeaway orders. Consider streamlining packaging.",
-      metric: `${((takeawayCount / orders.length) * 100).toFixed(0)}% of orders`,
+      title: "Top Order Source",
+      description: `Most orders are coming from ${source}.`,
+      metric: `${((count / orders.length) * 100).toFixed(0)}% of orders`,
       priority: 5,
     });
   }

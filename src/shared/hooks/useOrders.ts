@@ -6,17 +6,6 @@ import type {
   CreateOrderPayload,
 } from "@shared/types/orders";
 
-// Check if in dev mode (fake auth)
-const isDevMode = () => {
-  return import.meta.env.DEV && localStorage.getItem("dev_mode") === "true";
-};
-
-// For write operations, use mock data in dev mode even if Supabase is connected
-// This is because dev mode uses fake auth that Supabase RLS will reject
-const shouldUseMockForWrites = () => {
-  return USE_MOCK_DATA || isDevMode();
-};
-
 // In-memory store for mock mode - allows full CRUD operations
 let mockOrderCounter = 5;
 const mockOrdersStore: Order[] = [
@@ -319,29 +308,9 @@ export function useUpdateOrderStatus() {
     }) => {
       const now = new Date().toISOString();
       
-      // In dev mode with fake auth, Supabase RLS will block updates
-      // So we use an optimistic approach: update succeeds locally
-      if (shouldUseMockForWrites()) {
-        // Find in mock store or add it
-        let order = mockOrdersStore.find(o => o.id === orderId);
-        
-        // If not in mock store but we have real Supabase orders, 
-        // we may need to sync - try fetching first
-        if (!order && !USE_MOCK_DATA) {
-          // Fetch the order from Supabase to get current state
-          const { data: fetchedOrder } = await supabase
-            .from("orders")
-            .select("*, items:order_items(*)")
-            .eq("id", orderId)
-            .single();
-          
-          if (fetchedOrder) {
-            // Add to mock store for future operations
-            mockOrdersStore.push(fetchedOrder as Order);
-            order = fetchedOrder as Order;
-          }
-        }
-        
+      // Mock mode - use in-memory store
+      if (USE_MOCK_DATA) {
+        const order = mockOrdersStore.find(o => o.id === orderId);
         if (!order) throw new Error("Order not found");
         
         order.status = status;
@@ -350,21 +319,7 @@ export function useUpdateOrderStatus() {
         if (status === "ready") order.ready_at = now;
         if (status === "delivered") order.delivered_at = now;
         
-        console.log(`📦 Dev mode: Order ${order.order_number} status updated to: ${status}`);
-        
-        // Try to update Supabase in background (will fail with RLS but that's ok)
-        if (!USE_MOCK_DATA) {
-          supabase
-            .from("orders")
-            .update({ status, updated_at: now })
-            .eq("id", orderId)
-            .then(({ error }) => {
-              if (error) {
-                console.warn("⚠️ Dev mode: Supabase update blocked by RLS (expected). Using local state.");
-              }
-            });
-        }
-        
+        console.log(`📦 Mock order ${order.order_number} status updated to: ${status}`);
         return order;
       }
 
@@ -385,7 +340,13 @@ export function useUpdateOrderStatus() {
         .select("*, items:order_items(*)")
         .single();
 
-      if (error) throw error;
+      if (error) {
+        const message = (error as { message?: string })?.message || "";
+        if (message.toLowerCase().includes("row-level security") || message.toLowerCase().includes("permission")) {
+          throw new Error("Not authorized to update orders. Please sign in with a real staff account.");
+        }
+        throw error;
+      }
       return data as Order;
     },
     onSuccess: () => {
@@ -402,43 +363,13 @@ export function useCancelOrder() {
     mutationFn: async (orderId: string) => {
       const now = new Date().toISOString();
       
-      // In dev mode with fake auth, handle locally
-      if (shouldUseMockForWrites()) {
-        let order = mockOrdersStore.find(o => o.id === orderId);
-        
-        // If not in mock store, sync from Supabase
-        if (!order && !USE_MOCK_DATA) {
-          const { data: fetchedOrder } = await supabase
-            .from("orders")
-            .select("*, items:order_items(*)")
-            .eq("id", orderId)
-            .single();
-          
-          if (fetchedOrder) {
-            mockOrdersStore.push(fetchedOrder as Order);
-            order = fetchedOrder as Order;
-          }
-        }
-        
+      if (USE_MOCK_DATA) {
+        const order = mockOrdersStore.find(o => o.id === orderId);
         if (!order) throw new Error("Order not found");
         
         order.status = "cancelled";
         order.updated_at = now;
-        console.log(`📦 Dev mode: Order ${order.order_number} cancelled`);
-        
-        // Try Supabase in background (will fail with RLS but that's ok)
-        if (!USE_MOCK_DATA) {
-          supabase
-            .from("orders")
-            .update({ status: "cancelled", updated_at: now })
-            .eq("id", orderId)
-            .then(({ error }) => {
-              if (error) {
-                console.warn("⚠️ Dev mode: Supabase cancel blocked by RLS (expected). Using local state.");
-              }
-            });
-        }
-        
+        console.log(`📦 Mock order ${order.order_number} cancelled`);
         return order;
       }
 
@@ -452,7 +383,13 @@ export function useCancelOrder() {
         .select()
         .single();
 
-      if (error) throw error;
+      if (error) {
+        const message = (error as { message?: string })?.message || "";
+        if (message.toLowerCase().includes("row-level security") || message.toLowerCase().includes("permission")) {
+          throw new Error("Not authorized to cancel orders. Please sign in with a real staff account.");
+        }
+        throw error;
+      }
       return data;
     },
     onSuccess: () => {

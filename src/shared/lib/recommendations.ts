@@ -9,7 +9,7 @@
  * - Seasonal/promotional items
  */
 
-import { MenuItem, Category } from "@shared/types/database";
+import type { MenuItem, Category } from "@shared/types";
 
 // Time periods for different meal suggestions
 type MealPeriod = "breakfast" | "lunch" | "afternoon" | "dinner" | "late-night";
@@ -162,8 +162,8 @@ function calculateItemScore(
   const popWeight = POPULARITY_WEIGHTS[categorySlug] || 1.0;
   score *= popWeight;
   
-  // If item is featured, boost it
-  if (item.featured) {
+  // If item is highlighted (popular/new), boost it
+  if (item.is_popular || item.is_new) {
     score += 0.15;
   }
   
@@ -227,8 +227,8 @@ export function getRecommendations(
     }
   }
   
-  // Popular items (featured items)
-  const popularItems = menuItems.filter(item => item.featured && item.available);
+  // Popular items (explicitly flagged)
+  const popularItems = menuItems.filter(item => (item.is_popular || item.is_new) && item.available);
   for (const item of popularItems.slice(0, 3)) {
     const score = calculateItemScore(item, "popular", cartItems, categories);
     if (score > 0.4 && !recommendations.some(r => r.item.id === item.id)) {
@@ -387,8 +387,8 @@ export function getComboSuggestions(
     });
     
     if (items.length > 0) {
-      // Pick a featured item if available, otherwise random
-      const featured = items.find(i => i.featured);
+      // Pick a highlighted item if available, otherwise first
+      const featured = items.find(i => i.is_popular || i.is_new);
       suggestions.push(featured || items[0]);
     }
   }

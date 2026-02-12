@@ -1,7 +1,7 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Plus, Sparkles, Check } from "lucide-react";
 import { formatPrice } from "@shared/lib/utils";
-import { MenuItem } from "@shared/types/database";
+import type { MenuItem } from "@shared/types";
 
 interface UpsellModalProps {
   isOpen: boolean;

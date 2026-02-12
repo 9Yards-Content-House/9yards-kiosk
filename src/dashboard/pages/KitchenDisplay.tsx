@@ -12,13 +12,13 @@ import {
   Timer,
   Flame,
 } from "lucide-react";
-import { Order, OrderItem } from "@shared/types/database";
+import type { Order, OrderItem, OrderStatus, PaymentStatus } from "@shared/types";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { formatPrice } from "@shared/lib/utils";
 
 // Status configurations
 const STATUS_CONFIG = {
-  pending: {
+  new: {
     label: "New Order",
     color: "bg-yellow-500",
     textColor: "text-yellow-600",
@@ -42,87 +42,168 @@ const STATUS_CONFIG = {
     borderColor: "border-green-200",
     icon: Check,
   },
-};
+} as const;
 
 // Mock KDS orders for development
 const generateMockKDSOrders = (): Order[] => {
-  const statuses: ("pending" | "preparing" | "ready")[] = ["pending", "preparing", "ready"];
   const now = Date.now();
-  
+
+  const makeItem = (partial: Partial<OrderItem> & { id: string; order_id: string }): OrderItem => ({
+    id: partial.id,
+    order_id: partial.order_id,
+    type: partial.type ?? "single",
+    main_dishes: partial.main_dishes ?? [],
+    sauce_name: partial.sauce_name ?? null,
+    sauce_preparation: partial.sauce_preparation ?? null,
+    sauce_size: partial.sauce_size ?? null,
+    side_dish: partial.side_dish ?? null,
+    extras: partial.extras ?? null,
+    quantity: partial.quantity ?? 1,
+    unit_price: partial.unit_price ?? 0,
+    total_price: partial.total_price ?? 0,
+  });
+
+  const makeOrder = (partial: {
+    id: string;
+    order_number: string;
+    status: OrderStatus;
+    createdAtMsAgo: number;
+    total: number;
+    payment_status: PaymentStatus;
+    items: OrderItem[];
+  }): Order => {
+    const created_at = new Date(now - partial.createdAtMsAgo).toISOString();
+    const updated_at = new Date().toISOString();
+    return {
+      id: partial.id,
+      order_number: partial.order_number,
+      status: partial.status,
+      customer_name: "Walk-in",
+      customer_phone: null,
+      customer_location: null,
+      payment_method: "cash",
+      payment_status: partial.payment_status,
+      momo_transaction_id: null,
+      subtotal: partial.total,
+      total: partial.total,
+      special_instructions: null,
+      source: "kiosk",
+      created_at,
+      updated_at,
+      prepared_at: null,
+      ready_at: null,
+      delivered_at: null,
+      items: partial.items,
+    };
+  };
+
   return [
-    {
+    makeOrder({
       id: "kds-1",
-      order_number: "A-001",
-      status: "pending",
+      order_number: "9Y-101",
+      status: "new",
+      createdAtMsAgo: 2 * 60 * 1000,
       total: 35000,
       payment_status: "pending",
-      payment_method: "cash",
-      order_type: "dine-in",
-      created_at: new Date(now - 2 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
       items: [
-        { id: "1", order_id: "kds-1", menu_item_id: "1", quantity: 2, unit_price: 15000, created_at: new Date().toISOString(), menu_item: { id: "1", name: "Chicken Pilao", category_id: "1", price: 15000, available: true, created_at: "", updated_at: "" } },
-        { id: "2", order_id: "kds-1", menu_item_id: "2", quantity: 1, unit_price: 5000, created_at: new Date().toISOString(), menu_item: { id: "2", name: "Passion Juice", category_id: "3", price: 5000, available: true, created_at: "", updated_at: "" } },
+        makeItem({
+          id: "1",
+          order_id: "kds-1",
+          quantity: 1,
+          unit_price: 35000,
+          total_price: 35000,
+          type: "combo",
+          main_dishes: ["Chicken Pilao"],
+          side_dish: "Kachumbari",
+        }),
       ],
-    },
-    {
+    }),
+    makeOrder({
       id: "kds-2",
-      order_number: "A-002",
+      order_number: "9Y-102",
       status: "preparing",
+      createdAtMsAgo: 5 * 60 * 1000,
       total: 45000,
-      payment_status: "completed",
-      payment_method: "mobile_money",
-      order_type: "takeaway",
-      created_at: new Date(now - 5 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
+      payment_status: "paid",
       items: [
-        { id: "3", order_id: "kds-2", menu_item_id: "3", quantity: 1, unit_price: 45000, created_at: new Date().toISOString(), menu_item: { id: "3", name: "Whole Chicken Lusaniya", category_id: "2", price: 45000, available: true, created_at: "", updated_at: "" } },
+        makeItem({
+          id: "2",
+          order_id: "kds-2",
+          quantity: 1,
+          unit_price: 45000,
+          total_price: 45000,
+          type: "single",
+          main_dishes: ["Whole Chicken Lusaniya"],
+        }),
       ],
-    },
-    {
+    }),
+    makeOrder({
       id: "kds-3",
-      order_number: "A-003",
+      order_number: "9Y-103",
       status: "preparing",
+      createdAtMsAgo: 8 * 60 * 1000,
       total: 25000,
-      payment_status: "completed",
-      payment_method: "cash",
-      order_type: "dine-in",
-      created_at: new Date(now - 8 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
+      payment_status: "paid",
       items: [
-        { id: "4", order_id: "kds-3", menu_item_id: "4", quantity: 2, unit_price: 10000, created_at: new Date().toISOString(), menu_item: { id: "4", name: "Beef Stew", category_id: "1", price: 10000, available: true, created_at: "", updated_at: "" } },
-        { id: "5", order_id: "kds-3", menu_item_id: "5", quantity: 1, unit_price: 5000, created_at: new Date().toISOString(), menu_item: { id: "5", name: "Kachumbari", category_id: "4", price: 5000, available: true, created_at: "", updated_at: "" } },
+        makeItem({
+          id: "3",
+          order_id: "kds-3",
+          quantity: 1,
+          unit_price: 25000,
+          total_price: 25000,
+          type: "combo",
+          main_dishes: ["Beef Stew"],
+          sauce_name: "Stew",
+        }),
       ],
-    },
-    {
+    }),
+    makeOrder({
       id: "kds-4",
-      order_number: "A-004",
+      order_number: "9Y-104",
       status: "ready",
+      createdAtMsAgo: 12 * 60 * 1000,
       total: 20000,
-      payment_status: "completed",
-      payment_method: "mobile_money",
-      order_type: "takeaway",
-      created_at: new Date(now - 12 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
+      payment_status: "paid",
       items: [
-        { id: "6", order_id: "kds-4", menu_item_id: "6", quantity: 2, unit_price: 10000, created_at: new Date().toISOString(), menu_item: { id: "6", name: "Rice", category_id: "4", price: 10000, available: true, created_at: "", updated_at: "" } },
+        makeItem({
+          id: "4",
+          order_id: "kds-4",
+          quantity: 2,
+          unit_price: 10000,
+          total_price: 20000,
+          type: "single",
+          main_dishes: ["Rice"],
+        }),
       ],
-    },
-    {
+    }),
+    makeOrder({
       id: "kds-5",
-      order_number: "A-005",
-      status: "pending",
+      order_number: "9Y-105",
+      status: "new",
+      createdAtMsAgo: 1 * 60 * 1000,
       total: 55000,
       payment_status: "pending",
-      payment_method: "cash",
-      order_type: "dine-in",
-      created_at: new Date(now - 1 * 60 * 1000).toISOString(),
-      updated_at: new Date().toISOString(),
       items: [
-        { id: "7", order_id: "kds-5", menu_item_id: "7", quantity: 1, unit_price: 45000, created_at: new Date().toISOString(), menu_item: { id: "7", name: "Half Chicken Lusaniya", category_id: "2", price: 45000, available: true, created_at: "", updated_at: "" } },
-        { id: "8", order_id: "kds-5", menu_item_id: "8", quantity: 2, unit_price: 5000, created_at: new Date().toISOString(), menu_item: { id: "8", name: "Mango Juice", category_id: "3", price: 5000, available: true, created_at: "", updated_at: "" } },
+        makeItem({
+          id: "5",
+          order_id: "kds-5",
+          quantity: 1,
+          unit_price: 45000,
+          total_price: 45000,
+          type: "single",
+          main_dishes: ["Half Chicken Lusaniya"],
+        }),
+        makeItem({
+          id: "6",
+          order_id: "kds-5",
+          quantity: 2,
+          unit_price: 5000,
+          total_price: 10000,
+          type: "single",
+          main_dishes: ["Mango Juice"],
+        }),
       ],
-    },
+    }),
   ];
 };
 
@@ -143,9 +224,9 @@ export default function KitchenDisplay() {
         .from("orders")
         .select(`
           *,
-          items:order_items(*, menu_item:menu_items(*))
+          items:order_items(*)
         `)
-        .in("status", ["pending", "preparing", "ready"])
+        .in("status", ["new", "preparing", "ready"])
         .order("created_at", { ascending: true });
 
       if (data) {
@@ -171,7 +252,7 @@ export default function KitchenDisplay() {
   }, []);
 
   // Group orders by status
-  const pendingOrders = orders.filter((o) => o.status === "pending");
+  const pendingOrders = orders.filter((o) => o.status === "new");
   const preparingOrders = orders.filter((o) => o.status === "preparing");
   const readyOrders = orders.filter((o) => o.status === "ready");
 
@@ -191,17 +272,17 @@ export default function KitchenDisplay() {
   };
 
   // Update order status
-  const updateOrderStatus = async (orderId: string, newStatus: string) => {
+  const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
     if (USE_MOCK_DATA) {
       setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus as Order["status"] } : o))
+        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
       );
       return;
     }
 
     await supabase
       .from("orders")
-      .update({ status: newStatus, updated_at: new Date().toISOString() })
+        .update({ status: newStatus, updated_at: new Date().toISOString() })
       .eq("id", orderId);
   };
 
@@ -294,7 +375,7 @@ export default function KitchenDisplay() {
                 <KDSOrderCard
                   key={order.id}
                   order={order}
-                  status="pending"
+                  status="new"
                   timeElapsed={getTimeElapsed(order.created_at)}
                   isUrgent={isUrgent(order.created_at)}
                   onStartCooking={() => updateOrderStatus(order.id, "preparing")}
@@ -341,7 +422,7 @@ export default function KitchenDisplay() {
                   status="ready"
                   timeElapsed={getTimeElapsed(order.created_at)}
                   isUrgent={false}
-                  onComplete={() => updateOrderStatus(order.id, "completed")}
+                  onComplete={() => updateOrderStatus(order.id, "delivered")}
                 />
               ))}
             </AnimatePresence>
@@ -354,7 +435,7 @@ export default function KitchenDisplay() {
 
 interface KDSOrderCardProps {
   order: Order;
-  status: "pending" | "preparing" | "ready";
+  status: "new" | "preparing" | "ready";
   timeElapsed: string;
   isUrgent: boolean;
   onStartCooking?: () => void;
@@ -388,11 +469,6 @@ function KDSOrderCard({
       <div className={`px-4 py-3 flex items-center justify-between ${config.color}`}>
         <div className="flex items-center gap-2">
           <span className="text-2xl font-bold">#{order.order_number}</span>
-          {order.order_type === "takeaway" && (
-            <span className="px-2 py-0.5 bg-white/20 rounded text-xs font-medium">
-              TAKEAWAY
-            </span>
-          )}
         </div>
         <div className="flex items-center gap-2">
           <Timer className="w-4 h-4" />
@@ -409,7 +485,11 @@ function KDSOrderCard({
                 {item.quantity}
               </span>
               <span className="font-medium text-white">
-                {item.menu_item?.name || "Unknown Item"}
+                {[
+                  ...(item.main_dishes?.length ? [item.main_dishes.join(" + ")] : []),
+                  ...(item.sauce_name ? [`Sauce: ${item.sauce_name}`] : []),
+                  ...(item.side_dish ? [`Side: ${item.side_dish}`] : []),
+                ].join(" • ") || "Item"}
               </span>
             </div>
           </div>
@@ -418,7 +498,7 @@ function KDSOrderCard({
 
       {/* Action Button */}
       <div className="px-4 pb-4">
-        {status === "pending" && onStartCooking && (
+        {status === "new" && onStartCooking && (
           <button
             onClick={onStartCooking}
             className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"

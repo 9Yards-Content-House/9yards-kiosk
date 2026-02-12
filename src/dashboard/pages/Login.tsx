@@ -24,7 +24,7 @@ export default function Login() {
   // Shared state
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState<"pin" | "email">("pin");
+  const [activeTab, setActiveTab] = useState<"pin" | "email">("email");
 
   // Redirect if already logged in
   useEffect(() => {

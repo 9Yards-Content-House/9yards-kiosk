@@ -6,7 +6,7 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Profile, UserRole } from "@shared/types/auth";
 import type { User, Session } from "@supabase/supabase-js";
 
@@ -15,6 +15,7 @@ const DEV_EMAIL = "dev@test.com";
 const DEV_PASSWORD = "devtest123";
 const DEV_PIN = "1234";
 const IS_DEV = import.meta.env.DEV;
+const CAN_USE_DEV_BYPASS_AUTH = IS_DEV && USE_MOCK_DATA;
 
 // Mock user for dev mode
 const DEV_USER: User = {
@@ -68,8 +69,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   useEffect(() => {
+    // Dev-mode bypass is only allowed when running fully in mock mode.
+    // If Supabase is configured, force production-like behavior.
+    if (!CAN_USE_DEV_BYPASS_AUTH && localStorage.getItem("dev_mode") === "true") {
+      localStorage.removeItem("dev_mode");
+    }
+
     // Check for dev mode session in localStorage
-    if (IS_DEV && localStorage.getItem("dev_mode") === "true") {
+    if (CAN_USE_DEV_BYPASS_AUTH && localStorage.getItem("dev_mode") === "true") {
       setUser(DEV_USER);
       setProfile(DEV_PROFILE);
       setIsDevMode(true);
@@ -104,7 +111,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signIn = async (email: string, password: string) => {
     // Dev mode bypass for local testing
-    if (IS_DEV && email === DEV_EMAIL && password === DEV_PASSWORD) {
+    if (CAN_USE_DEV_BYPASS_AUTH && email === DEV_EMAIL && password === DEV_PASSWORD) {
       console.log("🔧 Dev mode login activated");
       localStorage.setItem("dev_mode", "true");
       setUser(DEV_USER);
@@ -123,7 +130,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   const signInWithPin = async (pin: string) => {
     // Dev mode bypass for local testing
-    if (IS_DEV && pin === DEV_PIN) {
+    if (CAN_USE_DEV_BYPASS_AUTH && pin === DEV_PIN) {
       console.log("🔧 Dev mode PIN login activated");
       localStorage.setItem("dev_mode", "true");
       setUser(DEV_USER);
@@ -132,37 +139,10 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Look up the profile by PIN hash (store PIN as bcrypt hash in DB)
-    // For simplicity, we'll use a basic lookup - in production use proper hashing
-    const { data: profileData, error: profileError } = await supabase
-      .from("profiles")
-      .select("*")
-      .eq("pin_hash", pin) // In production, this should compare hashed values
-      .eq("active", true)
-      .single();
-
-    if (profileError || !profileData) {
-      throw new Error("Invalid PIN");
-    }
-
-    // Update last_login_at
-    await supabase
-      .from("profiles")
-      .update({ last_login_at: new Date().toISOString() })
-      .eq("id", profileData.id);
-
-    // Create a pseudo-user from the profile for PIN-based auth
-    const pinUser: User = {
-      id: profileData.id,
-      email: profileData.email || `staff-${profileData.id}@9yards.local`,
-      app_metadata: { provider: "pin" },
-      user_metadata: { full_name: profileData.full_name },
-      aud: "authenticated",
-      created_at: profileData.created_at,
-    } as User;
-
-    setUser(pinUser);
-    setProfile(profileData);
+    // Production parity: PIN-based pseudo-auth does not create a Supabase session,
+    // so any RLS-protected writes (order updates, menu edits) will fail.
+    // Keep PIN login disabled unless implemented via Supabase Auth or an Edge Function.
+    throw new Error("PIN login isn't enabled. Please use Email login.");
   };
 
   const signOut = async () => {

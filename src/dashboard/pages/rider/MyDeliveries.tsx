@@ -84,7 +84,7 @@ const MOCK_DELIVERIES: Order[] = [
 ];
 
 // In-memory store for mock mode
-let mockDeliveriesStore = [...MOCK_DELIVERIES];
+const mockDeliveriesStore = [...MOCK_DELIVERIES];
 
 export default function MyDeliveries() {
   const { user } = useAuth();

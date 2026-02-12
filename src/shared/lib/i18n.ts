@@ -33,6 +33,8 @@ export interface TranslationKeys {
   'welcome.viewBoard': string;
   'welcome.tapAnywhere': string;
   'welcome.poweredBy': string;
+  'welcome.wereOpen': string;
+  'welcome.tapToBegin': string;
   
   // Menu
   'menu.title': string;
@@ -211,12 +213,14 @@ const translations: Record<Language, TranslationKeys> = {
     
     // Welcome page
     'welcome.title': '9Yards Food',
-    'welcome.subtitle': 'Fresh Ugandan cuisine, made with love',
-    'welcome.startOrder': 'Start New Order',
-    'welcome.trackOrder': 'Track My Order',
-    'welcome.viewBoard': 'View Order Board',
+    'welcome.subtitle': 'Order fresh Ugandan meals, ready in minutes',
+    'welcome.startOrder': 'Place Your Order',
+    'welcome.trackOrder': 'Find My Order',
+    'welcome.viewBoard': 'Live Orders',
     'welcome.tapAnywhere': 'Touch anywhere to begin',
     'welcome.poweredBy': 'Powered by 9Yards',
+    'welcome.wereOpen': "We're Open!",
+    'welcome.tapToBegin': 'Tap to begin',
     
     // Menu
     'menu.title': 'Our Menu',
@@ -394,12 +398,14 @@ const translations: Record<Language, TranslationKeys> = {
     
     // Welcome page
     'welcome.title': '9Yards Food',
-    'welcome.subtitle': 'Emmere ennungi eya Uganda',
-    'welcome.startOrder': 'Tandika Order',
-    'welcome.trackOrder': 'Goberera Order Yo',
-    'welcome.viewBoard': 'Laba Order Board',
+    'welcome.subtitle': 'Funa emmere ennungi eya Uganda, eneetegekebwa mangu',
+    'welcome.startOrder': 'Teekawo Order Yo',
+    'welcome.trackOrder': 'Zuula Order Yange',
+    'welcome.viewBoard': 'Orders Eziriwo',
     'welcome.tapAnywhere': 'Koma wonna okutandika',
     'welcome.poweredBy': 'Eteekebwawo 9Yards',
+    'welcome.wereOpen': 'Tuli Bbawo!',
+    'welcome.tapToBegin': 'Koma okutandika',
     
     // Menu
     'menu.title': 'Menu Yaffe',
