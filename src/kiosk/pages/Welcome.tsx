@@ -60,12 +60,6 @@ export default function Welcome() {
       {/* Background gradient */}
       <div className="absolute inset-0 gradient-hero" />
 
-      {/* Subtle background shapes */}
-      <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-[5vmin] -right-[5vmin] w-[30vmin] h-[30vmin] rounded-full bg-white/5" />
-        <div className="absolute -bottom-[8vmin] -left-[8vmin] w-[45vmin] h-[45vmin] rounded-full bg-white/[0.03]" />
-      </div>
-
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)]">
         <div className="text-white/70 leading-tight">
