@@ -1,4 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
+import { useEffect } from "react";
 import { 
   Accessibility, 
   Sun, 
@@ -28,6 +29,16 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
 
   const hasChanges = settings.highContrast || settings.largeText || settings.reducedMotion || settings.touchTargetSize !== "normal";
 
+  // Close on Escape key
+  useEffect(() => {
+    if (!isOpen) return;
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -43,6 +54,9 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
             transition={{ type: "spring", stiffness: 400, damping: 30 }}
+            role="dialog"
+            aria-modal="true"
+            aria-label="Accessibility settings"
             className="bg-white rounded-[clamp(1.25rem,3vmin,2rem)] shadow-2xl w-full max-w-[clamp(20rem,60vmin,30rem)] overflow-hidden"
             onClick={(e) => e.stopPropagation()}
           >
@@ -60,6 +74,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                 </div>
                 <button
                   onClick={onClose}
+                  aria-label="Close accessibility settings"
                   className="w-[clamp(2.25rem,5vmin,3rem)] h-[clamp(2.25rem,5vmin,3rem)] rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 active:bg-white/30 transition-colors"
                 >
                   <X className="w-[clamp(1rem,2.2vmin,1.25rem)] h-[clamp(1rem,2.2vmin,1.25rem)]" />
@@ -162,6 +177,9 @@ function ToggleOption({ icon, title, description, enabled, onToggle }: ToggleOpt
   return (
     <button
       onClick={onToggle}
+      role="switch"
+      aria-checked={enabled}
+      aria-label={title}
       className={`w-full p-[clamp(0.625rem,2vmin,1rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] flex items-center gap-[clamp(0.5rem,1.5vmin,0.875rem)] transition-colors ${
         enabled 
           ? "bg-primary/5 border-2 border-primary/20" 
@@ -175,7 +193,7 @@ function ToggleOption({ icon, title, description, enabled, onToggle }: ToggleOpt
       </div>
       <div className="flex-1 text-left min-w-0">
         <h3 className="font-semibold text-gray-900 text-[clamp(0.8rem,1.8vmin,1rem)]">{title}</h3>
-        <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-gray-400">{description}</p>
+        <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-gray-500">{description}</p>
       </div>
       <div className={`w-[clamp(2.75rem,6vmin,3.25rem)] h-[clamp(1.625rem,3.5vmin,1.875rem)] rounded-full p-[2px] transition-colors flex-shrink-0 ${
         enabled ? "bg-primary" : "bg-gray-300"

@@ -62,19 +62,20 @@ export default function Welcome() {
 
       {/* Subtle background shapes */}
       <div className="absolute inset-0 overflow-hidden">
-        <div className="absolute -top-20 -right-20 w-64 h-64 rounded-full bg-white/5" />
-        <div className="absolute -bottom-32 -left-32 w-96 h-96 rounded-full bg-white/[0.03]" />
+        <div className="absolute -top-[5vmin] -right-[5vmin] w-[30vmin] h-[30vmin] rounded-full bg-white/5" />
+        <div className="absolute -bottom-[8vmin] -left-[8vmin] w-[45vmin] h-[45vmin] rounded-full bg-white/[0.03]" />
       </div>
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)]">
         <div className="text-white/70 leading-tight">
-          <div className="text-[clamp(0.75rem,1.6vw,1rem)] font-medium">{day}</div>
-          <div className="text-[clamp(1.125rem,2.4vw,1.5rem)] font-semibold text-white/90">{time}</div>
+          <div className="text-[clamp(0.75rem,1.6vmin,1rem)] font-medium">{day}</div>
+          <div className="text-[clamp(1.125rem,2.4vmin,1.5rem)] font-semibold text-white/90">{time}</div>
         </div>
         <div className="flex items-center gap-[clamp(0.125rem,0.5vw,0.375rem)]">
           <button
             onClick={() => setShowAccessibility(true)}
+            aria-label="Accessibility settings"
             className={cn(
               "flex items-center justify-center rounded-xl transition-colors",
               "w-[clamp(2.5rem,5vmin,3rem)] h-[clamp(2.5rem,5vmin,3rem)]",
@@ -86,10 +87,11 @@ export default function Welcome() {
           </button>
           <button
             onClick={toggleLanguage}
+            aria-label={`Switch to ${language === 'en' ? 'Luganda' : 'English'}`}
             className="flex items-center gap-[clamp(0.25rem,0.6vw,0.5rem)] rounded-xl px-[clamp(0.625rem,1.5vw,1rem)] h-[clamp(2.5rem,5vmin,3rem)] text-white/60 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
           >
             <Globe className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
-            <span className="text-[clamp(0.8rem,1.6vw,1rem)] font-medium">
+            <span className="text-[clamp(0.8rem,1.6vmin,1rem)] font-medium">
               {language === 'en' ? 'Luganda' : 'English'}
             </span>
           </button>
@@ -135,7 +137,7 @@ export default function Welcome() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/70 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[28rem]"
+          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/70 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[clamp(16rem,55vmin,28rem)]"
         >
           {t('welcome.subtitle')}
         </motion.p>
@@ -155,7 +157,7 @@ export default function Welcome() {
               'w-full bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-white',
               'text-[clamp(1.25rem,3.5vmin,1.875rem)] font-bold',
               'py-[clamp(1rem,3.5vh,1.75rem)] rounded-2xl',
-              'shadow-cta transition-all duration-200'
+              'shadow-cta transition-all duration-150 active:scale-[0.98]'
             )}
           >
             {t('welcome.startOrder')}
@@ -170,7 +172,8 @@ export default function Welcome() {
               'w-full bg-white/5 hover:bg-white/10 active:bg-white/15',
               'text-white/70 hover:text-white/90 border-white/15',
               'text-[clamp(0.875rem,2.5vmin,1.175rem)] font-medium',
-              'py-[clamp(0.75rem,2.5vh,1.25rem)] rounded-xl'
+              'py-[clamp(0.75rem,2.5vh,1.25rem)] rounded-xl',
+              'transition-all duration-150 active:scale-[0.98]'
             )}
           >
             {t('welcome.trackOrder')}
