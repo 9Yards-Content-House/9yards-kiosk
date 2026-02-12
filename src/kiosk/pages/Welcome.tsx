@@ -135,7 +135,7 @@ export default function Welcome() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/65 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[28rem]"
+          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/70 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[28rem]"
         >
           {t('welcome.subtitle')}
         </motion.p>
@@ -168,9 +168,9 @@ export default function Welcome() {
             onClick={handleTrackOrder}
             className={cn(
               'w-full bg-white/5 hover:bg-white/10 active:bg-white/15',
-              'text-white/55 hover:text-white/75 border-white/10',
-              'text-[clamp(0.75rem,1.8vmin,1rem)] font-medium',
-              'py-[clamp(0.625rem,2vh,1rem)] rounded-xl'
+              'text-white/70 hover:text-white/90 border-white/15',
+              'text-[clamp(0.875rem,2.5vmin,1.175rem)] font-medium',
+              'py-[clamp(0.75rem,2.5vh,1.25rem)] rounded-xl'
             )}
           >
             {t('welcome.trackOrder')}
