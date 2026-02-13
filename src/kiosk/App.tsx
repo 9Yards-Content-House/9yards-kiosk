@@ -5,6 +5,7 @@ import { LanguageProvider } from "@shared/context/LanguageContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
 import { useInactivityTimer } from "./hooks/useInactivityTimer";
 import { useMenuRealtime } from "@shared/hooks/useMenu";
+import { useOrdersRealtime } from "@shared/hooks/useOrders";
 import ErrorBoundary from "@shared/components/ErrorBoundary";
 import InactivityOverlay from "./components/InactivityOverlay";
 
@@ -22,6 +23,8 @@ function KioskRoutes() {
   const { isInactive, resetTimer } = useInactivityTimer();
   // Subscribe to menu updates from dashboard
   useMenuRealtime();
+  // Subscribe to order updates for tracking
+  useOrdersRealtime();
 
   return (
     <>

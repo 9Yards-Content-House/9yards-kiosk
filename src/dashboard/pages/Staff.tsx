@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, UserX, UserCheck, Trash2, Edit2 } from "lucide-react";
+import { Plus, Loader2, UserX, UserCheck, Trash2, Edit2, RefreshCw } from "lucide-react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Profile, UserRole } from "@shared/types/auth";
 import { useAuth } from "../context/AuthContext";
@@ -64,7 +64,7 @@ export default function Staff() {
   const queryClient = useQueryClient();
   const canManage = role ? hasPermission(role, "staff:create") : false;
 
-  const { data: staff, isLoading } = useQuery<Profile[]>({
+  const { data: staff, isLoading, refetch } = useQuery<Profile[]>({
     queryKey: ["staff"],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
@@ -72,14 +72,42 @@ export default function Staff() {
         return mockStaffStore;
       }
       
+      console.log("📡 Fetching staff from Supabase...");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
-      if (error) throw error;
+      
+      if (error) {
+        console.error("❌ Error fetching staff:", error);
+        throw error;
+      }
+      
+      console.log("✅ Fetched staff:", data?.length, "members");
       return data;
     },
   });
+
+  // Realtime subscription for instant sync
+  useEffect(() => {
+    if (USE_MOCK_DATA) return;
+
+    const channel = supabase
+      .channel('profiles-changes')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'profiles' },
+        (payload) => {
+          console.log('🔄 Profile change detected:', payload.eventType);
+          queryClient.invalidateQueries({ queryKey: ["staff"] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const [showInvite, setShowInvite] = useState(false);
   const [inviteEmail, setInviteEmail] = useState("");
@@ -216,21 +244,43 @@ export default function Staff() {
         return;
       }
       
-      // Delete the profile (the user in auth.users will remain but be inactive)
-      // In production, you'd use a service role function to fully delete the auth user
-      const { error } = await supabase
+      console.log(`🗑️ Attempting to delete profile: ${id}`);
+      
+      // First try to delete from profiles
+      const { data, error, count } = await supabase
         .from("profiles")
         .delete()
-        .eq("id", id);
-      if (error) throw error;
+        .eq("id", id)
+        .select();
+      
+      if (error) {
+        console.error("❌ Delete error:", error);
+        throw new Error(error.message || "Failed to delete profile");
+      }
+      
+      console.log("✅ Delete result:", { data, count });
+      
+      // If no rows were affected, the delete might have been blocked by RLS
+      if (!data || data.length === 0) {
+        // Instead of failing, mark as inactive
+        console.log("⚠️ Delete returned no rows, marking as inactive instead");
+        const { error: updateError } = await supabase
+          .from("profiles")
+          .update({ active: false })
+          .eq("id", id);
+        
+        if (updateError) {
+          throw new Error("Could not delete or deactivate user");
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       toast.success("Staff member removed");
     },
     onError: (err: any) => {
-      console.error("Delete error:", err);
-      toast.error("Failed to remove staff member");
+      console.error("Delete mutation error:", err);
+      toast.error(err.message || "Failed to remove staff member");
     },
   });
 

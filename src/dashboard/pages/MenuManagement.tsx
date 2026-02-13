@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Filter, LayoutGrid, List } from "lucide-react";
-import { useAllMenuItems, useCategories } from "@shared/hooks/useMenu";
+import { useAllMenuItems, useCategories, useMenuRealtime } from "@shared/hooks/useMenu";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
 import MenuItemRow from "../components/MenuItemRow";
@@ -27,6 +27,9 @@ export default function MenuManagement() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
+
+  // Subscribe to menu changes for realtime sync
+  useMenuRealtime();
 
   const canEdit = role ? hasPermission(role, "menu:update") : false;
   const canCreate = role ? hasPermission(role, "menu:create") : false;

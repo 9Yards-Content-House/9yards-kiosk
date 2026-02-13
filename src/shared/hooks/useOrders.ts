@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type {
   Order,
@@ -534,3 +535,56 @@ export const applyLocalOverlay = (order: Order): Order => applyOverlay(order);
 // Export function to get overlay for a specific order ID
 export const getOrderOverlay = (orderId: string): Partial<Order> | undefined => 
   localOrderOverlay.get(orderId);
+
+/**
+ * Subscribe to order changes via Supabase realtime.
+ * Use in dashboard and kiosk to keep orders synced.
+ */
+export function useOrdersRealtime() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log("📦 Mock mode: Orders realtime subscription disabled");
+      return;
+    }
+
+    console.log("🔌 Setting up orders realtime subscription...");
+
+    const channel = supabase
+      .channel('orders-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'orders',
+        },
+        (payload) => {
+          console.log('🔄 Order change detected:', payload.eventType, payload.new);
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+          queryClient.invalidateQueries({ queryKey: ['order'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'order_items',
+        },
+        () => {
+          console.log('🔄 Order items updated');
+          queryClient.invalidateQueries({ queryKey: ['orders'] });
+        }
+      )
+      .subscribe((status) => {
+        console.log('📡 Orders subscription status:', status);
+      });
+
+    return () => {
+      console.log('🔌 Cleaning up orders realtime subscription');
+      if (supabase) supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+}
