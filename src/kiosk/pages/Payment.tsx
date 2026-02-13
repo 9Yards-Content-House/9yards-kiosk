@@ -1,9 +1,10 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed, CreditCard, Banknote, Smartphone } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useCreateOrder } from "@shared/hooks/useOrders";
+import { useAllMenuItems } from "@shared/hooks/useMenu";
 import { cn, formatPrice } from "@shared/lib/utils";
 import { KIOSK } from "@shared/lib/constants";
 import KioskHeader from "../components/KioskHeader";
@@ -14,8 +15,18 @@ import type { PaymentMethod, CreateOrderPayload } from "@shared/types/orders";
 export default function Payment() {
   const navigate = useNavigate();
   const { items, subtotal, clearCart } = useKioskCart();
+  const { data: allMenuItems = [] } = useAllMenuItems();
   const createOrder = useCreateOrder();
   const [step, setStep] = useState<"review" | "momo" | "submitting" | "error">("review");
+
+  // Helper to find item image from menu data
+  const getItemImage = useCallback((item: typeof items[0]) => {
+    const itemName = item.label || item.sauceName;
+    const menuItem = allMenuItems.find(
+      (m) => m.name === itemName || m.name.includes(itemName) || itemName.includes(m.name)
+    );
+    return menuItem?.image_url || null;
+  }, [allMenuItems]);
 
   // Get stored details
   const detailsRaw = sessionStorage.getItem("kiosk_order_details");
@@ -71,7 +82,8 @@ export default function Payment() {
           customerPhone: order.customer_phone,
         }
       });
-    } catch {
+    } catch (error) {
+      console.error("Order placement failed:", error);
       setStep("error");
     }
   };
@@ -142,11 +154,29 @@ export default function Payment() {
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
           <h3 className="font-bold text-lg text-[#212282] mb-4">Order Summary</h3>
           <div className="space-y-4">
-            {items.map((item) => (
+{items.map((item) => {
+                const imageUrl = getItemImage(item);
+                return (
               <div key={item.id} className="flex gap-3 items-start pb-4 border-b border-gray-100 last:border-b-0 last:pb-0">
-                {/* Item Image Placeholder */}
-                <div className="shrink-0 w-16 h-16 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 relative flex items-center justify-center">
-                  <UtensilsCrossed className="w-6 h-6 text-gray-300" />
+                {/* Item Image */}
+                <div className="shrink-0 w-16 h-16 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 relative">
+                  {imageUrl ? (
+                    <img
+                      src={imageUrl}
+                      alt={item.label || item.sauceName}
+                      className="w-full h-full object-cover"
+                      onError={(e) => {
+                        e.currentTarget.style.display = 'none';
+                        e.currentTarget.nextElementSibling?.classList.remove('hidden');
+                      }}
+                    />
+                  ) : null}
+                  <div className={cn(
+                    "w-full h-full flex items-center justify-center",
+                    imageUrl ? "hidden" : ""
+                  )}>
+                    <UtensilsCrossed className="w-6 h-6 text-gray-300" />
+                  </div>
                   {/* Type badge */}
                   <span className={cn(
                     'absolute bottom-1 left-1 text-[8px] font-bold px-1 py-0.5 rounded-full uppercase',
@@ -189,7 +219,7 @@ export default function Payment() {
                   </div>
                 </div>
               </div>
-            ))}
+            );})}
           </div>
           
           {/* Total */}

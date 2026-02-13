@@ -7,14 +7,9 @@ import {
   ArrowLeft,
   Heart,
   Plus,
+  Minus,
   Flame,
-  UtensilsCrossed,
-  Drumstick,
-  Beef,
-  CupSoda,
-  LeafyGreen,
-  Sparkles,
-  IceCream,
+  ShoppingCart,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
@@ -31,14 +26,14 @@ import { useFavorites } from '../context/FavoritesContext';
 export type Category = 'all' | 'lusaniya' | 'main' | 'sauce' | 'juice' | 'dessert' | 'side';
 
 // Category configuration matching main website
-const categoryConfig: Record<Category, { icon: React.ReactNode; label: string }> = {
-  all: { icon: <UtensilsCrossed className="w-4 h-4" />, label: 'All Items' },
-  lusaniya: { icon: <Sparkles className="w-4 h-4" />, label: 'Lusaniya' },
-  main: { icon: <Drumstick className="w-4 h-4" />, label: 'Main Dishes' },
-  sauce: { icon: <Beef className="w-4 h-4" />, label: 'Sauces' },
-  juice: { icon: <CupSoda className="w-4 h-4" />, label: 'Juices' },
-  dessert: { icon: <IceCream className="w-4 h-4" />, label: 'Desserts' },
-  side: { icon: <LeafyGreen className="w-4 h-4" />, label: 'Sides' },
+const categoryConfig: Record<Category, { label: string }> = {
+  all: { label: 'All Items' },
+  lusaniya: { label: 'Lusaniya' },
+  main: { label: 'Main Dishes' },
+  sauce: { label: 'Sauces' },
+  juice: { label: 'Juices' },
+  dessert: { label: 'Desserts' },
+  side: { label: 'Sides' },
 };
 
 // Map category slugs to Category type
@@ -56,7 +51,20 @@ export default function MenuNew() {
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { data: allItems = [] } = useAllMenuItems();
-  const { addItem, itemCount, subtotal } = useKioskCart();
+  const { addItem, itemCount, subtotal, items: cartItems, removeItem, updateQuantity } = useKioskCart();
+
+  // Get quantity in cart for a given item name
+  const getCartQuantity = useCallback((itemName: string) => {
+    return cartItems.filter(ci => 
+      ci.sauceName === itemName || ci.label === itemName
+    ).reduce((sum, ci) => sum + ci.quantity, 0);
+  }, [cartItems]);
+
+  // Get cart item ID by name
+  const getCartItemId = useCallback((itemName: string) => {
+    const item = cartItems.find(ci => ci.sauceName === itemName || ci.label === itemName);
+    return item?.id || null;
+  }, [cartItems]);
   const { favorites, toggleFavorite } = useFavorites();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
@@ -163,23 +171,48 @@ export default function MenuNew() {
 
   // Handle adding individual items to cart
   const handleAddToCart = useCallback(
-    (item: typeof processedItems[0], quantity: number = 1) => {
+    (item: typeof processedItems[0]) => {
       vibrate([30, 30]);
-      addItem({
-        id: crypto.randomUUID(),
-        type: 'single',
-        sauceName: item.name,
-        saucePreparation: '',
-        sauceSize: '',
-        mainDishes: [],
-        sideDish: '',
-        extras: [],
-        quantity,
-        unitPrice: item.price || 0,
-        label: item.name,
-      });
+      const existingCartItem = cartItems.find(ci => ci.sauceName === item.name || ci.label === item.name);
+      
+      if (existingCartItem) {
+        // Increment quantity
+        updateQuantity(existingCartItem.id, existingCartItem.quantity + 1);
+      } else {
+        // Add new item
+        addItem({
+          id: crypto.randomUUID(),
+          type: 'single',
+          sauceName: item.name,
+          saucePreparation: '',
+          sauceSize: '',
+          mainDishes: [],
+          sideDish: '',
+          extras: [],
+          quantity: 1,
+          unitPrice: item.price || 0,
+          label: item.name,
+        });
+      }
     },
-    [addItem]
+    [addItem, updateQuantity, cartItems]
+  );
+
+  // Handle removing individual items from cart
+  const handleRemoveFromCart = useCallback(
+    (item: typeof processedItems[0]) => {
+      vibrate([30]);
+      const existingCartItem = cartItems.find(ci => ci.sauceName === item.name || ci.label === item.name);
+      
+      if (existingCartItem) {
+        if (existingCartItem.quantity > 1) {
+          updateQuantity(existingCartItem.id, existingCartItem.quantity - 1);
+        } else {
+          removeItem(existingCartItem.id);
+        }
+      }
+    },
+    [updateQuantity, removeItem, cartItems]
   );
 
   // Handle starting combo builder
@@ -346,7 +379,6 @@ export default function MenuNew() {
                       : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-200'
                   )}
                 >
-                  {config.icon}
                   {config.label}
                   {count > 0 && (
                     <span
@@ -363,44 +395,6 @@ export default function MenuNew() {
             })}
           </div>
         </div>
-      </div>
-
-      {/* Create Your Custom Meal CTA */}
-      <div className="px-4 py-4 shrink-0">
-        <button
-          onClick={handleStartCombo}
-          className="w-full relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#E6411C] to-orange-500 text-white shadow-lg active:scale-[0.99] transition-transform"
-        >
-          {/* Decorative circles */}
-          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white/10" />
-          <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10" />
-
-          <div className="relative flex items-center justify-between p-5">
-            <div className="text-left">
-              <h3 className="font-bold text-xl mb-1">Create Your Custom Meal</h3>
-              <p className="text-white/90 text-sm">
-                Choose a main dish, protein sauce, and a complimentary side
-              </p>
-              <div className="flex flex-wrap gap-4 mt-2 text-xs">
-                <span className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  Choose Multiple Mains
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  Fresh Protein Sauce
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
-                  Complimentary Side
-                </span>
-              </div>
-            </div>
-            <div className="shrink-0 ml-4 bg-white text-[#E6411C] font-bold px-5 py-3 rounded-full text-sm active:scale-95 transition-transform">
-              Create My Meal →
-            </div>
-          </div>
-        </button>
       </div>
 
       {/* Menu Grid */}
@@ -439,11 +433,13 @@ export default function MenuNew() {
                     item={item}
                     onAddToOrder={handleStartCombo}
                     onAddToCart={() => handleAddToCart(item)}
+                    onRemoveFromCart={() => handleRemoveFromCart(item)}
                     onToggleFavorite={handleToggleFavorite}
                     isFavorite={favorites.includes(item.id)}
                     isHighlighted={highlightedItemId === item.id}
                     getPriceDisplay={getPriceDisplay}
                     getCategoryLabel={getCategoryLabel}
+                    cartQuantity={getCartQuantity(item.name)}
                   />
                 </motion.div>
               ))}
@@ -486,22 +482,26 @@ interface MenuItemCardProps {
   item: ProcessedItem;
   onAddToOrder: () => void;
   onAddToCart?: () => void;
+  onRemoveFromCart?: () => void;
   onToggleFavorite: (id: string) => void;
   isFavorite: boolean;
   isHighlighted?: boolean;
   getPriceDisplay: (item: ProcessedItem) => React.ReactNode;
   getCategoryLabel: (item: ProcessedItem) => string;
+  cartQuantity?: number;
 }
 
 function MenuItemCard({
   item,
   onAddToOrder,
   onAddToCart,
+  onRemoveFromCart,
   onToggleFavorite,
   isFavorite,
   isHighlighted,
   getPriceDisplay,
   getCategoryLabel,
+  cartQuantity = 0,
 }: MenuItemCardProps) {
   const isIndividual =
     item.isIndividual ||
@@ -617,9 +617,21 @@ function MenuItemCard({
             className="absolute inset-0 bg-[#E6411C]/0 group-hover:bg-[#E6411C]/10 transition-colors flex items-center justify-center"
             aria-hidden="true"
           >
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#E6411C] text-white text-xs font-semibold px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5">
-              <Plus className="w-3.5 h-3.5" />
-              Add to Order
+            <span className={cn(
+              "opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5",
+              cartQuantity > 0 ? "bg-green-500 text-white" : "bg-[#E6411C] text-white"
+            )}>
+              {cartQuantity > 0 ? (
+                <>
+                  <ShoppingCart className="w-3.5 h-3.5" />
+                  In Order
+                </>
+              ) : (
+                <>
+                  <Plus className="w-3.5 h-3.5" />
+                  Add to Order
+                </>
+              )}
             </span>
           </div>
         )}
@@ -646,17 +658,47 @@ function MenuItemCard({
         <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
           {getPriceDisplay(item)}
 
-          {/* Add to Cart button for Individual items */}
+          {/* Add to Cart button / Quantity Stepper for Individual items */}
           {item.available && isIndividual && onAddToCart && (
-            <button
-              onClick={(e) => {
-                e.stopPropagation();
-                onAddToCart();
-              }}
-              className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#E6411C]/90 text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
-            >
-              Add to Order
-            </button>
+            cartQuantity > 0 ? (
+              // Show quantity stepper when item is in cart
+              <div className="flex items-center gap-1.5 bg-[#E6411C]/10 rounded-full px-1.5 py-1">
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onRemoveFromCart?.();
+                  }}
+                  className="w-7 h-7 flex items-center justify-center bg-white text-[#E6411C] rounded-full shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
+                  aria-label="Decrease quantity"
+                >
+                  <Minus className="w-3.5 h-3.5" />
+                </button>
+                <span className="text-sm font-bold w-5 text-center text-[#212282]">
+                  {cartQuantity}
+                </span>
+                <button
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    onAddToCart();
+                  }}
+                  className="w-7 h-7 flex items-center justify-center bg-[#E6411C] text-white rounded-full shadow-sm hover:bg-[#d13a18] active:scale-95 transition-all"
+                  aria-label="Increase quantity"
+                >
+                  <Plus className="w-3.5 h-3.5" />
+                </button>
+              </div>
+            ) : (
+              // Show "Add to Order" when not in cart
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onAddToCart();
+                }}
+                className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#E6411C]/90 text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
+              >
+                Add to Order
+              </button>
+            )
           )}
 
           {/* Visual indicator for tappable - non-Individual items */}

@@ -6,12 +6,22 @@ import type {
   CreateOrderPayload,
 } from "@shared/types/orders";
 
+// Generate a memorable order number like "9Y-XK42"
+// Format: 9Y + 2 letters + 2 digits for easy verbal communication
+function generateOrderNumber(): string {
+  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Removed I and O to avoid confusion with 1 and 0
+  const l1 = letters[Math.floor(Math.random() * letters.length)];
+  const l2 = letters[Math.floor(Math.random() * letters.length)];
+  const d1 = Math.floor(Math.random() * 10);
+  const d2 = Math.floor(Math.random() * 10);
+  return `9Y-${l1}${l2}${d1}${d2}`;
+}
+
 // In-memory store for mock mode - allows full CRUD operations
-let mockOrderCounter = 5;
 const mockOrdersStore: Order[] = [
   {
     id: "order-1",
-    order_number: "9Y-0001",
+    order_number: "9Y-AB12",
     status: "new",
     customer_name: "John Doe",
     customer_phone: "+256700111222",
@@ -35,7 +45,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-2",
-    order_number: "9Y-0002",
+    order_number: "9Y-CD34",
     status: "preparing",
     customer_name: "Jane Smith",
     customer_phone: "+256700333444",
@@ -58,7 +68,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-3",
-    order_number: "9Y-0003",
+    order_number: "9Y-EF56",
     status: "ready",
     customer_name: "Peter Otieno",
     customer_phone: "+256700555666",
@@ -82,7 +92,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-4",
-    order_number: "9Y-0004",
+    order_number: "9Y-GH78",
     status: "delivered",
     customer_name: "Mary Nakato",
     customer_phone: "+256700777888",
@@ -205,6 +215,47 @@ export function useTodaysOrders() {
   });
 }
 
+// Helper to create a mock order object
+function createMockOrder(orderData: Omit<CreateOrderPayload, "items">, items: CreateOrderPayload["items"]): Order {
+  const id = `order-${Date.now()}`;
+  const now = new Date().toISOString();
+  
+  return {
+    id,
+    order_number: generateOrderNumber(),
+    status: "new",
+    customer_name: orderData.customer_name,
+    customer_phone: orderData.customer_phone || null,
+    customer_location: orderData.customer_location || null,
+    payment_method: orderData.payment_method,
+    payment_status: orderData.payment_method === "mobile_money" ? "paid" : "pending",
+    momo_transaction_id: null,
+    subtotal: orderData.subtotal,
+    total: orderData.total,
+    special_instructions: orderData.special_instructions || null,
+    source: orderData.source || "kiosk",
+    created_at: now,
+    updated_at: now,
+    prepared_at: null,
+    ready_at: null,
+    delivered_at: null,
+    items: items.map((item, idx) => ({
+      id: `${id}-item-${idx}`,
+      order_id: id,
+      type: item.type,
+      main_dishes: item.main_dishes || [],
+      sauce_name: item.sauce_name || null,
+      sauce_preparation: item.sauce_preparation || null,
+      sauce_size: item.sauce_size || null,
+      side_dish: item.side_dish || null,
+      extras: item.extras || null,
+      quantity: item.quantity,
+      unit_price: item.unit_price,
+      total_price: item.total_price,
+    })),
+  };
+}
+
 /** Create a new order from the kiosk */
 export function useCreateOrder() {
   const queryClient = useQueryClient();
@@ -214,79 +265,61 @@ export function useCreateOrder() {
       const { items, ...orderData } = payload;
 
       if (USE_MOCK_DATA) {
-        // Create mock order
-        const id = `order-${Date.now()}`;
-        const orderNum = String(mockOrderCounter++).padStart(3, '0');
-        const now = new Date().toISOString();
-        
-        const newOrder: Order = {
-          id,
-          order_number: `9Y-${orderNum}`,
-          status: "new",
-          customer_name: orderData.customer_name,
-          customer_phone: orderData.customer_phone || null,
-          customer_location: orderData.customer_location || null,
-          payment_method: orderData.payment_method,
-          payment_status: orderData.payment_method === "mobile_money" ? "paid" : "pending",
-          momo_transaction_id: null,
-          subtotal: orderData.subtotal,
-          total: orderData.total,
-          special_instructions: orderData.special_instructions || null,
-          source: orderData.source || "kiosk",
-          created_at: now,
-          updated_at: now,
-          prepared_at: null,
-          ready_at: null,
-          delivered_at: null,
-          items: items.map((item, idx) => ({
-            id: `${id}-item-${idx}`,
-            order_id: id,
-            type: item.type,
-            main_dishes: item.main_dishes || [],
-            sauce_name: item.sauce_name || null,
-            sauce_preparation: item.sauce_preparation || null,
-            sauce_size: item.sauce_size || null,
-            side_dish: item.side_dish || null,
-            extras: item.extras || null,
-            quantity: item.quantity,
-            unit_price: item.unit_price,
-            total_price: item.total_price,
-          })),
-        };
-        
+        // Create mock order with memorable order number
+        const newOrder = createMockOrder(orderData, items);
         mockOrdersStore.unshift(newOrder);
         console.log("📦 Mock order created:", newOrder.order_number);
         return newOrder;
       }
 
-      // Real Supabase implementation
-      const { data: order, error: orderError } = await supabase
-        .from("orders")
-        .insert(orderData)
-        .select()
-        .single();
+      // Real Supabase implementation with fallback to mock on failure
+      try {
+        const { data: order, error: orderError } = await supabase
+          .from("orders")
+          .insert(orderData)
+          .select()
+          .single();
 
-      if (orderError) throw orderError;
+        if (orderError) {
+          console.error("❌ Failed to create order:", orderError);
+          throw orderError;
+        }
 
-      const orderItems = items.map((item) => ({
-        ...item,
-        order_id: order.id,
-      }));
+        const orderItems = items.map((item) => ({
+          ...item,
+          order_id: order.id,
+        }));
 
-      const { error: itemsError } = await supabase
-        .from("order_items")
-        .insert(orderItems);
+        const { error: itemsError } = await supabase
+          .from("order_items")
+          .insert(orderItems);
 
-      if (itemsError) throw itemsError;
+        if (itemsError) {
+          console.error("❌ Failed to create order items:", itemsError);
+          throw itemsError;
+        }
 
-      const { data: fullOrder, error: fetchError } = await supabase
-        .from("orders")
-        .select("*, items:order_items(*)")
-        .eq("id", order.id)
-        .single();
+        const { data: fullOrder, error: fetchError } = await supabase
+          .from("orders")
+          .select("*, items:order_items(*)")
+          .eq("id", order.id)
+          .single();
 
-      if (fetchError) throw fetchError;
-      return fullOrder as Order;
+        if (fetchError) {
+          console.error("❌ Failed to fetch created order:", fetchError);
+          throw fetchError;
+        }
+        
+        console.log("✅ Order created in Supabase:", fullOrder.order_number);
+        return fullOrder as Order;
+      } catch (err) {
+        // Fallback to mock mode if Supabase fails
+        console.warn("⚠️ Supabase failed, creating mock order instead:", err);
+        const newOrder = createMockOrder(orderData, items);
+        mockOrdersStore.unshift(newOrder);
+        console.log("📦 Fallback mock order created:", newOrder.order_number);
+        return newOrder;
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] });

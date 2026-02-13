@@ -41,17 +41,52 @@ export default function CartNew() {
   const [showClearDialog, setShowClearDialog] = useState(false);
   const [showUpsell, setShowUpsell] = useState(false);
 
-  // Get upsell suggestions based on cart
+  // Check if upsell has already been shown this session
+  const upsellShown = sessionStorage.getItem('kiosk_upsell_shown') === 'true';
+
+  // Check if user already has juice or dessert in cart
+  const hasJuiceOrDessert = useMemo(() => {
+    if (allMenuItems.length === 0 || categories.length === 0) return false;
+    
+    return items.some(item => {
+      const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
+      if (!menuItem) return false;
+      
+      const category = categories.find(c => c.id === menuItem.category_id);
+      return category?.slug === 'juices' || category?.slug === 'desserts';
+    });
+  }, [items, allMenuItems, categories]);
+
+  // Get upsell suggestions based on cart (only juices/desserts not already in cart)
   const upsellSuggestions = useMemo(() => {
+    // Don't show upsells if user already has juice/dessert
+    if (hasJuiceOrDessert) return [];
     if (items.length === 0 || allMenuItems.length === 0 || categories.length === 0) return [];
+    
+    // Get names of items already in cart
+    const cartItemNames = new Set(items.map(item => item.label || item.sauceName));
+    
     // Convert cart items to MenuItem format for the recommendation engine
     const cartMenuItems = items.map(item => {
       const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
       return menuItem;
     }).filter(Boolean) as any[];
     
-    return getUpsellSuggestions(allMenuItems, categories, cartMenuItems);
-  }, [items, allMenuItems, categories]);
+    // Get suggestions and filter out items already in cart
+    return getUpsellSuggestions(allMenuItems, categories, cartMenuItems)
+      .filter(s => !cartItemNames.has(s.suggestedItem.name));
+  }, [items, allMenuItems, categories, hasJuiceOrDessert]);
+
+  // Helper to get item image from menu items
+  const getItemImage = useCallback((item: typeof items[0]) => {
+    // Try to find matching menu item
+    const menuItem = allMenuItems.find(m => 
+      m.name === item.sauceName || 
+      m.name === item.label ||
+      (item.type === 'combo' && m.name === item.sauceName)
+    );
+    return menuItem?.image_url || null;
+  }, [allMenuItems]);
 
   const handleQuantityChange = useCallback(
     (id: string, delta: number) => {
@@ -88,8 +123,8 @@ export default function CartNew() {
   }, []);
 
   const handleCheckout = useCallback(() => {
-    // Show upsell if we have suggestions and user hasn't seen it
-    if (upsellSuggestions.length > 0) {
+    // Show upsell only if we have suggestions and user hasn't seen it this session
+    if (upsellSuggestions.length > 0 && !upsellShown) {
       setShowUpsell(true);
     } else {
       // Save order to history for quick reorder feature
@@ -102,7 +137,7 @@ export default function CartNew() {
       }
       navigate('/details');
     }
-  }, [navigate, upsellSuggestions, items, allMenuItems, subtotal]);
+  }, [navigate, upsellSuggestions, upsellShown, items, allMenuItems, subtotal]);
 
   const handleSkipUpsell = useCallback(() => {
     setShowUpsell(false);
@@ -207,17 +242,24 @@ export default function CartNew() {
                 <div className="p-4 border-b bg-white">
                   <div className="flex gap-4 items-start">
                     {/* Item Image */}
-                    <div className="shrink-0 w-24 h-24 rounded-2xl bg-muted overflow-hidden border border-gray-200 relative">
-                      {/* Fallback icon */}
-                      <div className="w-full h-full flex items-center justify-center text-gray-300">
-                        <UtensilsCrossed className="w-8 h-8" />
-                      </div>
+                    <div className="shrink-0 w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden border border-gray-200 relative">
+                      {getItemImage(item) ? (
+                        <img
+                          src={getItemImage(item)!}
+                          alt={item.label || item.sauceName}
+                          className="w-full h-full object-cover"
+                        />
+                      ) : (
+                        <div className="w-full h-full flex items-center justify-center text-gray-300">
+                          <UtensilsCrossed className="w-8 h-8" />
+                        </div>
+                      )}
                       {/* Type badge */}
                       <span className={cn(
                         'absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase',
                         item.type === 'combo' 
-                          ? 'bg-purple-100 text-purple-700' 
-                          : 'bg-blue-100 text-blue-700'
+                          ? 'bg-[#E6411C] text-white' 
+                          : 'bg-[#212282] text-white'
                       )}>
                         {item.type === 'combo' ? 'Combo' : 'Single'}
                       </span>
