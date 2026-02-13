@@ -165,6 +165,15 @@ export interface TranslationKeys {
   'tracking.readyAt': string;
   'tracking.deliveredAt': string;
   'tracking.liveUpdates': string;
+  'tracking.enterHint': string;
+  'tracking.notFoundDesc': string;
+  'tracking.tryAgain': string;
+  'tracking.readyPickup': string;
+  'tracking.readyDesc': string;
+  'tracking.searchAnother': string;
+  'tracking.yourItems': string;
+  'tracking.placeOrder': string;
+  'tracking.cancelled': string;
   
   // Order Board
   'board.title': string;
@@ -351,7 +360,16 @@ const translations: Record<Language, TranslationKeys> = {
     'tracking.startedAt': 'Started Preparing',
     'tracking.readyAt': 'Ready for Pickup',
     'tracking.deliveredAt': 'Delivered',
-    'tracking.liveUpdates': 'Live updates enabled',
+    'tracking.liveUpdates': 'Live updates',
+    'tracking.enterHint': 'Enter the 4-digit number on your receipt',
+    'tracking.notFoundDesc': 'We could not find that order. Please check the number on your receipt and try again.',
+    'tracking.tryAgain': 'Try Again',
+    'tracking.readyPickup': 'Your order is ready!',
+    'tracking.readyDesc': 'Please come to the counter to collect your food.',
+    'tracking.searchAnother': 'Search Another Order',
+    'tracking.yourItems': 'Your Items',
+    'tracking.placeOrder': 'Place New Order',
+    'tracking.cancelled': 'Cancelled',
     
     // Order Board
     'board.title': 'Order Board',
@@ -538,6 +556,15 @@ const translations: Record<Language, TranslationKeys> = {
     'tracking.readyAt': 'Yeetegese',
     'tracking.deliveredAt': 'Yatwaliddwa',
     'tracking.liveUpdates': 'Ebipya birabika',
+    'tracking.enterHint': 'Wandiika ennamba 4 ku risiti yo',
+    'tracking.notFoundDesc': 'Tetusobodde kuzuula order eyo. Kebera ennamba ku risiti yo ogezeeko nate.',
+    'tracking.tryAgain': 'Gezaako Nate',
+    'tracking.readyPickup': 'Order yo yeetegese!',
+    'tracking.readyDesc': 'Jjangu ku kaawunta okukwata emmere yo.',
+    'tracking.searchAnother': 'Noonya Order Endala',
+    'tracking.yourItems': 'Ebintu Byo',
+    'tracking.placeOrder': 'Tekawo Order Empya',
+    'tracking.cancelled': 'Yakomezebwa',
     
     // Order Board
     'board.title': 'Order Board',
