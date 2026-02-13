@@ -54,9 +54,30 @@ export default function OrderLookup() {
     },
     enabled: !!searchNumber,
     retry: false,
-    // Poll frequently to pick up dashboard updates
-    refetchInterval: 3000,
+    // Poll as fallback, but realtime subscription provides instant updates
+    refetchInterval: 5000,
   });
+
+  // Subscribe to realtime updates for the tracked order
+  useEffect(() => {
+    if (!order?.id || USE_MOCK_DATA) return;
+    
+    const channel = supabase
+      .channel(`order-track-${order.id}`)
+      .on(
+        'postgres_changes',
+        { event: 'UPDATE', schema: 'public', table: 'orders', filter: `id=eq.${order.id}` },
+        () => {
+          // Refetch the order when it's updated
+          refetch();
+        }
+      )
+      .subscribe();
+    
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [order?.id, refetch]);
 
   const { data: waitTime } = useWaitTime();
 

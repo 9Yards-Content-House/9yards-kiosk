@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -211,6 +211,24 @@ export default function KitchenDisplay() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const prevOrderCountRef = useRef<number>(0);
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Play notification sound for new orders
+  const playNotificationSound = useCallback(() => {
+    if (!soundEnabled) return;
+    try {
+      if (!audioRef.current) {
+        audioRef.current = new Audio('/sounds/new-order.mp3');
+      }
+      audioRef.current.currentTime = 0;
+      audioRef.current.play().catch(() => {
+        // Autoplay may be blocked, that's okay
+      });
+    } catch {
+      // Audio not supported
+    }
+  }, [soundEnabled]);
 
   // Load orders
   useEffect(() => {
@@ -255,6 +273,14 @@ export default function KitchenDisplay() {
   const pendingOrders = orders.filter((o) => o.status === "new");
   const preparingOrders = orders.filter((o) => o.status === "preparing");
   const readyOrders = orders.filter((o) => o.status === "ready");
+
+  // Play sound when new orders arrive
+  useEffect(() => {
+    if (pendingOrders.length > prevOrderCountRef.current) {
+      playNotificationSound();
+    }
+    prevOrderCountRef.current = pendingOrders.length;
+  }, [pendingOrders.length, playNotificationSound]);
 
   // Calculate time elapsed
   const getTimeElapsed = (createdAt: string) => {

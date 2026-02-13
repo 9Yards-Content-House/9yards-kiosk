@@ -252,23 +252,30 @@ create policy "Anyone can read order items"
   using (true);
 
 -- PROFILES: Users read own, admin manages all
+-- Create a security definer function to avoid infinite recursion in RLS
+CREATE OR REPLACE FUNCTION public.get_my_role()
+RETURNS public.user_role
+LANGUAGE sql
+SECURITY DEFINER
+STABLE
+AS $$
+  SELECT role FROM public.profiles WHERE id = auth.uid()
+$$;
+
 DROP POLICY IF EXISTS "Users can read own profile" ON public.profiles;
 create policy "Users can read own profile"
   on public.profiles for select
-  using (id = auth.uid() or exists (
-    select 1 from public.profiles p
-    where p.id = auth.uid() and p.role = 'admin'
-  ));
+  using (id = auth.uid());
+
+DROP POLICY IF EXISTS "Admin can read all profiles" ON public.profiles;
+create policy "Admin can read all profiles"
+  on public.profiles for select
+  using (public.get_my_role() = 'admin');
 
 DROP POLICY IF EXISTS "Admin can manage profiles" ON public.profiles;
 create policy "Admin can manage profiles"
   on public.profiles for all
-  using (
-    exists (
-      select 1 from public.profiles
-      where profiles.id = auth.uid() and profiles.role = 'admin'
-    )
-  );
+  using (public.get_my_role() = 'admin');
 
 -- NOTIFICATIONS
 DROP POLICY IF EXISTS "Staff can read notifications for their role" ON public.notifications;

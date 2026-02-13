@@ -8,8 +8,8 @@ import { timeAgo } from "@shared/lib/utils";
 
 // Mock notifications for development
 const MOCK_NOTIFICATIONS: NotificationType[] = [
-  { id: "1", message: "New order #9Y-0042 received", target_role: "admin", read: false, created_at: new Date(Date.now() - 5 * 60000).toISOString() },
-  { id: "2", message: "Order #9Y-0041 marked as ready", target_role: "admin", read: true, created_at: new Date(Date.now() - 30 * 60000).toISOString() },
+  { id: "1", order_id: "order-mock-1", type: "new_order", message: "New order #9Y-0042 received", target_role: "admin", read: false, created_at: new Date(Date.now() - 5 * 60000).toISOString() },
+  { id: "2", order_id: "order-mock-2", type: "status_change", message: "Order #9Y-0041 marked as ready", target_role: "admin", read: true, created_at: new Date(Date.now() - 30 * 60000).toISOString() },
 ];
 
 export default function NotificationBell() {

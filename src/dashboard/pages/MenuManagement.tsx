@@ -43,10 +43,10 @@ export default function MenuManagement() {
     let matchesType = true;
     if (filterType === "available") matchesType = item.available;
     if (filterType === "unavailable") matchesType = !item.available;
-    if (filterType === "popular") matchesType = (item as any).is_popular;
-    if (filterType === "new") matchesType = (item as any).is_new;
+    if (filterType === "popular") matchesType = !!item.is_popular;
+    if (filterType === "new") matchesType = !!item.is_new;
     if (filterType === "scheduled") {
-      matchesType = !!(item as any).available_from || !!(item as any).available_until;
+      matchesType = !!item.available_from || !!item.available_until;
     }
 
     return matchesSearch && matchesCategory && matchesType;
@@ -56,8 +56,8 @@ export default function MenuManagement() {
   const stats = {
     total: items?.length || 0,
     available: items?.filter((i) => i.available).length || 0,
-    popular: items?.filter((i) => (i as any).is_popular).length || 0,
-    new: items?.filter((i) => (i as any).is_new).length || 0,
+    popular: items?.filter((i) => i.is_popular).length || 0,
+    new: items?.filter((i) => i.is_new).length || 0,
   };
 
   if (isLoading) {

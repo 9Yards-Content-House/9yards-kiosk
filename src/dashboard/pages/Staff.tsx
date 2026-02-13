@@ -49,7 +49,7 @@ const MOCK_STAFF: Profile[] = [
 let mockStaffStore = [...MOCK_STAFF];
 
 export default function Staff() {
-  const { role } = useAuth();
+  const { role, loading: authLoading } = useAuth();
   const queryClient = useQueryClient();
   const canManage = role ? hasPermission(role, "staff:create") : false;
 
@@ -137,6 +137,14 @@ export default function Staff() {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
     },
   });
+
+  if (authLoading) {
+    return (
+      <div className="p-6 flex justify-center">
+        <Loader2 className="w-6 h-6 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
 
   if (!canManage) {
     return (

@@ -95,7 +95,7 @@ function generateMockAnalyticsOrders(): Order[] {
 const MOCK_ANALYTICS_ORDERS = generateMockAnalyticsOrders();
 
 export default function Analytics() {
-  const { role } = useAuth();
+  const { role, loading: authLoading } = useAuth();
   const canView = role ? hasPermission(role, 'analytics:read') : false;
   const [timeRange, setTimeRange] = useState<TimeRange>('30d');
 
@@ -248,6 +248,14 @@ export default function Analytics() {
       ordersChange,
     };
   }, [orders]);
+
+  if (authLoading) {
+    return (
+      <div className="p-6 flex justify-center">
+        <div className="w-6 h-6 animate-spin border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!canView) {
     return (

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
 import { usePushNotifications } from "../hooks/usePushNotifications";
@@ -6,9 +7,18 @@ import { Switch } from "@shared/components/ui/switch";
 import { Bell, Volume2, Smartphone } from "lucide-react";
 
 export default function Settings() {
-  const { role, profile } = useAuth();
+  const { role, profile, loading: authLoading } = useAuth();
   const canView = role ? hasPermission(role, "settings:read") : false;
   const { permission, subscribed, requestPermission } = usePushNotifications();
+  const [soundEnabled, setSoundEnabled] = useState(true);
+
+  if (authLoading) {
+    return (
+      <div className="p-6 flex justify-center">
+        <div className="w-6 h-6 animate-spin border-2 border-primary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   if (!canView) {
     return (
@@ -48,7 +58,7 @@ export default function Settings() {
                 </p>
               </div>
             </div>
-            <Switch defaultChecked />
+            <Switch checked={soundEnabled} onCheckedChange={setSoundEnabled} />
           </div>
 
           {/* Push */}

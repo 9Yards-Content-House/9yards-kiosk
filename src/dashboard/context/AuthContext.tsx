@@ -55,6 +55,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isDevMode, setIsDevMode] = useState(false);
 
   const fetchProfile = useCallback(async (userId: string) => {
+    console.log("🔍 Fetching profile for user:", userId);
     const { data, error } = await supabase
       .from("profiles")
       .select("*")
@@ -62,9 +63,14 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       .single();
 
     if (!error && data) {
+      console.log("✅ Profile loaded:", data.full_name, "Role:", data.role);
       setProfile(data);
     } else if (error) {
-      console.error("Error fetching profile:", error);
+      console.error("❌ Error fetching profile:", error.message, error.details);
+      // Try to create a profile if it doesn't exist
+      if (error.code === 'PGRST116') {
+        console.log("Profile not found, this shouldn't happen after user creation");
+      }
     }
   }, []);
 
@@ -121,11 +127,16 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     }
 
     // Normal Supabase auth
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
     if (error) throw error;
+    
+    // Immediately fetch profile after successful login
+    if (data.user) {
+      await fetchProfile(data.user.id);
+    }
   };
 
   const signInWithPin = async (pin: string) => {

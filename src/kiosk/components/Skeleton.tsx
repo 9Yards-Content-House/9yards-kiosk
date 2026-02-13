@@ -121,11 +121,11 @@ export function CategoryTabsSkeleton() {
   return (
     <div className="px-2 pb-3 overflow-x-auto scrollbar-hide">
       <div className="flex gap-2 min-w-max">
-        {Array.from({ length: 6 }).map((_, i) => (
+        {[100, 85, 90, 80, 95, 88].map((width, i) => (
           <Skeleton 
             key={i}
             className="h-10 rounded-full"
-            style={{ width: 80 + Math.random() * 40 }}
+            width={width}
             variant="rounded"
           />
         ))}

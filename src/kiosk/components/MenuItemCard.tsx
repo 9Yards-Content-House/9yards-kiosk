@@ -12,17 +12,12 @@ interface MenuItemCardProps {
   isNew?: boolean;
 }
 
-// Best sellers and new items (can be customized based on actual data)
-const BEST_SELLERS = ["chicken", "fish", "beef", "ordinary"];
-const NEW_ITEMS = ["beef-pilao", "beef & pilao"];
-
 export default function MenuItemCard({ item, isComboStarter, onAdd, isBestSeller, isNew }: MenuItemCardProps) {
   const { addItem } = useKioskCart();
 
-  // Derive badges from item name if not explicitly passed
-  const itemNameLower = item.name.toLowerCase();
-  const showBestSeller = isBestSeller ?? BEST_SELLERS.some(term => itemNameLower.includes(term));
-  const showNew = isNew ?? NEW_ITEMS.some(term => itemNameLower.includes(term));
+  // Use database flags, with props as override
+  const showBestSeller = isBestSeller ?? item.is_popular ?? false;
+  const showNew = isNew ?? item.is_new ?? false;
 
   const handleAdd = () => {
     vibrate();
