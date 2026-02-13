@@ -124,32 +124,37 @@ export default function OrderDetail() {
       {/* Items */}
       <div className="bg-card rounded-xl border p-4 mb-6">
         <h3 className="font-semibold text-lg mb-3">Items</h3>
-        {order.items?.map((item) => (
-          <div key={item.id} className="flex justify-between py-2 border-b last:border-b-0">
-            <div>
-              <p className="font-medium">
-                {item.type === "combo" ? "Combo" : item.sauce_name || "Item"}
-                {" "}x{item.quantity}
-              </p>
-              {item.main_dishes.length > 0 && (
-                <p className="text-sm text-muted-foreground">
-                  Mains: {item.main_dishes.join(", ")}
+        {order.items?.map((item) => {
+          // Build a descriptive name for the item
+          const itemName = item.type === "combo" 
+            ? (item.sauce_name ? `${item.sauce_name} Lusaniya` : "Combo Meal")
+            : (item.sauce_name || "Item");
+          
+          return (
+            <div key={item.id} className="flex justify-between py-2 border-b last:border-b-0">
+              <div>
+                <p className="font-medium">
+                  {itemName} x{item.quantity}
                 </p>
-              )}
-              {item.sauce_name && (
-                <p className="text-sm text-muted-foreground">
-                  {item.sauce_name}
-                  {item.sauce_preparation && ` (${item.sauce_preparation})`}
-                  {item.sauce_size && ` — ${item.sauce_size}`}
-                </p>
-              )}
-              {item.side_dish && (
-                <p className="text-sm text-muted-foreground">Side: {item.side_dish}</p>
-              )}
+                {item.main_dishes && item.main_dishes.length > 0 && (
+                  <p className="text-sm text-muted-foreground">
+                    {item.main_dishes.join(", ")}
+                  </p>
+                )}
+                {item.sauce_preparation && (
+                  <p className="text-sm text-muted-foreground">
+                    {item.sauce_preparation}
+                    {item.sauce_size && ` — ${item.sauce_size}`}
+                  </p>
+                )}
+                {item.side_dish && (
+                  <p className="text-sm text-muted-foreground">Side: {item.side_dish}</p>
+                )}
+              </div>
+              <span className="font-semibold">{formatPrice(item.total_price)}</span>
             </div>
-            <span className="font-semibold">{formatPrice(item.total_price)}</span>
-          </div>
-        ))}
+          );
+        })}
         {order.special_instructions && (
           <div className="mt-3 pt-3 border-t">
             <p className="text-sm font-medium">Special Instructions:</p>

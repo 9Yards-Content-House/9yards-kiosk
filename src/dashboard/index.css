@@ -32,6 +32,16 @@
   padding: 1rem;
 }
 
+/* Draggable order cards */
+[draggable="true"] {
+  cursor: grab;
+  user-select: none;
+}
+
+[draggable="true"]:active {
+  cursor: grabbing;
+}
+
 /* New order pulse */
 @keyframes order-pulse {
   0%, 100% {

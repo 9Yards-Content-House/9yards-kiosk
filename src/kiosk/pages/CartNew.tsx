@@ -29,6 +29,7 @@ import UpsellModal from '../components/UpsellModal';
 import { saveOrderToHistory } from '../components/QuickReorder';
 import { useAllMenuItems, useCategories } from '@shared/hooks/useMenu';
 import { getUpsellSuggestions } from '@shared/lib/recommendations';
+import { useSound } from '../hooks/useSound';
 
 export default function CartNew() {
   const navigate = useNavigate();
@@ -36,6 +37,7 @@ export default function CartNew() {
   const { items, removeItem, updateQuantity, clearCart, subtotal, itemCount, addItem } = useKioskCart();
   const { data: allMenuItems = [] } = useAllMenuItems();
   const { data: categories = [] } = useCategories();
+  const { play } = useSound();
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -96,27 +98,31 @@ export default function CartNew() {
 
       const newQty = item.quantity + delta;
       if (newQty <= 0) {
+        play('remove');
         removeItem(id);
       } else {
+        play(delta > 0 ? 'add' : 'tap');
         updateQuantity(id, newQty);
       }
     },
-    [items, removeItem, updateQuantity]
+    [items, removeItem, updateQuantity, play]
   );
 
   const handleRemove = useCallback(
     (id: string) => {
       vibrate([50, 30]);
+      play('remove');
       removeItem(id);
     },
-    [removeItem]
+    [removeItem, play]
   );
 
   const handleClearCart = useCallback(() => {
     vibrate([50, 30, 50]);
+    play('remove');
     clearCart();
     setShowClearDialog(false);
-  }, [clearCart]);
+  }, [clearCart, play]);
 
   const handleEditCombo = useCallback((id: string) => {
     setEditingItemId(id);
@@ -154,6 +160,7 @@ export default function CartNew() {
 
   const handleAddUpsellItem = useCallback((item: any) => {
     vibrate([30, 30]);
+    play('add');
     addItem({
       id: crypto.randomUUID(),
       type: 'single',
@@ -167,7 +174,7 @@ export default function CartNew() {
       unitPrice: item.price,
       label: item.name,
     });
-  }, [addItem]);
+  }, [addItem, play]);
 
   // Empty cart state
   if (items.length === 0) {
@@ -230,13 +237,19 @@ export default function CartNew() {
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto">
         <AnimatePresence mode="popLayout">
-          {items.map((item) => (
+          {items.map((item, index) => (
             <motion.div
               key={item.id}
               layout
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0, x: 100, height: 0 }}
+              initial={{ opacity: 0, x: -20, scale: 0.95 }}
+              animate={{ opacity: 1, x: 0, scale: 1 }}
+              exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
+              transition={{ 
+                type: 'spring', 
+                stiffness: 500, 
+                damping: 30,
+                delay: index * 0.05,
+              }}
             >
               <SwipeableItem onDelete={() => handleRemove(item.id)}>
                 <div className="p-4 border-b bg-white">

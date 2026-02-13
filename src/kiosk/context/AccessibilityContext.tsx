@@ -6,6 +6,7 @@ export interface AccessibilitySettings {
   reducedMotion: boolean;
   screenReader: boolean;
   touchTargetSize: "normal" | "large" | "extra-large";
+  soundEnabled: boolean;
 }
 
 interface AccessibilityContextType {
@@ -17,8 +18,10 @@ interface AccessibilityContextType {
   toggleHighContrast: () => void;
   toggleLargeText: () => void;
   toggleReducedMotion: () => void;
+  toggleSound: () => void;
   resetToDefaults: () => void;
   isAccessibilityMode: boolean;
+  soundEnabled: boolean;
 }
 
 const defaultSettings: AccessibilitySettings = {
@@ -27,6 +30,7 @@ const defaultSettings: AccessibilitySettings = {
   reducedMotion: false,
   screenReader: false,
   touchTargetSize: "normal",
+  soundEnabled: true, // Sound enabled by default for premium kiosk feel
 };
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
@@ -118,6 +122,10 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setSettings(prev => ({ ...prev, reducedMotion: !prev.reducedMotion }));
   };
 
+  const toggleSound = () => {
+    setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }));
+  };
+
   const resetToDefaults = () => {
     setSettings(defaultSettings);
   };
@@ -132,8 +140,10 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         toggleHighContrast,
         toggleLargeText,
         toggleReducedMotion,
+        toggleSound,
         resetToDefaults,
         isAccessibilityMode,
+        soundEnabled: settings.soundEnabled,
       }}
     >
       {children}

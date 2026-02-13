@@ -8,7 +8,8 @@ import {
   Hand, 
   RotateCcw, 
   X,
-  Check
+  Check,
+  Volume2,
 } from "lucide-react";
 import { useAccessibility } from "../context/AccessibilityContext";
 
@@ -23,11 +24,12 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
     toggleHighContrast, 
     toggleLargeText, 
     toggleReducedMotion,
+    toggleSound,
     updateSetting,
     resetToDefaults 
   } = useAccessibility();
 
-  const hasChanges = settings.highContrast || settings.largeText || settings.reducedMotion || settings.touchTargetSize !== "normal";
+  const hasChanges = settings.highContrast || settings.largeText || settings.reducedMotion || settings.touchTargetSize !== "normal" || !settings.soundEnabled;
 
   // Close on Escape key
   useEffect(() => {
@@ -109,6 +111,15 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                 description="Less movement on screen"
                 enabled={settings.reducedMotion}
                 onToggle={toggleReducedMotion}
+              />
+
+              {/* Sound Effects */}
+              <ToggleOption
+                icon={<Volume2 />}
+                title="Sound Effects"
+                description="Play sounds on interactions"
+                enabled={settings.soundEnabled}
+                onToggle={toggleSound}
               />
 
               {/* Touch Target Size */}

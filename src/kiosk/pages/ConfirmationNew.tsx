@@ -15,6 +15,8 @@ import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
 import { QRCodeFallback } from '@shared/components/QRCode';
 import KioskHeader from '../components/KioskHeader';
+import { Confetti, SuccessCheckmark } from '../components/SuccessCelebration';
+import { useSound } from '../hooks/useSound';
 
 export default function ConfirmationNew() {
   const navigate = useNavigate();
@@ -22,9 +24,11 @@ export default function ConfirmationNew() {
   const { t } = useTranslation();
   const { setLanguage } = useLanguage();
   const { data: waitTime } = useWaitTime();
+  const { play } = useSound();
 
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(60);
+  const [showConfetti, setShowConfetti] = useState(true);
 
   // Get order details from navigation state
   const orderNumber = location.state?.orderNumber || '9Y-0000';
@@ -52,9 +56,10 @@ export default function ConfirmationNew() {
     try {
       await navigator.clipboard.writeText(orderNumber);
       setCopied(true);
+      play('select');
       setTimeout(() => setCopied(false), 2000);
     } catch {}
-  }, [orderNumber]);
+  }, [orderNumber, play]);
 
   const handleNewOrder = useCallback(() => {
     setLanguage('en');
@@ -67,16 +72,20 @@ export default function ConfirmationNew() {
 
   return (
     <div className="kiosk-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
+      {/* Confetti celebration */}
+      {showConfetti && (
+        <Confetti 
+          count={80} 
+          duration={4000}
+          onComplete={() => setShowConfetti(false)} 
+        />
+      )}
+
       {/* Success header */}
       <div className="pt-12 pb-8 text-center">
-        <motion.div
-          initial={{ scale: 0 }}
-          animate={{ scale: 1 }}
-          transition={{ type: 'spring', stiffness: 200, delay: 0.2 }}
-          className="w-24 h-24 bg-green-500 rounded-full flex items-center justify-center mx-auto mb-6 shadow-lg"
-        >
-          <Check className="w-12 h-12 text-white" strokeWidth={3} />
-        </motion.div>
+        <div className="flex justify-center mb-6">
+          <SuccessCheckmark size={96} />
+        </div>
 
         <motion.h1
           initial={{ opacity: 0, y: 20 }}
@@ -105,12 +114,21 @@ export default function ConfirmationNew() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-3xl p-6 shadow-lg border-2 border-green-200 text-center"
+            className="bg-white rounded-3xl p-6 shadow-lg border-2 border-green-200 text-center relative overflow-hidden"
           >
-            <p className="text-gray-500 mb-2">{t('confirmation.orderNumber')}</p>
-            <div className="text-5xl md:text-6xl font-black text-[#212282] tracking-wider mb-4">
-              {orderNumber}
-            </div>
+            {/* Subtle animated background */}
+            <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-50" />
+            
+            <div className="relative z-10">
+              <p className="text-gray-500 mb-2">{t('confirmation.orderNumber')}</p>
+              <motion.div 
+                className="text-5xl md:text-6xl font-black text-[#212282] tracking-wider mb-4"
+                initial={{ scale: 0.8 }}
+                animate={{ scale: 1 }}
+                transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.8 }}
+              >
+                {orderNumber}
+              </motion.div>
             
             <Button
               variant="outline"
@@ -133,6 +151,7 @@ export default function ConfirmationNew() {
             <p className="text-sm text-gray-500 mt-4">
               {t('confirmation.saveNumber')}
             </p>
+            </div>
           </motion.div>
 
           {/* QR Code */}

@@ -10,6 +10,7 @@ import { KIOSK } from "@shared/lib/constants";
 import KioskHeader from "../components/KioskHeader";
 import MoMoPayment from "../components/MoMoPayment";
 import { Button } from "@shared/components/ui/button";
+import { useSound } from "../hooks/useSound";
 import type { PaymentMethod, CreateOrderPayload } from "@shared/types/orders";
 
 export default function Payment() {
@@ -17,6 +18,7 @@ export default function Payment() {
   const { items, subtotal, clearCart } = useKioskCart();
   const { data: allMenuItems = [] } = useAllMenuItems();
   const createOrder = useCreateOrder();
+  const { play } = useSound();
   const [step, setStep] = useState<"review" | "momo" | "submitting" | "error">("review");
 
   // Helper to find item image from menu data
@@ -84,6 +86,7 @@ export default function Payment() {
       });
     } catch (error) {
       console.error("Order placement failed:", error);
+      play('error');
       setStep("error");
     }
   };

@@ -7,13 +7,18 @@ import { hasPermission } from "@shared/types/auth";
 export default function MobileNav() {
   const { role } = useAuth();
 
-  const links = [
+  const allLinks = [
     { to: "/orders", label: "Orders", icon: LayoutDashboard, permission: "orders:read" },
     { to: "/kitchen", label: "Kitchen", icon: ChefHat, permission: "orders:read" },
     { to: "/menu", label: "Menu", icon: UtensilsCrossed, permission: "menu:read" },
     { to: "/deliveries", label: "Deliveries", icon: Truck, permission: "deliveries:read" },
     { to: "/settings", label: "Settings", icon: Settings, permission: "settings:read" },
-  ].filter((link) => role && hasPermission(role, link.permission));
+  ];
+
+  // Show all links if no role (graceful fallback), otherwise filter by permissions
+  const links = !role 
+    ? allLinks 
+    : allLinks.filter((link) => hasPermission(role, link.permission));
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t md:hidden z-50">

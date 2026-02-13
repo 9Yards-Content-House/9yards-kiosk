@@ -21,6 +21,7 @@ import OptimizedImage from '@shared/components/OptimizedImage';
 import ComboBuilderNew from '../components/ComboBuilderNew';
 import CartBar from '../components/CartBar';
 import { useFavorites } from '../context/FavoritesContext';
+import { useSound } from '../hooks/useSound';
 
 // Category type for the menu
 export type Category = 'all' | 'lusaniya' | 'main' | 'sauce' | 'juice' | 'dessert' | 'side';
@@ -52,6 +53,7 @@ export default function MenuNew() {
   const { data: categories = [] } = useCategories();
   const { data: allItems = [] } = useAllMenuItems();
   const { addItem, itemCount, subtotal, items: cartItems, removeItem, updateQuantity } = useKioskCart();
+  const { play } = useSound();
 
   // Get quantity in cart for a given item name
   const getCartQuantity = useCallback((itemName: string) => {
@@ -173,6 +175,7 @@ export default function MenuNew() {
   const handleAddToCart = useCallback(
     (item: typeof processedItems[0]) => {
       vibrate([30, 30]);
+      play('add');
       const existingCartItem = cartItems.find(ci => ci.sauceName === item.name || ci.label === item.name);
       
       if (existingCartItem) {
@@ -195,13 +198,14 @@ export default function MenuNew() {
         });
       }
     },
-    [addItem, updateQuantity, cartItems]
+    [addItem, updateQuantity, cartItems, play]
   );
 
   // Handle removing individual items from cart
   const handleRemoveFromCart = useCallback(
     (item: typeof processedItems[0]) => {
       vibrate([30]);
+      play('remove');
       const existingCartItem = cartItems.find(ci => ci.sauceName === item.name || ci.label === item.name);
       
       if (existingCartItem) {
@@ -212,14 +216,15 @@ export default function MenuNew() {
         }
       }
     },
-    [updateQuantity, removeItem, cartItems]
+    [updateQuantity, removeItem, cartItems, play]
   );
 
   // Handle starting combo builder
   const handleStartCombo = useCallback(() => {
     vibrate();
+    play('select');
     setComboBuilderOpen(true);
-  }, []);
+  }, [play]);
 
   const handleCloseComboBuilder = useCallback(() => {
     setComboBuilderOpen(false);
@@ -227,17 +232,19 @@ export default function MenuNew() {
 
   const handleCategoryChange = useCallback((category: Category) => {
     vibrate();
+    play('tap');
     setActiveCategory(category);
     // Scroll to top of menu grid
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, []);
+  }, [play]);
 
   const handleToggleFavorite = useCallback(
     (id: string) => {
       vibrate();
+      play('select');
       toggleFavorite(id);
     },
-    [toggleFavorite]
+    [toggleFavorite, play]
   );
 
   // Get price display for an item

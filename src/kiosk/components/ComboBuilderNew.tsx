@@ -14,6 +14,7 @@ import { useGroupedMenu } from '@shared/hooks/useMenu';
 import { useKioskCart } from '../context/KioskCartContext';
 import { MenuItem, SauceSize } from '@shared/types';
 import { cn, formatPrice, vibrate } from '@shared/lib/utils';
+import { useSound } from '../hooks/useSound';
 
 interface ComboBuilderProps {
   open: boolean;
@@ -86,6 +87,7 @@ export default function ComboBuilder({
   const navigate = useNavigate();
   const { data: groupedMenu = [] } = useGroupedMenu();
   const { addItem, removeItem, items } = useKioskCart();
+  const { play } = useSound();
   const mainContentRef = useRef<HTMLElement>(null);
 
   const [step, setStep] = useState(1);
@@ -321,16 +323,18 @@ export default function ComboBuilder({
   // Selection handlers
   const toggleMainDish = useCallback((name: string) => {
     vibrate();
+    play('select');
     setCombo((prev) => ({
       ...prev,
       mainDishes: prev.mainDishes.includes(name)
         ? prev.mainDishes.filter((d) => d !== name)
         : [...prev.mainDishes, name],
     }));
-  }, []);
+  }, [play]);
 
   const selectSauce = useCallback((sauce: MenuItem) => {
     vibrate();
+    play('select');
     const firstPrep = sauce.preparations?.[0];
     const prepName = typeof firstPrep === 'string' ? firstPrep : firstPrep?.name || '';
     setCombo((prev) => ({
@@ -339,15 +343,17 @@ export default function ComboBuilder({
       saucePreparation: prepName,
       sauceSize: sauce.sizes && sauce.sizes.length > 0 ? sauce.sizes[0] : null,
     }));
-  }, []);
+  }, [play]);
 
   const selectSideDish = useCallback((name: string) => {
     vibrate();
+    play('select');
     setCombo((prev) => ({ ...prev, sideDish: name }));
-  }, []);
+  }, [play]);
 
   const updateExtra = useCallback((item: MenuItem, delta: number) => {
     vibrate();
+    play(delta > 0 ? 'add' : 'remove');
     setCombo((prev) => {
       const existing = prev.extras.find((e) => e.item.id === item.id);
       if (existing) {
@@ -366,18 +372,20 @@ export default function ComboBuilder({
       }
       return prev;
     });
-  }, []);
+  }, [play]);
 
   const updateQuantity = useCallback((delta: number) => {
     vibrate();
+    play('tap');
     setCombo((prev) => ({ ...prev, quantity: Math.max(1, prev.quantity + delta) }));
-  }, []);
+  }, [play]);
 
   // Handle add to cart
   const handleAddToCart = useCallback(() => {
     if (!combo.sauce) return;
 
     vibrate([50, 50, 50]);
+    play('success');
 
     let price = combo.sauceSize?.price || combo.sauce.sizes?.[0]?.price || combo.sauce.price || 0;
     combo.extras.forEach((e) => {
