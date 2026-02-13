@@ -1,6 +1,6 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
-import type { MenuItem } from "@shared/types/menu";
+import type { MenuItem, SaucePreparation, SauceSize } from "@shared/types/menu";
 
 // In-memory store for mock mode menu items (references useMenu.ts mock data)
 // This is a simple demo - when connected to Supabase, the real DB will handle this
@@ -14,11 +14,17 @@ interface CreateMenuItemPayload {
   image_url: string;
   available: boolean;
   sort_order: number;
+  is_popular?: boolean;
+  is_new?: boolean;
+  preparations?: SaucePreparation[] | null;
+  sizes?: SauceSize[] | null;
 }
 
 interface UpdateMenuItemPayload extends Partial<CreateMenuItemPayload> {
   is_popular?: boolean;
   is_new?: boolean;
+  preparations?: SaucePreparation[] | null;
+  sizes?: SauceSize[] | null;
 }
 
 /** Create a new menu item */

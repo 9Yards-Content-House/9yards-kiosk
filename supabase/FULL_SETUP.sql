@@ -277,6 +277,11 @@ create policy "Admin can manage profiles"
   on public.profiles for all
   using (public.get_my_role() = 'admin');
 
+DROP POLICY IF EXISTS "Admin can delete profiles" ON public.profiles;
+create policy "Admin can delete profiles"
+  on public.profiles for delete
+  using (public.get_my_role() = 'admin');
+
 -- NOTIFICATIONS
 DROP POLICY IF EXISTS "Staff can read notifications for their role" ON public.notifications;
 create policy "Staff can read notifications for their role"

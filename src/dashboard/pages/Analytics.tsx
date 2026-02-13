@@ -120,7 +120,7 @@ export default function Analytics() {
       
       let query = supabase
         .from('orders')
-        .select('*, order_items(*, menu_item:menu_items(name, category_id))')
+        .select('*, order_items(*)')
         .neq('status', 'cancelled')
         .order('created_at', { ascending: true });
 
@@ -130,7 +130,12 @@ export default function Analytics() {
 
       const { data, error } = await query;
       if (error) throw error;
-      return data;
+      
+      // Map order_items to items for compatibility
+      return (data || []).map(order => ({
+        ...order,
+        items: order.order_items,
+      }));
     },
     enabled: canView,
   });
@@ -189,14 +194,29 @@ export default function Analytics() {
       ...data,
     }));
 
-    // Top menu items
+    // Top menu items - use sauce_name and main_dishes
     const itemCounts: Record<string, { count: number; revenue: number }> = {};
     orders.forEach((o) => {
-      o.order_items?.forEach((item: any) => {
-        const name = item.menu_item?.name || 'Unknown';
-        if (!itemCounts[name]) itemCounts[name] = { count: 0, revenue: 0 };
-        itemCounts[name].count += item.quantity;
-        itemCounts[name].revenue += item.unit_price * item.quantity;
+      const orderItems = o.order_items || o.items || [];
+      orderItems.forEach((item: any) => {
+        // Use sauce_name as the primary item name, or first main dish
+        const name = item.sauce_name || (item.main_dishes && item.main_dishes[0]) || 'Unknown';
+        if (name && name !== 'Unknown') {
+          if (!itemCounts[name]) itemCounts[name] = { count: 0, revenue: 0 };
+          itemCounts[name].count += item.quantity || 1;
+          itemCounts[name].revenue += (item.unit_price || 0) * (item.quantity || 1);
+        }
+        
+        // Also count main dishes separately if present
+        if (item.main_dishes && Array.isArray(item.main_dishes)) {
+          item.main_dishes.forEach((dish: string) => {
+            if (dish) {
+              if (!itemCounts[dish]) itemCounts[dish] = { count: 0, revenue: 0 };
+              itemCounts[dish].count += item.quantity || 1;
+              // Don't add revenue for sides to avoid double counting
+            }
+          });
+        }
       });
     });
     const topItems = Object.entries(itemCounts)

@@ -34,6 +34,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "staff:read",
     "staff:create",
     "staff:update",
+    "staff:delete",
     "analytics:read",
     "settings:read",
     "settings:update",
