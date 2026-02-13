@@ -9,7 +9,7 @@ import { cn, formatPrice } from '@shared/lib/utils';
 import { Order, OrderItem } from '@shared/types';
 import { Button } from '@shared/components/ui/button';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
-import { getMockOrdersStore } from '@shared/hooks/useOrders';
+import { getMockOrdersStore, applyLocalOverlay } from '@shared/hooks/useOrders';
 
 export default function OrderLookup() {
   const navigate = useNavigate();
@@ -34,7 +34,8 @@ export default function OrderLookup() {
         const mockOrders = getMockOrdersStore();
         const found = mockOrders.find(o => o.order_number === searchNumber.toUpperCase());
         if (!found) throw new Error('Order not found');
-        return found as Order & { order_items: OrderItem[] };
+        // Apply any local overlay from dashboard updates
+        return applyLocalOverlay(found) as Order & { order_items: OrderItem[] };
       }
 
       // Real Supabase query
@@ -48,12 +49,13 @@ export default function OrderLookup() {
         .single();
 
       if (error) throw error;
-      return data as Order & { order_items: OrderItem[] };
+      // Apply any local overlay from dashboard updates
+      return applyLocalOverlay(data as Order) as Order & { order_items: OrderItem[] };
     },
     enabled: !!searchNumber,
     retry: false,
-    // Poll in mock mode since realtime doesn't work
-    refetchInterval: USE_MOCK_DATA ? 3000 : false,
+    // Poll frequently to pick up dashboard updates
+    refetchInterval: 3000,
   });
 
   const { data: waitTime } = useWaitTime();
