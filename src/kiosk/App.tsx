@@ -1,8 +1,10 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { KioskCartProvider } from "./context/KioskCartContext";
+import { FavoritesProvider } from "./context/FavoritesContext";
 import { LanguageProvider } from "@shared/context/LanguageContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
 import { useInactivityTimer } from "./hooks/useInactivityTimer";
+import { useMenuRealtime } from "@shared/hooks/useMenu";
 import ErrorBoundary from "@shared/components/ErrorBoundary";
 import InactivityOverlay from "./components/InactivityOverlay";
 
@@ -18,6 +20,8 @@ import OrderLookup from "./pages/OrderLookup";
 
 function KioskRoutes() {
   const { isInactive, resetTimer } = useInactivityTimer();
+  // Subscribe to menu updates from dashboard
+  useMenuRealtime();
 
   return (
     <>
@@ -43,9 +47,11 @@ export default function App() {
     <ErrorBoundary>
       <AccessibilityProvider>
         <LanguageProvider>
-          <KioskCartProvider>
-            <KioskRoutes />
-          </KioskCartProvider>
+          <FavoritesProvider>
+            <KioskCartProvider>
+              <KioskRoutes />
+            </KioskCartProvider>
+          </FavoritesProvider>
         </LanguageProvider>
       </AccessibilityProvider>
     </ErrorBoundary>

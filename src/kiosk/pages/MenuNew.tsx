@@ -1,53 +1,138 @@
-import { useState, useCallback, useMemo } from 'react';
+import { useState, useCallback, useMemo, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Search, X, ChefHat, ShoppingCart } from 'lucide-react';
+import {
+  Search,
+  X,
+  ArrowLeft,
+  Heart,
+  Plus,
+  Flame,
+  UtensilsCrossed,
+  Drumstick,
+  Beef,
+  CupSoda,
+  LeafyGreen,
+  Sparkles,
+  IceCream,
+} from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
-import { useCategories, useAllMenuItems, useGroupedMenu } from '@shared/hooks/useMenu';
+import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
 import { useKioskCart } from '../context/KioskCartContext';
 import { MenuItem } from '@shared/types';
 import { cn, formatPrice, vibrate } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
-import { Input } from '@shared/components/ui/input';
-import KioskHeader from '../components/KioskHeader';
-import CategoryTabsNew from '../components/CategoryTabsNew';
-import MenuItemCardNew from '../components/MenuItemCardNew';
+import OptimizedImage from '@shared/components/OptimizedImage';
 import ComboBuilderNew from '../components/ComboBuilderNew';
 import CartBar from '../components/CartBar';
-import RecommendationSection from '../components/RecommendationSection';
-import { QuickReorderPanel } from '../components/QuickReorder';
-import { getRecommendations } from '@shared/lib/recommendations';
+import { useFavorites } from '../context/FavoritesContext';
+
+// Category type for the menu
+export type Category = 'all' | 'lusaniya' | 'main' | 'sauce' | 'juice' | 'dessert' | 'side';
+
+// Category configuration matching main website
+const categoryConfig: Record<Category, { icon: React.ReactNode; label: string }> = {
+  all: { icon: <UtensilsCrossed className="w-4 h-4" />, label: 'All Items' },
+  lusaniya: { icon: <Sparkles className="w-4 h-4" />, label: 'Lusaniya' },
+  main: { icon: <Drumstick className="w-4 h-4" />, label: 'Main Dishes' },
+  sauce: { icon: <Beef className="w-4 h-4" />, label: 'Sauces' },
+  juice: { icon: <CupSoda className="w-4 h-4" />, label: 'Juices' },
+  dessert: { icon: <IceCream className="w-4 h-4" />, label: 'Desserts' },
+  side: { icon: <LeafyGreen className="w-4 h-4" />, label: 'Sides' },
+};
+
+// Map category slugs to Category type
+const slugToCategoryType: Record<string, Category> = {
+  lusaniya: 'lusaniya',
+  'main-dishes': 'main',
+  sauces: 'sauce',
+  juices: 'juice',
+  desserts: 'dessert',
+  'side-dishes': 'side',
+};
 
 export default function MenuNew() {
   const navigate = useNavigate();
   const { t } = useTranslation();
   const { data: categories = [] } = useCategories();
   const { data: allItems = [] } = useAllMenuItems();
-  const { data: groupedMenu } = useGroupedMenu();
   const { addItem, itemCount, subtotal } = useKioskCart();
+  const { favorites, toggleFavorite } = useFavorites();
+  const scrollContainerRef = useRef<HTMLDivElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const stickyRef = useRef<HTMLDivElement>(null);
 
-  const [activeCategory, setActiveCategory] = useState<string | null>(null);
+  const [activeCategory, setActiveCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [comboBuilderOpen, setComboBuilderOpen] = useState(false);
-  const [selectedSauce, setSelectedSauce] = useState<MenuItem | null>(null);
-  const [showQuickReorder, setShowQuickReorder] = useState(false);
+  const [isSticky, setIsSticky] = useState(false);
+  const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
-  // Get AI recommendations
-  const recommendations = useMemo(() => {
-    if (allItems.length === 0 || categories.length === 0) return [];
-    return getRecommendations(allItems, categories, [], 4);
+  // Handle sticky header
+  useEffect(() => {
+    const handleScroll = () => {
+      if (stickyRef.current) {
+        setIsSticky(window.scrollY > 200);
+      }
+    };
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  // Process menu items into normalized format matching main website
+  const processedItems = useMemo(() => {
+    return allItems.map((item) => {
+      const category = categories.find((c) => c.id === item.category_id);
+      const categoryType = category ? slugToCategoryType[category.slug] || 'main' : 'main';
+
+      return {
+        id: item.id,
+        name: item.name,
+        image: item.image_url,
+        price: item.sizes?.[0]?.price || item.price || null,
+        category: category?.name || '',
+        categoryType,
+        available: item.available,
+        isFree: categoryType === 'main' || categoryType === 'side',
+        description: item.description,
+        isIndividual: categoryType === 'lusaniya' || categoryType === 'juice' || categoryType === 'dessert',
+        isPopular: item.is_popular,
+        isNew: item.is_new,
+        originalItem: item,
+      };
+    });
   }, [allItems, categories]);
+
+  // Calculate category counts
+  const categoryCounts = useMemo(() => {
+    const counts: Record<Category, number> = {
+      all: processedItems.filter((i) => i.available).length,
+      lusaniya: 0,
+      main: 0,
+      sauce: 0,
+      juice: 0,
+      dessert: 0,
+      side: 0,
+    };
+
+    processedItems
+      .filter((i) => i.available)
+      .forEach((item) => {
+        if (item.categoryType in counts) {
+          counts[item.categoryType as Category]++;
+        }
+      });
+
+    return counts;
+  }, [processedItems]);
 
   // Filter items based on search and category
   const filteredItems = useMemo(() => {
-    let items = allItems.filter((item) => item.available);
+    let items = processedItems.filter((item) => item.available);
 
     // Category filter
-    if (activeCategory) {
-      const category = categories.find((c) => c.slug === activeCategory);
-      if (category) {
-        items = items.filter((item) => item.category_id === category.id);
-      }
+    if (activeCategory !== 'all') {
+      items = items.filter((item) => item.categoryType === activeCategory);
     }
 
     // Search filter
@@ -56,40 +141,30 @@ export default function MenuNew() {
       items = items.filter(
         (item) =>
           item.name.toLowerCase().includes(query) ||
-          item.description?.toLowerCase().includes(query)
+          item.description?.toLowerCase().includes(query) ||
+          item.category.toLowerCase().includes(query)
       );
     }
 
-    // Sort by sort_order
-    return items.sort((a, b) => (a.sort_order || 0) - (b.sort_order || 0));
-  }, [allItems, categories, activeCategory, searchQuery]);
+    return items;
+  }, [processedItems, activeCategory, searchQuery]);
 
-  // Item counts per category
-  const itemCounts = useMemo(() => {
-    const counts: Record<string, number> = {};
-    categories.forEach((cat) => {
-      counts[cat.slug] = allItems.filter(
-        (item) => item.category_id === cat.id && item.available
-      ).length;
-    });
-    return counts;
-  }, [allItems, categories]);
-
-  // Get category slug for an item
-  const getCategorySlug = useCallback(
-    (item: MenuItem) => {
-      const category = categories.find((c) => c.id === item.category_id);
-      return category?.slug;
-    },
-    [categories]
-  );
+  // Scroll to item when highlighting
+  useEffect(() => {
+    if (highlightedItemId) {
+      const element = document.querySelector(`[data-item-id="${highlightedItemId}"]`);
+      if (element) {
+        element.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+      const timer = setTimeout(() => setHighlightedItemId(null), 2000);
+      return () => clearTimeout(timer);
+    }
+  }, [highlightedItemId]);
 
   // Handle adding individual items to cart
   const handleAddToCart = useCallback(
-    (item: MenuItem, quantity: number) => {
+    (item: typeof processedItems[0], quantity: number = 1) => {
       vibrate([30, 30]);
-      const categorySlug = getCategorySlug(item);
-      
       addItem({
         id: crypto.randomUUID(),
         type: 'single',
@@ -100,132 +175,250 @@ export default function MenuNew() {
         sideDish: '',
         extras: [],
         quantity,
-        unitPrice: item.price,
+        unitPrice: item.price || 0,
         label: item.name,
       });
     },
-    [addItem, getCategorySlug]
+    [addItem]
   );
 
   // Handle starting combo builder
-  const handleStartCombo = useCallback((sauce?: MenuItem) => {
+  const handleStartCombo = useCallback(() => {
     vibrate();
-    setSelectedSauce(sauce || null);
     setComboBuilderOpen(true);
   }, []);
 
   const handleCloseComboBuilder = useCallback(() => {
     setComboBuilderOpen(false);
-    setSelectedSauce(null);
+  }, []);
+
+  const handleCategoryChange = useCallback((category: Category) => {
+    vibrate();
+    setActiveCategory(category);
+    // Scroll to top of menu grid
+    scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
+  }, []);
+
+  const handleToggleFavorite = useCallback(
+    (id: string) => {
+      vibrate();
+      toggleFavorite(id);
+    },
+    [toggleFavorite]
+  );
+
+  // Get price display for an item
+  const getPriceDisplay = useCallback((item: typeof processedItems[0]) => {
+    if (item.isFree) {
+      return (
+        <span className="inline-flex items-center gap-1 text-green-600 font-semibold text-sm">
+          FREE
+        </span>
+      );
+    }
+    if (item.price) {
+      if (item.categoryType === 'sauce') {
+        return (
+          <span className="text-[#E6411C] font-bold text-base">
+            {formatPrice(item.price)}
+          </span>
+        );
+      }
+      if (item.categoryType === 'juice' || item.categoryType === 'dessert') {
+        return (
+          <span className="text-[#E6411C] font-bold text-base">
+            {formatPrice(item.price)}
+          </span>
+        );
+      }
+      return (
+        <span className="text-[#E6411C] font-extrabold text-lg">
+          {formatPrice(item.price)}
+        </span>
+      );
+    }
+    return (
+      <span className="text-muted-foreground font-medium text-sm italic">
+        Part of Combo
+      </span>
+    );
+  }, []);
+
+  // Get category label for card
+  const getCategoryLabel = useCallback((item: typeof processedItems[0]) => {
+    switch (item.categoryType) {
+      case 'lusaniya':
+        return 'Signature';
+      case 'main':
+        return 'Combo Base';
+      case 'sauce':
+        return 'Combo Protein';
+      case 'juice':
+        return 'Add-on';
+      case 'dessert':
+        return 'Add-on';
+      case 'side':
+        return 'Included Side';
+      default:
+        return item.category;
+    }
   }, []);
 
   return (
-    <div className="kiosk-screen flex flex-col bg-background">
-      <KioskHeader
-        title={t('menu.title')}
-        showBack
-        onBack={() => navigate('/')}
-      />
-
-      {/* Search bar */}
-      <div className="px-4 py-3 bg-background border-b">
-        <div className="relative">
-          <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-          <Input
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            placeholder={t('menu.searchPlaceholder')}
-            className="pl-12 pr-10 h-12 text-lg rounded-full bg-muted border-0"
-          />
-          {searchQuery && (
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setSearchQuery('')}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-8 w-8"
-            >
-              <X className="w-4 h-4" />
-            </Button>
-          )}
-        </div>
-      </div>
-
-      {/* Quick Reorder Button */}
-      <div className="px-4 pt-3 flex gap-2">
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={() => setShowQuickReorder(true)}
-          className="flex-1 flex items-center justify-center gap-2 py-3 rounded-xl bg-secondary/10 text-secondary font-semibold border border-secondary/20 hover:bg-secondary/20 transition-colors"
-        >
-          ⭐ Favorites & Reorder
-        </motion.button>
-      </div>
-
-      {/* AI Recommendations */}
-      {recommendations.length > 0 && !searchQuery && !activeCategory && (
-        <div className="px-4 pt-4">
-          <RecommendationSection
-            recommendations={recommendations}
-            onAddToCart={(itemId) => {
-              const item = allItems.find(i => i.id === itemId);
-              if (item) handleAddToCart(item, 1);
+    <div className="kiosk-screen flex flex-col bg-gray-50 overflow-hidden">
+      {/* Hero Section - Primary Blue Background */}
+      <div className="bg-[#212282] text-white py-6 px-4 shrink-0">
+        <div className="flex items-center gap-3 mb-4">
+          <button
+            onClick={() => navigate('/')}
+            aria-label={t('common.back')}
+            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 active:bg-white/20 active:scale-95 transition-all"
+          >
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          <img
+            src="/images/logo/9yards-logo-white.png"
+            alt="9Yards Food"
+            className="h-8 w-auto"
+            onError={(e) => {
+              e.currentTarget.style.display = 'none';
             }}
           />
         </div>
-      )}
+        <h1 className="text-2xl md:text-3xl font-bold mb-2">
+          Discover Authentic Ugandan Flavors
+        </h1>
+        <p className="text-white/80 text-sm md:text-base">
+          Fresh ingredients, traditional recipes, unforgettable taste
+        </p>
+      </div>
 
-      {/* Build Combo CTA Banner */}
-      <div className="px-4 py-3">
-        <motion.button
-          whileTap={{ scale: 0.98 }}
-          onClick={() => handleStartCombo()}
-          className={cn(
-            'w-full flex items-center justify-between p-4 rounded-2xl',
-            'bg-gradient-to-r from-primary to-primary/80 text-white',
-            'shadow-lg hover:shadow-xl transition-shadow'
-          )}
+      {/* Sticky Search & Category Bar */}
+      <div
+        ref={stickyRef}
+        className={cn(
+          'bg-white border-b z-20 transition-shadow',
+          isSticky && 'shadow-md'
+        )}
+      >
+        {/* Search Bar */}
+        <div className="px-4 py-3">
+          <div className="relative">
+            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <input
+              ref={searchInputRef}
+              type="text"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Search menu items..."
+              className="w-full h-12 pl-12 pr-12 text-base rounded-full border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#212282]/30 focus:border-[#212282] transition-all"
+            />
+            {searchQuery && (
+              <button
+                onClick={() => setSearchQuery('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 active:scale-95 transition-all"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+          </div>
+        </div>
+
+        {/* Category Tabs */}
+        <div className="px-2 pb-3 overflow-x-auto scrollbar-hide">
+          <div className="flex gap-2 min-w-max">
+            {(Object.keys(categoryConfig) as Category[]).map((category) => {
+              const config = categoryConfig[category];
+              const count = categoryCounts[category];
+              const isActive = activeCategory === category;
+
+              // Skip categories with no items (except 'all')
+              if (category !== 'all' && count === 0) return null;
+
+              return (
+                <button
+                  key={category}
+                  onClick={() => handleCategoryChange(category)}
+                  className={cn(
+                    'shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all',
+                    isActive
+                      ? 'bg-[#E6411C] text-white shadow-md'
+                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-200'
+                  )}
+                >
+                  {config.icon}
+                  {config.label}
+                  {count > 0 && (
+                    <span
+                      className={cn(
+                        'px-2 py-0.5 rounded-full text-xs font-semibold',
+                        isActive ? 'bg-white/25 text-white' : 'bg-gray-200 text-gray-500'
+                      )}
+                    >
+                      {count}
+                    </span>
+                  )}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Create Your Custom Meal CTA */}
+      <div className="px-4 py-4 shrink-0">
+        <button
+          onClick={handleStartCombo}
+          className="w-full relative overflow-hidden rounded-2xl bg-gradient-to-r from-[#E6411C] to-orange-500 text-white shadow-lg active:scale-[0.99] transition-transform"
         >
-          <div className="flex items-center gap-3">
-            <div className="w-12 h-12 bg-white/20 rounded-full flex items-center justify-center">
-              <ChefHat className="w-6 h-6" />
-            </div>
+          {/* Decorative circles */}
+          <div className="absolute -right-8 -top-8 w-24 h-24 rounded-full bg-white/10" />
+          <div className="absolute -right-4 -bottom-4 w-16 h-16 rounded-full bg-white/10" />
+
+          <div className="relative flex items-center justify-between p-5">
             <div className="text-left">
-              <p className="font-bold text-lg">{t('menu.buildCombo')}</p>
-              <p className="text-white/80 text-sm">{t('menu.buildYourMeal')}</p>
+              <h3 className="font-bold text-xl mb-1">Create Your Custom Meal</h3>
+              <p className="text-white/90 text-sm">
+                Choose a main dish, protein sauce, and a complimentary side
+              </p>
+              <div className="flex flex-wrap gap-4 mt-2 text-xs">
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  Choose Multiple Mains
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  Fresh Protein Sauce
+                </span>
+                <span className="flex items-center gap-1.5">
+                  <span className="w-1.5 h-1.5 rounded-full bg-white" />
+                  Complimentary Side
+                </span>
+              </div>
+            </div>
+            <div className="shrink-0 ml-4 bg-white text-[#E6411C] font-bold px-5 py-3 rounded-full text-sm active:scale-95 transition-transform">
+              Create My Meal →
             </div>
           </div>
-          <div className="bg-white text-primary font-bold px-4 py-2 rounded-full">
-            Start →
-          </div>
-        </motion.button>
+        </button>
       </div>
 
-      {/* Category tabs */}
-      <div className="border-b bg-background sticky top-0 z-10">
-        <CategoryTabsNew
-          categories={categories}
-          activeCategory={activeCategory}
-          onCategoryChange={setActiveCategory}
-          itemCounts={itemCounts}
-        />
-      </div>
-
-      {/* Menu grid */}
-      <div className="flex-1 overflow-y-auto pb-24">
+      {/* Menu Grid */}
+      <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-24">
         {filteredItems.length === 0 ? (
-          <div className="flex flex-col items-center justify-center py-16 text-center px-4">
-            <Search className="w-12 h-12 text-muted-foreground mb-4" />
+          <div className="flex flex-col items-center justify-center py-16 text-center px-8">
+            <Search className="w-16 h-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t('menu.noResults')}</h3>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground text-base">
               Try a different search term or category
             </p>
             <Button
               variant="outline"
               onClick={() => {
                 setSearchQuery('');
-                setActiveCategory(null);
+                setActiveCategory('all');
               }}
-              className="mt-4"
+              className="mt-4 h-12 px-6 rounded-full"
             >
               Clear filters
             </Button>
@@ -233,59 +426,247 @@ export default function MenuNew() {
         ) : (
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
             <AnimatePresence mode="popLayout">
-              {filteredItems.map((item, index) => {
-                const categorySlug = getCategorySlug(item);
-                return (
-                  <motion.div
-                    key={item.id}
-                    layout
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    exit={{ opacity: 0, scale: 0.9 }}
-                    transition={{ delay: index * 0.05 }}
-                  >
-                    <MenuItemCardNew
-                      item={item}
-                      categorySlug={categorySlug}
-                      onAddToCart={handleAddToCart}
-                      onStartCombo={handleStartCombo}
-                    />
-                  </motion.div>
-                );
-              })}
+              {filteredItems.map((item, index) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={{ opacity: 0, scale: 0.95 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.95 }}
+                  transition={{ delay: Math.min(index * 0.02, 0.2) }}
+                >
+                  <MenuItemCard
+                    item={item}
+                    onAddToOrder={handleStartCombo}
+                    onAddToCart={() => handleAddToCart(item)}
+                    onToggleFavorite={handleToggleFavorite}
+                    isFavorite={favorites.includes(item.id)}
+                    isHighlighted={highlightedItemId === item.id}
+                    getPriceDisplay={getPriceDisplay}
+                    getCategoryLabel={getCategoryLabel}
+                  />
+                </motion.div>
+              ))}
             </AnimatePresence>
           </div>
         )}
       </div>
 
-      {/* Cart bar */}
+      {/* Cart Bar */}
       {itemCount > 0 && (
-        <CartBar
-          itemCount={itemCount}
-          total={subtotal}
-          onClick={() => navigate('/cart')}
-        />
+        <CartBar itemCount={itemCount} total={subtotal} onClick={() => navigate('/cart')} />
       )}
 
       {/* Combo Builder Modal */}
-      <ComboBuilderNew
-        open={comboBuilderOpen}
-        onClose={handleCloseComboBuilder}
-        initialSauce={selectedSauce || undefined}
-      />
+      <ComboBuilderNew open={comboBuilderOpen} onClose={handleCloseComboBuilder} />
+    </div>
+  );
+}
 
-      {/* Quick Reorder Panel */}
-      <QuickReorderPanel
-        isOpen={showQuickReorder}
-        onClose={() => setShowQuickReorder(false)}
-        menuItems={allItems}
-        onAddToCart={(items) => {
-          items.forEach(({ menuItem, quantity }) => {
-            handleAddToCart(menuItem, quantity);
-          });
-          setShowQuickReorder(false);
-        }}
-      />
+// ==================== Menu Item Card Component ====================
+// Replicates MenuItemCard from main website exactly
+
+interface ProcessedItem {
+  id: string;
+  name: string;
+  image: string;
+  price: number | null;
+  category: string;
+  categoryType: Category;
+  available: boolean;
+  isFree?: boolean;
+  description?: string;
+  isIndividual?: boolean;
+  isPopular?: boolean;
+  isNew?: boolean;
+  originalItem: MenuItem;
+}
+
+interface MenuItemCardProps {
+  item: ProcessedItem;
+  onAddToOrder: () => void;
+  onAddToCart?: () => void;
+  onToggleFavorite: (id: string) => void;
+  isFavorite: boolean;
+  isHighlighted?: boolean;
+  getPriceDisplay: (item: ProcessedItem) => React.ReactNode;
+  getCategoryLabel: (item: ProcessedItem) => string;
+}
+
+function MenuItemCard({
+  item,
+  onAddToOrder,
+  onAddToCart,
+  onToggleFavorite,
+  isFavorite,
+  isHighlighted,
+  getPriceDisplay,
+  getCategoryLabel,
+}: MenuItemCardProps) {
+  const isIndividual =
+    item.isIndividual ||
+    item.categoryType === 'lusaniya' ||
+    item.categoryType === 'juice' ||
+    item.categoryType === 'dessert';
+
+  // Handle main card click
+  const handleCardClick = () => {
+    if (!item.available) return;
+    if (isIndividual && onAddToCart) {
+      onAddToCart();
+    } else if (!isIndividual) {
+      onAddToOrder();
+    }
+  };
+
+  return (
+    <div
+      data-item-id={item.id}
+      role="button"
+      tabIndex={item.available ? 0 : -1}
+      onClick={handleCardClick}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault();
+          handleCardClick();
+        }
+      }}
+      aria-label={`${item.name}${!item.available ? ' - Sold out' : isIndividual ? ' - Add to order' : ' - Start combo'}`}
+      aria-disabled={!item.available}
+      className={cn(
+        'group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-[#E6411C]/50 hover:bg-[#E6411C]/5 active:scale-[0.98]',
+        'transition-all duration-200 flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2',
+        item.available ? 'cursor-pointer' : 'cursor-not-allowed',
+        isHighlighted && 'ring-4 ring-[#E6411C] ring-offset-2 animate-pulse',
+        !item.available && 'opacity-60'
+      )}
+    >
+      {/* Image Container */}
+      <div className="relative aspect-[4/3] overflow-hidden bg-muted">
+        <OptimizedImage
+          src={item.image}
+          alt={item.name}
+          aspectRatio="4/3"
+          className={cn('w-full h-full object-cover', !item.available && 'grayscale')}
+        />
+
+        {/* Sold out overlay */}
+        {!item.available && (
+          <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
+            <span className="bg-black/70 text-white text-sm font-bold px-4 py-2 rounded-full border border-white/20">
+              Sold Out
+            </span>
+          </div>
+        )}
+
+        {/* Badge - Top Left */}
+        <div className="absolute top-2.5 left-2.5">
+          {item.available && item.isPopular && (
+            <span className="bg-[#E6411C] text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+              <Flame className="w-3 h-3" aria-hidden="true" />
+              Popular
+            </span>
+          )}
+          {item.available && item.isNew && !item.isPopular && (
+            <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+              New
+            </span>
+          )}
+          {item.isFree && item.available && !item.isPopular && !item.isNew && (
+            <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+              FREE
+            </span>
+          )}
+        </div>
+
+        {/* Favorite Button - Top Right */}
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onToggleFavorite(item.id);
+          }}
+          className="absolute top-2 right-2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
+          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
+          title={isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
+        >
+          <Heart
+            className={cn(
+              'w-4 h-4 transition-colors',
+              isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-500'
+            )}
+            aria-hidden="true"
+          />
+        </button>
+
+        {/* Tap indicator on hover - non-Individual items */}
+        {item.available && !isIndividual && (
+          <div
+            className="absolute inset-0 bg-[#E6411C]/0 group-hover:bg-[#E6411C]/10 transition-colors flex items-center justify-center"
+            aria-hidden="true"
+          >
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#E6411C] text-white text-xs font-semibold px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5" />
+              Start Combo
+            </span>
+          </div>
+        )}
+
+        {/* Tap indicator on hover - Individual items */}
+        {item.available && isIndividual && (
+          <div
+            className="absolute inset-0 bg-[#E6411C]/0 group-hover:bg-[#E6411C]/10 transition-colors flex items-center justify-center"
+            aria-hidden="true"
+          >
+            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#E6411C] text-white text-xs font-semibold px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5">
+              <Plus className="w-3.5 h-3.5" />
+              Add to Order
+            </span>
+          </div>
+        )}
+      </div>
+
+      {/* Content */}
+      <div className="p-3 md:p-4 flex flex-col flex-1">
+        {/* Category tag */}
+        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">
+          {getCategoryLabel(item)}
+        </span>
+
+        {/* Name */}
+        <h3 className="font-bold text-foreground text-sm md:text-base leading-tight mb-0.5 line-clamp-1">
+          {item.name}
+        </h3>
+
+        {/* Description */}
+        <p className="text-gray-600 text-xs md:text-sm line-clamp-1 mb-2">
+          {item.description || item.category}
+        </p>
+
+        {/* Price Row */}
+        <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
+          {getPriceDisplay(item)}
+
+          {/* Add to Cart button for Individual items */}
+          {item.available && isIndividual && onAddToCart && (
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToCart();
+              }}
+              className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#E6411C]/90 text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
+            >
+              Add to Order
+            </button>
+          )}
+
+          {/* Visual indicator for tappable - non-Individual items */}
+          {item.available && !isIndividual && (
+            <span className="text-[#E6411C] font-semibold text-[10px] md:text-xs flex items-center gap-1 md:hidden">
+              Build Combo
+            </span>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

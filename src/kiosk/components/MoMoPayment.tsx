@@ -2,7 +2,7 @@ import { useState } from "react";
 import { motion } from "framer-motion";
 import { Loader2, Smartphone, ArrowLeft } from "lucide-react";
 import { formatPrice } from "@shared/lib/utils";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import KioskHeader from "./KioskHeader";
@@ -33,6 +33,16 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
   const handleSubmit = async () => {
     setStep("waiting");
     setError(null);
+
+    // Mock mode - simulate successful payment
+    if (USE_MOCK_DATA) {
+      console.log("📦 Mock MoMo payment:", { phone: momoPhone, amount, network });
+      setTimeout(() => {
+        setStep("success");
+        setTimeout(onSuccess, 1500);
+      }, 2000);
+      return;
+    }
 
     try {
       const { data, error: fnError } = await supabase.functions.invoke("momo-payment", {

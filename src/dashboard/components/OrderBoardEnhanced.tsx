@@ -12,7 +12,7 @@ import {
   ArrowRight,
 } from 'lucide-react';
 import { cn, formatPrice, timeAgo, vibrate } from '@shared/lib/utils';
-import { supabase } from '@shared/lib/supabase';
+import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import {
   ORDER_STATUS_LABELS,
   type Order,
@@ -21,6 +21,7 @@ import {
 import { Button } from '@shared/components/ui/button';
 import { usePrintTicket } from '../hooks/usePrintTicket';
 import StatusBadge from './StatusBadge';
+import { getMockOrdersStore } from '@shared/hooks/useOrders';
 
 interface OrderBoardEnhancedProps {
   grouped: Record<OrderStatus, Order[]>;
@@ -63,6 +64,22 @@ export default function OrderBoardEnhanced({
       vibrate();
 
       try {
+        // Mock mode - update local store
+        if (USE_MOCK_DATA) {
+          const mockOrders = getMockOrdersStore();
+          const mockOrder = mockOrders.find(o => o.id === order.id);
+          if (mockOrder) {
+            mockOrder.status = newStatus;
+            mockOrder.updated_at = new Date().toISOString();
+            if (newStatus === 'ready') {
+              mockOrder.ready_at = new Date().toISOString();
+            }
+            console.log(`📦 Mock order ${mockOrder.order_number} → ${newStatus}`);
+          }
+          onStatusChange?.(order.id, newStatus);
+          return;
+        }
+
         const { error } = await supabase
           .from('orders')
           .update({

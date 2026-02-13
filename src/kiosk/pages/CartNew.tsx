@@ -2,13 +2,14 @@ import { useState, useCallback, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
-  ArrowLeft,
   ShoppingBag,
   Trash2,
   Plus,
   Minus,
-  Edit2,
+  Pencil,
   AlertCircle,
+  UtensilsCrossed,
+  X,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useKioskCart } from '../context/KioskCartContext';
@@ -136,22 +137,25 @@ export default function CartNew() {
   // Empty cart state
   if (items.length === 0) {
     return (
-      <div className="kiosk-screen flex flex-col bg-background">
+      <div className="kiosk-screen flex flex-col bg-white">
         <KioskHeader
           title={t('cart.title')}
           showBack
           onBack={() => navigate('/menu')}
         />
         <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
-          <div className="w-24 h-24 bg-muted rounded-full flex items-center justify-center mb-6">
-            <ShoppingBag className="w-12 h-12 text-muted-foreground" />
+          <div className="w-32 h-32 bg-[#E6411C]/5 rounded-full flex items-center justify-center mb-6 border border-[#E6411C]/10 relative">
+            <ShoppingBag className="w-12 h-12 text-[#E6411C]/40" />
+            <div className="absolute top-2 right-2 bg-white rounded-full p-2 border border-gray-100 shadow-sm">
+              <span className="text-xl">🤔</span>
+            </div>
           </div>
-          <h2 className="text-2xl font-bold mb-2">{t('cart.empty')}</h2>
-          <p className="text-muted-foreground mb-8">{t('cart.emptyDesc')}</p>
+          <h2 className="text-2xl font-bold text-[#212282] mb-2">{t('cart.empty')}</h2>
+          <p className="text-gray-500 mb-8 text-lg">{t('cart.emptyDesc')}</p>
           <Button
             size="touch"
             onClick={() => navigate('/menu')}
-            className="bg-secondary hover:bg-secondary/90 gap-2"
+            className="bg-[#E6411C] hover:bg-[#d13a18] gap-2 text-white font-bold"
           >
             <ShoppingBag className="w-5 h-5" />
             {t('cart.browseMenu')}
@@ -162,21 +166,19 @@ export default function CartNew() {
   }
 
   return (
-    <div className="kiosk-screen flex flex-col bg-background">
+    <div className="kiosk-screen flex flex-col bg-[#FAFAFA]">
       <KioskHeader
         title={t('cart.title')}
         showBack
         onBack={() => navigate('/menu')}
         rightElement={
-          <Button
-            variant="ghost"
-            size="sm"
+          <button 
             onClick={() => setShowClearDialog(true)}
-            className="text-destructive hover:text-destructive hover:bg-destructive/10"
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100"
           >
-            <Trash2 className="w-4 h-4 mr-1" />
-            Clear
-          </Button>
+            <Trash2 className="w-4 h-4" />
+            <span>Clear All</span>
+          </button>
         }
       />
 
@@ -203,101 +205,107 @@ export default function CartNew() {
             >
               <SwipeableItem onDelete={() => handleRemove(item.id)}>
                 <div className="p-4 border-b bg-white">
-                  <div className="flex gap-4">
-                    {/* Item info */}
-                    <div className="flex-1">
-                      <div className="flex items-start justify-between">
-                        <div>
-                          <span
-                            className={cn(
-                              'text-xs px-2 py-0.5 rounded-full',
-                              item.type === 'combo'
-                                ? 'bg-primary/10 text-primary'
-                                : 'bg-secondary/10 text-secondary'
-                            )}
-                          >
-                            {item.type === 'combo' ? t('cart.combo') : 'Single'}
-                          </span>
-                          <h3 className="font-semibold text-lg mt-1">
-                            {item.sauceName}
-                            {item.saucePreparation && (
-                              <span className="text-muted-foreground font-normal">
-                                {' '}
-                                ({item.saucePreparation})
+                  <div className="flex gap-4 items-start">
+                    {/* Item Image */}
+                    <div className="shrink-0 w-24 h-24 rounded-2xl bg-muted overflow-hidden border border-gray-200 relative">
+                      {/* Fallback icon */}
+                      <div className="w-full h-full flex items-center justify-center text-gray-300">
+                        <UtensilsCrossed className="w-8 h-8" />
+                      </div>
+                      {/* Type badge */}
+                      <span className={cn(
+                        'absolute bottom-1 left-1 text-[9px] font-bold px-1.5 py-0.5 rounded-full uppercase',
+                        item.type === 'combo' 
+                          ? 'bg-purple-100 text-purple-700' 
+                          : 'bg-blue-100 text-blue-700'
+                      )}>
+                        {item.type === 'combo' ? 'Combo' : 'Single'}
+                      </span>
+                    </div>
+
+                    {/* Item Content */}
+                    <div className="flex flex-1 flex-col justify-between min-h-[96px]">
+                      <div>
+                        <div className="flex justify-between items-start mb-1">
+                          <h3 className="text-[#212282] text-base font-bold leading-tight line-clamp-2">
+                            {item.label || item.sauceName}
+                            {item.saucePreparation && item.saucePreparation !== 'Default' && (
+                              <span className="text-muted-foreground font-normal text-sm">
+                                {' '}({item.saucePreparation})
                               </span>
                             )}
                           </h3>
+                          {/* Desktop X button */}
+                          <button 
+                            onClick={() => handleRemove(item.id)}
+                            className="hidden lg:flex text-gray-400 hover:text-red-500 transition-colors p-1"
+                            aria-label="Remove item"
+                          >
+                            <X className="w-5 h-5" />
+                          </button>
                         </div>
-                        <span className="font-bold text-lg">
-                          {formatPrice(item.unitPrice * item.quantity)}
-                        </span>
+                        
+                        {/* Combo details */}
+                        {item.type === 'combo' && (
+                          <div className="text-sm text-muted-foreground space-y-1">
+                            {item.mainDishes && item.mainDishes.length > 0 && (
+                              <p className="text-xs">{item.mainDishes.join(' + ')}</p>
+                            )}
+                            {item.sideDish && (
+                              <p className="text-xs">+ {item.sideDish}</p>
+                            )}
+                            {item.extras && item.extras.length > 0 && (
+                              <p className="text-xs text-[#E6411C]">
+                                + {item.extras.map((e) => e.quantity > 1 ? `${e.name} ×${e.quantity}` : e.name).join(', ')}
+                              </p>
+                            )}
+                          </div>
+                        )}
                       </div>
 
-                      {/* Combo details */}
-                      {item.type === 'combo' && (
-                        <div className="mt-2 text-sm text-muted-foreground space-y-1">
-                          {item.mainDishes && item.mainDishes.length > 0 && (
-                            <p>
-                              <span className="font-medium">Main:</span>{' '}
-                              {item.mainDishes.join(', ')}
-                            </p>
-                          )}
-                          {item.sideDish && (
-                            <p>
-                              <span className="font-medium">Side:</span>{' '}
-                              {item.sideDish}
-                            </p>
-                          )}
-                          {item.sauceSize && (
-                            <p>
-                              <span className="font-medium">Size:</span>{' '}
-                              {item.sauceSize}
-                            </p>
-                          )}
-                          {item.extras && item.extras.length > 0 && (
-                            <p>
-                              <span className="font-medium">Extras:</span>{' '}
-                              {item.extras
-                                .map((e) => `${e.quantity}x ${e.name}`)
-                                .join(', ')}
+                      {/* Price and Controls */}
+                      <div className="flex items-center justify-between mt-3">
+                        <div>
+                          <p className="text-[#E6411C] font-bold text-lg">
+                            {formatPrice(item.unitPrice * item.quantity)}
+                          </p>
+                          {item.quantity > 1 && (
+                            <p className="text-[10px] text-muted-foreground">
+                              {formatPrice(item.unitPrice)} each
                             </p>
                           )}
                         </div>
-                      )}
+                        
+                        <div className="flex items-center gap-3">
+                          {/* Quantity Controls */}
+                          <div className="flex items-center gap-3 bg-gray-100 rounded-full p-0.5 border border-gray-200">
+                            <button
+                              onClick={() => handleQuantityChange(item.id, -1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-gray-700 hover:bg-gray-50 shadow-sm transition-all active:scale-95"
+                            >
+                              <Minus className="w-4 h-4" />
+                            </button>
+                            <span className="w-6 text-center text-sm font-bold text-gray-900">
+                              {item.quantity}
+                            </span>
+                            <button
+                              onClick={() => handleQuantityChange(item.id, 1)}
+                              className="w-8 h-8 flex items-center justify-center rounded-full bg-[#E6411C] text-white hover:bg-[#d13a18] shadow-sm transition-all active:scale-95"
+                            >
+                              <Plus className="w-4 h-4" />
+                            </button>
+                          </div>
 
-                      {/* Actions */}
-                      <div className="flex items-center justify-between mt-3">
-                        {item.type === 'combo' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleEditCombo(item.id)}
-                            className="text-primary gap-1"
-                          >
-                            <Edit2 className="w-4 h-4" />
-                            {t('cart.edit')}
-                          </Button>
-                        )}
-                        <div className="flex items-center gap-3 ml-auto">
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-10 w-10 rounded-full"
-                            onClick={() => handleQuantityChange(item.id, -1)}
-                          >
-                            <Minus className="w-4 h-4" />
-                          </Button>
-                          <span className="text-xl font-bold w-8 text-center">
-                            {item.quantity}
-                          </span>
-                          <Button
-                            variant="outline"
-                            size="icon"
-                            className="h-10 w-10 rounded-full"
-                            onClick={() => handleQuantityChange(item.id, 1)}
-                          >
-                            <Plus className="w-4 h-4" />
-                          </Button>
+                          {/* Edit Button (Combos only) */}
+                          {item.type === 'combo' && (
+                            <button
+                              onClick={() => handleEditCombo(item.id)}
+                              className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-100 active:scale-95"
+                              title="Edit Combo"
+                            >
+                              <Pencil className="w-4 h-4" />
+                            </button>
+                          )}
                         </div>
                       </div>
                     </div>
@@ -310,10 +318,10 @@ export default function CartNew() {
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-white p-4 space-y-3">
-        <div className="flex items-center justify-between text-lg">
-          <span className="font-semibold">{t('cart.subtotal')}</span>
-          <span className="font-bold text-2xl text-secondary">
+      <div className="border-t bg-white p-4 space-y-4">
+        <div className="flex items-center justify-between">
+          <span className="text-gray-600 font-medium">{t('cart.subtotal')}</span>
+          <span className="font-bold text-2xl text-[#E6411C]">
             {formatPrice(subtotal)}
           </span>
         </div>
@@ -323,7 +331,7 @@ export default function CartNew() {
             variant="outline"
             size="touch"
             onClick={() => navigate('/menu')}
-            className="flex-1 gap-2"
+            className="flex-1 gap-2 border-gray-200 text-[#212282] hover:bg-gray-50"
           >
             <Plus className="w-5 h-5" />
             {t('cart.addMore')}
@@ -331,7 +339,7 @@ export default function CartNew() {
           <Button
             size="touch"
             onClick={handleCheckout}
-            className="flex-1 bg-secondary hover:bg-secondary/90"
+            className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
           >
             {t('cart.checkout')}
           </Button>

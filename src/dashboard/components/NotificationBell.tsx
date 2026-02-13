@@ -1,10 +1,16 @@
 import { useState } from "react";
 import { Bell } from "lucide-react";
 import { useQuery } from "@tanstack/react-query";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { NotificationType } from "@shared/types/auth";
 import { timeAgo } from "@shared/lib/utils";
+
+// Mock notifications for development
+const MOCK_NOTIFICATIONS: NotificationType[] = [
+  { id: "1", message: "New order #9Y-0042 received", target_role: "admin", read: false, created_at: new Date(Date.now() - 5 * 60000).toISOString() },
+  { id: "2", message: "Order #9Y-0041 marked as ready", target_role: "admin", read: true, created_at: new Date(Date.now() - 30 * 60000).toISOString() },
+];
 
 export default function NotificationBell() {
   const { role } = useAuth();
@@ -13,6 +19,11 @@ export default function NotificationBell() {
   const { data: notifications } = useQuery<NotificationType[]>({
     queryKey: ["notifications", role],
     queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning mock notifications");
+        return MOCK_NOTIFICATIONS;
+      }
+
       const { data, error } = await supabase
         .from("notifications")
         .select("*")
@@ -23,7 +34,7 @@ export default function NotificationBell() {
       return data;
     },
     enabled: !!role,
-    refetchInterval: 30_000,
+    refetchInterval: USE_MOCK_DATA ? 10_000 : 30_000,
   });
 
   const unreadCount = notifications?.filter((n) => !n.read).length || 0;

@@ -11,7 +11,7 @@ let mockOrderCounter = 5;
 const mockOrdersStore: Order[] = [
   {
     id: "order-1",
-    order_number: "9Y-001",
+    order_number: "9Y-0001",
     status: "new",
     customer_name: "John Doe",
     customer_phone: "+256700111222",
@@ -35,7 +35,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-2",
-    order_number: "9Y-002",
+    order_number: "9Y-0002",
     status: "preparing",
     customer_name: "Jane Smith",
     customer_phone: "+256700333444",
@@ -58,7 +58,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-3",
-    order_number: "9Y-003",
+    order_number: "9Y-0003",
     status: "ready",
     customer_name: "Peter Otieno",
     customer_phone: "+256700555666",
@@ -82,7 +82,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-4",
-    order_number: "9Y-004",
+    order_number: "9Y-0004",
     status: "delivered",
     customer_name: "Mary Nakato",
     customer_phone: "+256700777888",
@@ -397,3 +397,6 @@ export function useCancelOrder() {
     },
   });
 }
+
+// Export getter for mock store (used by OrderLookup to share state)
+export const getMockOrdersStore = () => mockOrdersStore;

@@ -1,4 +1,5 @@
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Category, MenuItem, GroupedMenu } from "@shared/types/menu";
 
@@ -183,4 +184,54 @@ export function useGroupedMenu() {
     },
     staleTime: 2 * 60 * 1000,
   });
+}
+
+/**
+ * Subscribe to menu item changes via Supabase realtime.
+ * Invalidates menu queries when updates are detected.
+ * Use in the kiosk root to ensure menu stays synced with dashboard changes.
+ */
+export function useMenuRealtime() {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    if (USE_MOCK_DATA || !supabase) {
+      console.log("📦 Mock mode: Menu realtime subscription disabled");
+      return;
+    }
+
+    const channel = supabase
+      .channel('menu-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'menu_items',
+        },
+        (payload) => {
+          console.log('🔄 Menu item updated:', payload.eventType);
+          queryClient.invalidateQueries({ queryKey: ['menu_items'] });
+          queryClient.invalidateQueries({ queryKey: ['grouped_menu'] });
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'categories',
+        },
+        () => {
+          console.log('🔄 Categories updated');
+          queryClient.invalidateQueries({ queryKey: ['categories'] });
+          queryClient.invalidateQueries({ queryKey: ['grouped_menu'] });
+        }
+      )
+      .subscribe();
+
+    return () => {
+      if (supabase) supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 }

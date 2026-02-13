@@ -80,20 +80,20 @@ export default function Details() {
   };
 
   return (
-    <div className="kiosk-screen flex flex-col bg-background">
+    <div className="kiosk-screen flex flex-col bg-[#FAFAFA]">
       <KioskHeader title="Your Details" showBack onBack={() => navigate("/cart")} />
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full">
         {/* Name */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2">
-            Your Name <span className="text-red-500">*</span>
+          <label className="block text-base font-bold text-[#212282] mb-2">
+            Your Name <span className="text-[#E6411C]">*</span>
           </label>
           <Input
             value={name}
             onChange={(e) => { setName(e.target.value); setErrors((prev) => ({ ...prev, customer_name: '' })); }}
             placeholder={t('details.namePlaceholder')}
-            className={`h-14 text-lg ${errors.customer_name ? 'border-red-500' : ''}`}
+            className={`h-14 text-lg rounded-xl border-gray-200 focus:border-[#212282] focus:ring-[#212282] ${errors.customer_name ? 'border-red-500' : ''}`}
             autoFocus
           />
           {errors.customer_name && (
@@ -106,8 +106,8 @@ export default function Details() {
 
         {/* Phone */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2">
-            Phone Number {needsPhone && <span className="text-red-500">*</span>}
+          <label className="block text-base font-bold text-[#212282] mb-2">
+            Phone Number {needsPhone && <span className="text-[#E6411C]">*</span>}
           </label>
           <Input
             value={phone}
@@ -115,7 +115,7 @@ export default function Details() {
             placeholder="07XX XXX XXX"
             type="tel"
             inputMode="numeric"
-            className={`h-14 text-lg ${errors.customer_phone ? 'border-red-500' : ''}`}
+            className={`h-14 text-lg rounded-xl border-gray-200 focus:border-[#212282] focus:ring-[#212282] ${errors.customer_phone ? 'border-red-500' : ''}`}
           />
           {errors.customer_phone ? (
             <p className="text-sm text-red-500 mt-1 flex items-center gap-1">
@@ -123,7 +123,7 @@ export default function Details() {
               {errors.customer_phone}
             </p>
           ) : (
-            <p className="text-sm text-muted-foreground mt-1">
+            <p className="text-sm text-gray-500 mt-1">
               {needsPhone ? t('details.phoneRequired') : t('details.phoneOptional')}
             </p>
           )}
@@ -131,24 +131,24 @@ export default function Details() {
 
         {/* Location */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2">
+          <label className="block text-base font-bold text-[#212282] mb-2">
             Desk / Office / Floor
           </label>
           <Input
             value={location}
             onChange={(e) => setLocation(e.target.value)}
             placeholder="e.g. 2nd Floor, Room 205"
-            className="h-14 text-lg"
+            className="h-14 text-lg rounded-xl border-gray-200 focus:border-[#212282] focus:ring-[#212282]"
           />
-          <p className="text-sm text-muted-foreground mt-1">
+          <p className="text-sm text-gray-500 mt-1">
             Help us find you for delivery
           </p>
         </div>
 
         {/* Payment method */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-3">
-            Payment Method <span className="text-red-500">*</span>
+          <label className="block text-base font-bold text-[#212282] mb-3">
+            Payment Method <span className="text-[#E6411C]">*</span>
           </label>
           <PaymentMethodSelector
             selected={paymentMethod}
@@ -158,29 +158,29 @@ export default function Details() {
 
         {/* Special instructions */}
         <div className="mb-6">
-          <label className="block text-lg font-semibold mb-2">
+          <label className="block text-base font-bold text-[#212282] mb-2">
             Special Instructions
           </label>
           <textarea
             value={specialInstructions}
             onChange={(e) => setSpecialInstructions(e.target.value)}
             placeholder="Any special requests?"
-            className="w-full h-24 p-3 text-lg border rounded-xl resize-none bg-background"
+            className="w-full h-24 p-3 text-lg border border-gray-200 rounded-xl resize-none bg-white focus:border-[#212282] focus:ring-1 focus:ring-[#212282] outline-none"
           />
         </div>
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-card p-4 space-y-3">
-        <div className="flex justify-between text-xl font-bold">
-          <span>Total ({itemCount} items)</span>
-          <span className="text-secondary">{formatPrice(subtotal)}</span>
+      <div className="border-t bg-white p-4 space-y-3">
+        <div className="flex justify-between items-center">
+          <span className="text-gray-600">Total ({itemCount} items)</span>
+          <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
         </div>
         <div className="flex gap-3">
           <Button
             variant="outline"
             size="touch"
-            className="flex-1"
+            className="flex-1 border-gray-200 text-[#212282]"
             onClick={() => navigate("/cart")}
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -188,7 +188,7 @@ export default function Details() {
           </Button>
           <Button
             size="touch"
-            className="flex-1 bg-secondary hover:bg-secondary/90"
+            className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
             disabled={!isValid}
             onClick={handleContinue}
           >

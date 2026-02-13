@@ -66,7 +66,7 @@ export default function ConfirmationNew() {
   }, [navigate, orderNumber]);
 
   return (
-    <div className="kiosk-screen flex flex-col bg-gradient-to-b from-green-50 to-background">
+    <div className="kiosk-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
       {/* Success header */}
       <div className="pt-12 pb-8 text-center">
         <motion.div
@@ -91,7 +91,7 @@ export default function ConfirmationNew() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-lg text-muted-foreground"
+          className="text-lg text-gray-500"
         >
           {t('confirmation.orderPlaced')}
         </motion.p>
@@ -107,15 +107,15 @@ export default function ConfirmationNew() {
             transition={{ delay: 0.6 }}
             className="bg-white rounded-3xl p-6 shadow-lg border-2 border-green-200 text-center"
           >
-            <p className="text-muted-foreground mb-2">{t('confirmation.orderNumber')}</p>
-            <div className="text-5xl md:text-6xl font-black text-primary tracking-wider mb-4">
+            <p className="text-gray-500 mb-2">{t('confirmation.orderNumber')}</p>
+            <div className="text-5xl md:text-6xl font-black text-[#212282] tracking-wider mb-4">
               {orderNumber}
             </div>
             
             <Button
               variant="outline"
               onClick={handleCopy}
-              className="gap-2 rounded-full"
+              className="gap-2 rounded-full border-gray-200"
             >
               {copied ? (
                 <>
@@ -130,7 +130,7 @@ export default function ConfirmationNew() {
               )}
             </Button>
 
-            <p className="text-sm text-muted-foreground mt-4">
+            <p className="text-sm text-gray-500 mt-4">
               {t('confirmation.saveNumber')}
             </p>
           </motion.div>
@@ -140,9 +140,9 @@ export default function ConfirmationNew() {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="bg-white rounded-2xl p-6 shadow-sm text-center"
+            className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center"
           >
-            <p className="text-sm text-muted-foreground mb-3">
+            <p className="text-sm text-gray-500 mb-3">
               Scan to track your order
             </p>
             <div className="flex justify-center">
@@ -197,8 +197,8 @@ export default function ConfirmationNew() {
       {/* Footer with actions */}
       <div className="p-4 border-t bg-white space-y-3">
         {/* Auto-reset countdown */}
-        <div className="text-center text-sm text-muted-foreground">
-          {t('confirmation.autoReset')} <span className="font-bold">{countdown}s</span>
+        <div className="text-center text-sm text-gray-500">
+          {t('confirmation.autoReset')} <span className="font-bold text-[#212282]">{countdown}s</span>
         </div>
 
         <div className="flex gap-3">
@@ -206,7 +206,7 @@ export default function ConfirmationNew() {
             variant="outline"
             size="touch"
             onClick={handleTrackOrder}
-            className="flex-1 gap-2"
+            className="flex-1 gap-2 border-gray-200 text-[#212282]"
           >
             <Search className="w-5 h-5" />
             {t('confirmation.trackOrder')}
@@ -215,7 +215,7 @@ export default function ConfirmationNew() {
           <Button
             size="touch"
             onClick={handleNewOrder}
-            className="flex-1 bg-secondary hover:bg-secondary/90 gap-2"
+            className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold gap-2"
           >
             <UtensilsCrossed className="w-5 h-5" />
             {t('confirmation.newOrder')}

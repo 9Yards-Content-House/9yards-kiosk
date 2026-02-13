@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback } from "react";
-import { supabase } from "@shared/lib/supabase";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../context/AuthContext";
 
 /**
@@ -27,8 +27,8 @@ export function usePushNotifications() {
           applicationServerKey: import.meta.env.VITE_VAPID_PUBLIC_KEY,
         });
 
-        // Store subscription in Supabase
-        if (user) {
+        // Store subscription in Supabase (skip in mock mode)
+        if (user && !USE_MOCK_DATA && supabase) {
           await supabase.from("push_subscriptions").upsert(
             {
               user_id: user.id,
@@ -37,6 +37,9 @@ export function usePushNotifications() {
             },
             { onConflict: "user_id" }
           );
+          setSubscribed(true);
+        } else if (USE_MOCK_DATA) {
+          console.log("📦 Mock mode: Push subscription skipped");
           setSubscribed(true);
         }
       } catch {

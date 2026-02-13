@@ -4,11 +4,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { ArrowLeft, RefreshCw, Volume2, Users } from 'lucide-react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '@shared/context/LanguageContext';
-import { supabase } from '@shared/lib/supabase';
+import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { cn, timeAgo } from '@shared/lib/utils';
 import { Order } from '@shared/types';
 import { Button } from '@shared/components/ui/button';
 import KioskHeader from '../components/KioskHeader';
+import { getMockOrdersStore } from '@shared/hooks/useOrders';
 
 interface TrackingOrder extends Order {
   itemCount?: number;
@@ -25,6 +26,14 @@ export default function TrackOrders() {
     queryFn: async () => {
       const today = new Date();
       today.setHours(0, 0, 0, 0);
+
+      // Mock mode - use local store
+      if (USE_MOCK_DATA) {
+        const mockOrders = getMockOrdersStore();
+        return mockOrders
+          .filter(o => ['new', 'preparing', 'ready'].includes(o.status) && new Date(o.created_at) >= today)
+          .map(o => ({ ...o, itemCount: o.items?.length || 0 })) as TrackingOrder[];
+      }
 
       const { data, error } = await supabase
         .from('orders')
@@ -43,11 +52,14 @@ export default function TrackOrders() {
         itemCount: order.order_items?.[0]?.count || 0,
       })) as TrackingOrder[];
     },
-    refetchInterval: 5000, // Refresh every 5 seconds
+    // Poll in mock mode since realtime doesn't work
+    refetchInterval: USE_MOCK_DATA ? 3000 : 5000,
   });
 
-  // Subscribe to realtime updates
+  // Subscribe to realtime updates (skip in mock mode)
   useEffect(() => {
+    if (USE_MOCK_DATA || !supabase) return;
+
     const channel = supabase
       .channel('tracking-orders')
       .on(
@@ -73,7 +85,7 @@ export default function TrackOrders() {
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (supabase) supabase.removeChannel(channel);
     };
   }, [refetch, lastReadyOrder]);
 

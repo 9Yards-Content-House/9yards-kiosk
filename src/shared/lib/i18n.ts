@@ -174,6 +174,7 @@ export interface TranslationKeys {
   'tracking.yourItems': string;
   'tracking.placeOrder': string;
   'tracking.cancelled': string;
+  'tracking.emptyState': string;
   
   // Order Board
   'board.title': string;
@@ -370,6 +371,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tracking.yourItems': 'Your Items',
     'tracking.placeOrder': 'Place New Order',
     'tracking.cancelled': 'Cancelled',
+    'tracking.emptyState': 'Enter your order number to see its status',
     
     // Order Board
     'board.title': 'Order Board',
@@ -565,6 +567,7 @@ const translations: Record<Language, TranslationKeys> = {
     'tracking.yourItems': 'Ebintu Byo',
     'tracking.placeOrder': 'Tekawo Order Empya',
     'tracking.cancelled': 'Yakomezebwa',
+    'tracking.emptyState': 'Wandiika ennamba y\'order okumanya embeera yaayo',
     
     // Order Board
     'board.title': 'Order Board',

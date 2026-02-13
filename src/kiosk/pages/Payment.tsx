@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useCreateOrder } from "@shared/hooks/useOrders";
-import { formatPrice } from "@shared/lib/utils";
+import { cn, formatPrice } from "@shared/lib/utils";
 import { KIOSK } from "@shared/lib/constants";
 import KioskHeader from "../components/KioskHeader";
 import MoMoPayment from "../components/MoMoPayment";
@@ -134,44 +134,107 @@ export default function Payment() {
 
   // Review step
   return (
-    <div className="kiosk-screen flex flex-col bg-background">
+    <div className="kiosk-screen flex flex-col bg-[#FAFAFA]">
       <KioskHeader title="Confirm Order" showBack onBack={() => navigate("/details")} />
 
       <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full">
-        <div className="bg-card rounded-xl p-6 shadow-sm border mb-4">
-          <h3 className="font-bold text-lg mb-3">Order Summary</h3>
-          {items.map((item) => (
-            <div key={item.id} className="flex justify-between py-2 border-b last:border-b-0">
-              <div>
-                <span className="font-medium">{item.label}</span>
-                <span className="text-muted-foreground ml-2">x{item.quantity}</span>
+        {/* Order Summary */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+          <h3 className="font-bold text-lg text-[#212282] mb-4">Order Summary</h3>
+          <div className="space-y-4">
+            {items.map((item) => (
+              <div key={item.id} className="flex gap-3 items-start pb-4 border-b border-gray-100 last:border-b-0 last:pb-0">
+                {/* Item Image Placeholder */}
+                <div className="shrink-0 w-16 h-16 rounded-xl bg-gray-100 overflow-hidden border border-gray-200 relative flex items-center justify-center">
+                  <UtensilsCrossed className="w-6 h-6 text-gray-300" />
+                  {/* Type badge */}
+                  <span className={cn(
+                    'absolute bottom-1 left-1 text-[8px] font-bold px-1 py-0.5 rounded-full uppercase',
+                    item.type === 'combo' 
+                      ? 'bg-purple-100 text-purple-700' 
+                      : 'bg-blue-100 text-blue-700'
+                  )}>
+                    {item.type === 'combo' ? 'Combo' : 'Single'}
+                  </span>
+                </div>
+
+                {/* Item Details */}
+                <div className="flex-1 min-w-0">
+                  <h4 className="text-[#212282] font-bold text-sm leading-tight line-clamp-2">
+                    {item.label || item.sauceName}
+                  </h4>
+                  
+                  {/* Combo details */}
+                  {item.type === 'combo' && (
+                    <div className="text-xs text-gray-500 space-y-0.5 mt-1">
+                      {item.mainDishes && item.mainDishes.length > 0 && (
+                        <p className="line-clamp-1">{item.mainDishes.join(' + ')}</p>
+                      )}
+                      {item.sideDish && (
+                        <p className="line-clamp-1">+ {item.sideDish}</p>
+                      )}
+                      {item.extras && item.extras.length > 0 && (
+                        <p className="text-[#E6411C] line-clamp-1">
+                          + {item.extras.map((e) => e.quantity > 1 ? `${e.name} ×${e.quantity}` : e.name).join(', ')}
+                        </p>
+                      )}
+                    </div>
+                  )}
+                  
+                  <div className="flex items-center justify-between mt-2">
+                    <span className="text-xs text-gray-500">Qty: {item.quantity}</span>
+                    <span className="text-[#E6411C] font-bold">
+                      {formatPrice(item.unitPrice * item.quantity)}
+                    </span>
+                  </div>
+                </div>
               </div>
-              <span className="font-semibold">
-                {formatPrice(item.unitPrice * item.quantity)}
-              </span>
-            </div>
-          ))}
-          <div className="flex justify-between py-3 font-bold text-xl mt-2">
-            <span>Total</span>
-            <span className="text-secondary">{formatPrice(subtotal)}</span>
+            ))}
+          </div>
+          
+          {/* Total */}
+          <div className="flex justify-between items-center pt-4 mt-4 border-t border-gray-200">
+            <span className="font-bold text-lg text-[#212282]">Total</span>
+            <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
           </div>
         </div>
 
-        <div className="bg-card rounded-xl p-6 shadow-sm border mb-4">
-          <h3 className="font-bold text-lg mb-3">Your Details</h3>
-          <p><strong>Name:</strong> {details.customer_name}</p>
-          {details.customer_phone && <p><strong>Phone:</strong> {details.customer_phone}</p>}
-          {details.customer_location && <p><strong>Location:</strong> {details.customer_location}</p>}
-          <p><strong>Payment:</strong> {paymentMethod === "cash" ? "Cash on Delivery" : paymentMethod === "mobile_money" ? "Mobile Money" : "Pay at Counter"}</p>
+        {/* Customer Details */}
+        <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
+          <h3 className="font-bold text-lg text-[#212282] mb-4">Your Details</h3>
+          <div className="space-y-3">
+            <div className="flex justify-between">
+              <span className="text-gray-500">Name</span>
+              <span className="font-medium text-[#212282]">{details.customer_name}</span>
+            </div>
+            {details.customer_phone && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Phone</span>
+                <span className="font-medium text-[#212282]">{details.customer_phone}</span>
+              </div>
+            )}
+            {details.customer_location && (
+              <div className="flex justify-between">
+                <span className="text-gray-500">Location</span>
+                <span className="font-medium text-[#212282]">{details.customer_location}</span>
+              </div>
+            )}
+            <div className="flex justify-between">
+              <span className="text-gray-500">Payment</span>
+              <span className="font-medium text-[#212282]">
+                {paymentMethod === "cash" ? "Cash on Delivery" : paymentMethod === "mobile_money" ? "Mobile Money" : "Pay at Counter"}
+              </span>
+            </div>
+          </div>
         </div>
       </div>
 
-      <div className="border-t bg-card p-4 space-y-3">
+      <div className="border-t bg-white p-4 space-y-3">
         <div className="flex gap-3">
           <Button
             variant="outline"
             size="touch"
-            className="flex-1"
+            className="flex-1 border-gray-200 text-[#212282]"
             onClick={() => navigate("/details")}
           >
             <ArrowLeft className="w-5 h-5 mr-2" />
@@ -179,7 +242,7 @@ export default function Payment() {
           </Button>
           <Button
             size="touch"
-            className="flex-1 bg-secondary hover:bg-secondary/90"
+            className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
             onClick={isMoMo ? () => setStep("momo") : handlePlaceOrder}
           >
             <CheckCircle2 className="w-5 h-5 mr-2" />

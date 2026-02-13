@@ -1,19 +1,21 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Check, Clock, ChefHat, Package, Delete, RotateCcw } from 'lucide-react';
-import { useQuery } from '@tanstack/react-query';
+import { ArrowLeft, Search, Check, Clock, ChefHat, Package, Delete } from 'lucide-react';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@shared/context/LanguageContext';
-import { supabase } from '@shared/lib/supabase';
+import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Order, OrderItem } from '@shared/types';
 import { Button } from '@shared/components/ui/button';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
+import { getMockOrdersStore } from '@shared/hooks/useOrders';
 
 export default function OrderLookup() {
   const navigate = useNavigate();
   const { orderNumber: urlOrderNumber } = useParams();
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const [orderNumber, setOrderNumber] = useState(urlOrderNumber || '');
   const [searchNumber, setSearchNumber] = useState(urlOrderNumber || '');
 
@@ -27,6 +29,15 @@ export default function OrderLookup() {
     queryFn: async () => {
       if (!searchNumber) return null;
 
+      // Mock mode - search local store
+      if (USE_MOCK_DATA) {
+        const mockOrders = getMockOrdersStore();
+        const found = mockOrders.find(o => o.order_number === searchNumber.toUpperCase());
+        if (!found) throw new Error('Order not found');
+        return found as Order & { order_items: OrderItem[] };
+      }
+
+      // Real Supabase query
       const { data, error } = await supabase
         .from('orders')
         .select(`
@@ -41,6 +52,8 @@ export default function OrderLookup() {
     },
     enabled: !!searchNumber,
     retry: false,
+    // Poll in mock mode since realtime doesn't work
+    refetchInterval: USE_MOCK_DATA ? 3000 : false,
   });
 
   const { data: waitTime } = useWaitTime();
@@ -49,6 +62,7 @@ export default function OrderLookup() {
   const handleNumpadPress = useCallback((digit: string) => {
     if (digit === 'clear') {
       setOrderNumber('');
+      setSearchNumber('');
     } else if (digit === 'delete') {
       setOrderNumber((prev) => prev.slice(0, -1));
     } else {
@@ -75,9 +89,9 @@ export default function OrderLookup() {
     }
   }, [urlOrderNumber]);
 
-  // Subscribe to order updates
+  // Subscribe to order updates (skip in mock mode - polling handles it)
   useEffect(() => {
-    if (!order) return;
+    if (!order || USE_MOCK_DATA || !supabase) return;
 
     const channel = supabase
       .channel(`order-${order.id}`)
@@ -91,300 +105,275 @@ export default function OrderLookup() {
         },
         () => {
           refetch();
+          queryClient.invalidateQueries({ queryKey: ['order-lookup'] });
         }
       )
       .subscribe();
 
     return () => {
-      supabase.removeChannel(channel);
+      if (supabase) supabase.removeChannel(channel);
     };
-  }, [order?.id, refetch]);
-
-  const handleSearchAnother = useCallback(() => {
-    setOrderNumber('');
-    setSearchNumber('');
-  }, []);
+  }, [order?.id, refetch, queryClient]);
 
   const digits = orderNumber.replace(/\D/g, '');
   const displayNumber = digits.length > 0
     ? `9Y-${digits.padStart(4, '0')}`
     : '9Y-____';
 
-  // Show order result view when we have a search in progress or a result
-  const showResult = !!searchNumber && (isLoading || !!order || !!error);
   const hasDigits = digits.length > 0;
+  const hasResult = !!searchNumber && (isLoading || !!order || !!error);
 
   return (
     <div className="kiosk-screen flex flex-col bg-background overflow-hidden">
       {/* Header */}
       <header className="flex items-center gap-[clamp(0.5rem,1.5vmin,1rem)] px-[clamp(0.75rem,3vmin,1.5rem)] py-[clamp(0.625rem,2vmin,1rem)] bg-primary shrink-0">
         <button
-          onClick={() => showResult ? handleSearchAnother() : navigate('/')}
+          onClick={() => navigate('/')}
           aria-label={t('common.back')}
-          className="w-[clamp(2.5rem,5.5vmin,3.25rem)] h-[clamp(2.5rem,5.5vmin,3.25rem)] flex items-center justify-center rounded-xl bg-white/10 text-white active:scale-95 transition-transform"
+          className="w-[clamp(2.5rem,5.5vmin,3.25rem)] h-[clamp(2.5rem,5.5vmin,3.25rem)] flex items-center justify-center rounded-xl bg-white/10 text-white active:bg-primary-foreground/20 active:scale-95 transition-all"
         >
           <ArrowLeft className="w-[clamp(1.125rem,2.5vmin,1.5rem)] h-[clamp(1.125rem,2.5vmin,1.5rem)]" />
         </button>
         <h1 className="text-[clamp(1rem,2.5vmin,1.375rem)] font-bold text-white flex-1">
           {t('tracking.title')}
         </h1>
-        {order && (
-          <div className="flex items-center gap-[clamp(0.25rem,0.6vmin,0.375rem)] text-white/70">
-            <div className="w-[clamp(0.375rem,0.8vmin,0.5rem)] h-[clamp(0.375rem,0.8vmin,0.5rem)] bg-green-400 rounded-full animate-pulse" />
-            <span className="text-[clamp(0.65rem,1.3vmin,0.8rem)]">{t('tracking.liveUpdates')}</span>
-          </div>
-        )}
       </header>
 
-      {/* Main content - no scroll */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <AnimatePresence mode="wait">
-          {!showResult ? (
-            /* ========== NUMPAD VIEW ========== */
-            <motion.div
-              key="numpad"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0, x: -50 }}
-              className="flex-1 flex flex-col items-center justify-center px-[clamp(1rem,4vmin,2rem)] py-[clamp(1rem,2vh,1.5rem)]"
-            >
-              <h2 className="text-[clamp(0.875rem,2.2vmin,1.125rem)] font-semibold text-muted-foreground mb-[clamp(0.5rem,1.5vmin,1rem)]">
-                {t('tracking.enterNumber')}
-              </h2>
+      {/* Main content - side by side layout */}
+      <div className="flex-1 flex overflow-hidden">
+        {/* Left side - Numpad (always visible) */}
+        <div className="w-[clamp(16rem,40%,22rem)] shrink-0 flex flex-col items-center justify-center px-[clamp(0.75rem,2vmin,1.25rem)] py-[clamp(0.75rem,2vmin,1.25rem)] bg-muted/30 border-r">
+          <h2 className="text-[clamp(0.75rem,1.8vmin,1rem)] font-semibold text-muted-foreground mb-[clamp(0.375rem,1vmin,0.625rem)]">
+            {t('tracking.enterNumber')}
+          </h2>
 
-              {/* Order number display */}
-              <div className="bg-white rounded-[clamp(0.75rem,2vmin,1.25rem)] px-[clamp(1.5rem,4vmin,2.5rem)] py-[clamp(0.5rem,1.5vmin,1rem)] mb-[clamp(0.75rem,2vmin,1.25rem)] shadow-card border-2 border-primary/20">
-                <span className="text-[clamp(1.5rem,5vmin,2.75rem)] font-mono font-bold text-primary tracking-[0.15em]">
-                  {displayNumber}
-                </span>
-              </div>
+          {/* Order number display */}
+          <div className="bg-white rounded-[clamp(0.625rem,1.5vmin,1rem)] px-[clamp(1rem,3vmin,2rem)] py-[clamp(0.375rem,1vmin,0.625rem)] mb-[clamp(0.5rem,1.5vmin,1rem)] shadow-card border-2 border-primary/20">
+            <span className="text-[clamp(1.25rem,4vmin,2.25rem)] font-mono font-bold text-primary tracking-[0.1em]">
+              {displayNumber}
+            </span>
+          </div>
 
-              {/* Numpad */}
-              <div className="grid grid-cols-3 gap-[clamp(0.25rem,0.8vmin,0.5rem)] w-full max-w-[clamp(12rem,35vmin,20rem)]">
-                {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'delete'].map(
-                  (key) => (
-                    <button
-                      key={key}
-                      onClick={() => handleNumpadPress(key)}
-                      className={cn(
-                        'aspect-square rounded-[clamp(0.5rem,1.2vmin,0.875rem)] font-bold transition-all active:scale-95',
-                        'text-[clamp(1.125rem,3vmin,1.75rem)]',
-                        'flex items-center justify-center',
-                        key === 'clear'
-                          ? 'bg-destructive/10 text-destructive active:bg-destructive/20 text-[clamp(0.7rem,1.6vmin,0.9rem)]'
-                          : key === 'delete'
-                            ? 'bg-muted active:bg-muted/60 text-muted-foreground'
-                            : 'bg-white border border-border active:bg-muted/50 text-foreground shadow-sm'
-                      )}
-                    >
-                      {key === 'delete' ? (
-                        <Delete className="w-[clamp(1rem,2.2vmin,1.375rem)] h-[clamp(1rem,2.2vmin,1.375rem)]" />
-                      ) : key === 'clear' ? (
-                        'CLR'
-                      ) : (
-                        key
-                      )}
-                    </button>
-                  )
-                )}
-              </div>
+          {/* Numpad */}
+          <div className="grid grid-cols-3 gap-[clamp(0.1875rem,0.5vmin,0.375rem)] w-full max-w-[clamp(10rem,28vmin,16rem)]">
+            {['1', '2', '3', '4', '5', '6', '7', '8', '9', 'clear', '0', 'delete'].map(
+              (key) => (
+                <button
+                  key={key}
+                  onClick={() => handleNumpadPress(key)}
+                  className={cn(
+                    'aspect-square rounded-[clamp(0.375rem,1vmin,0.625rem)] font-bold transition-all active:scale-95',
+                    'text-[clamp(1rem,2.5vmin,1.5rem)]',
+                    'flex items-center justify-center',
+                    key === 'clear'
+                      ? 'bg-destructive/10 text-destructive active:bg-destructive/20 text-[clamp(0.6rem,1.4vmin,0.8rem)]'
+                      : key === 'delete'
+                        ? 'bg-muted active:bg-muted/60 text-muted-foreground'
+                        : 'bg-white border border-border active:bg-muted/50 text-foreground shadow-sm'
+                  )}
+                >
+                  {key === 'delete' ? (
+                    <Delete className="w-[clamp(0.875rem,2vmin,1.125rem)] h-[clamp(0.875rem,2vmin,1.125rem)]" />
+                  ) : key === 'clear' ? (
+                    'CLR'
+                  ) : (
+                    key
+                  )}
+                </button>
+              )
+            )}
+          </div>
 
-              <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-muted-foreground mt-[clamp(0.5rem,1.5vmin,1rem)]">
-                {t('tracking.enterHint')}
-              </p>
-            </motion.div>
-          ) : (
-            /* ========== RESULT VIEW ========== */
-            <motion.div
-              key="result"
-              initial={{ opacity: 0, x: 50 }}
-              animate={{ opacity: 1, x: 0 }}
-              exit={{ opacity: 0 }}
-              className="flex-1 flex flex-col overflow-hidden"
-            >
-              {/* Loading */}
-              {isLoading && (
-                <div className="flex-1 flex items-center justify-center">
-                  <div className="animate-spin w-[clamp(2rem,5vmin,3rem)] h-[clamp(2rem,5vmin,3rem)] border-4 border-primary border-t-transparent rounded-full" />
-                </div>
-              )}
-
-              {/* Not found */}
-              {error && !isLoading && (
-                <div className="flex-1 flex flex-col items-center justify-center text-center px-[clamp(1rem,4vmin,2rem)]">
-                  <div className="w-[clamp(3rem,8vmin,4.5rem)] h-[clamp(3rem,8vmin,4.5rem)] bg-muted rounded-full flex items-center justify-center mb-[clamp(0.5rem,1.5vmin,1rem)]">
-                    <Search className="w-[clamp(1.25rem,3.5vmin,2rem)] h-[clamp(1.25rem,3.5vmin,2rem)] text-muted-foreground" />
-                  </div>
-                  <h3 className="text-[clamp(1rem,2.5vmin,1.375rem)] font-bold mb-[clamp(0.25rem,0.6vmin,0.375rem)]">
-                    {t('tracking.notFound')}
-                  </h3>
-                  <p className="text-[clamp(0.75rem,1.6vmin,0.9375rem)] text-muted-foreground mb-[clamp(0.75rem,2vmin,1.25rem)]">
-                    {t('tracking.notFoundDesc')}
-                  </p>
-                  <button
-                    onClick={handleSearchAnother}
-                    className="flex items-center gap-[clamp(0.25rem,0.6vmin,0.375rem)] text-[clamp(0.8rem,1.8vmin,1rem)] font-semibold text-primary active:scale-[0.98] transition-all"
-                  >
-                    <RotateCcw className="w-[clamp(0.8rem,1.8vmin,1rem)] h-[clamp(0.8rem,1.8vmin,1rem)]" />
-                    {t('tracking.tryAgain')}
-                  </button>
-                </div>
-              )}
-
-              {/* Order found */}
-              {order && !isLoading && (
-                <div className="flex-1 flex flex-col px-[clamp(0.75rem,3vmin,1.5rem)] py-[clamp(0.75rem,2vmin,1.25rem)] overflow-hidden">
-                  {/* Order header - fixed */}
-                  <div className="text-center shrink-0 mb-[clamp(0.5rem,1.5vmin,1rem)]">
-                    <p className="text-[clamp(1.75rem,5vmin,2.75rem)] font-black text-primary tracking-wide">
-                      {order.order_number}
-                    </p>
-                    <p className="text-[clamp(0.75rem,1.6vmin,1rem)] text-muted-foreground">
-                      {order.customer_name}
-                    </p>
-                  </div>
-
-                  {/* Status badge - fixed */}
-                  <div className="shrink-0 mb-[clamp(0.5rem,1.5vmin,1rem)]">
-                    <OrderStatusBadge status={order.status} />
-                  </div>
-
-                  {/* Scrollable content area */}
-                  <div className="flex-1 overflow-y-auto space-y-[clamp(0.5rem,1.5vmin,1rem)] max-w-[clamp(22rem,60vmin,32rem)] mx-auto w-full">
-                    {/* Wait time */}
-                    {(order.status === 'new' || order.status === 'preparing') && waitTime && (
-                      <div className="bg-amber-50 rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.625rem,2vmin,1rem)] text-center border border-amber-200">
-                        <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-amber-600 mb-[clamp(0.0625rem,0.25vmin,0.1875rem)]">
-                          {t('confirmation.estimatedWait')}
-                        </p>
-                        <p className="text-[clamp(1.25rem,3.5vmin,2rem)] font-bold text-amber-700">
-                          {formatWaitTime(waitTime.estimatedMinutes)}
-                        </p>
-                        <p className="text-[clamp(0.65rem,1.3vmin,0.8rem)] text-amber-600">
-                          {waitTime.ordersAhead} {t('confirmation.ordersAhead')}
-                        </p>
-                      </div>
-                    )}
-
-                    {/* Ready celebration */}
-                    {order.status === 'ready' && (
-                      <motion.div
-                        initial={{ scale: 0.9 }}
-                        animate={{ scale: 1 }}
-                        className="bg-green-50 rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.75rem,2.5vmin,1.25rem)] text-center border-2 border-green-300"
-                      >
-                        <p className="text-[clamp(1.125rem,3vmin,1.75rem)] font-bold text-green-700">
-                          {t('tracking.readyPickup')}
-                        </p>
-                        <p className="text-[clamp(0.7rem,1.5vmin,0.875rem)] text-green-600 mt-[clamp(0.0625rem,0.25vmin,0.1875rem)]">
-                          {t('tracking.readyDesc')}
-                        </p>
-                      </motion.div>
-                    )}
-
-                    {/* Timeline */}
-                    <div className="bg-white rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.625rem,2vmin,1rem)] shadow-card">
-                      <h3 className="font-semibold text-[clamp(0.8rem,1.8vmin,1rem)] mb-[clamp(0.375rem,1vmin,0.625rem)]">
-                        {t('tracking.timeline')}
-                      </h3>
-                      <OrderTimeline order={order} />
-                    </div>
-
-                    {/* Order items */}
-                    <div className="bg-white rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.625rem,2vmin,1rem)] shadow-card">
-                      <h3 className="font-semibold text-[clamp(0.8rem,1.8vmin,1rem)] mb-[clamp(0.25rem,0.8vmin,0.5rem)]">
-                        {t('tracking.yourItems')}
-                      </h3>
-                      <div className="space-y-[clamp(0.125rem,0.5vmin,0.375rem)]">
-                        {order.order_items?.map((item, idx) => (
-                          <div
-                            key={idx}
-                            className="flex justify-between items-center py-[clamp(0.25rem,0.8vmin,0.5rem)] border-b last:border-0"
-                          >
-                            <div className="min-w-0 flex-1">
-                              <p className="font-medium text-[clamp(0.75rem,1.6vmin,0.9375rem)] truncate">
-                                {item.quantity}x{' '}
-                                {item.type === 'combo'
-                                  ? `${item.sauce_name} Combo`
-                                  : item.sauce_name || 'Item'}
-                              </p>
-                              {item.type === 'combo' && item.main_dishes?.length > 0 && (
-                                <p className="text-[clamp(0.6rem,1.2vmin,0.75rem)] text-muted-foreground truncate">
-                                  {item.main_dishes.join(', ')}
-                                </p>
-                              )}
-                            </div>
-                            <span className="font-medium text-[clamp(0.75rem,1.6vmin,0.9375rem)] ml-[clamp(0.375rem,0.8vmin,0.5rem)] shrink-0">
-                              {formatPrice(item.total_price)}
-                            </span>
-                          </div>
-                        ))}
-                      </div>
-                      <div className="flex justify-between items-center pt-[clamp(0.375rem,1vmin,0.625rem)] mt-[clamp(0.375rem,1vmin,0.625rem)] border-t font-bold text-[clamp(0.8rem,1.8vmin,1rem)]">
-                        <span>{t('cart.total')}</span>
-                        <span className="text-secondary">{formatPrice(order.total)}</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </div>
-
-      {/* Footer - context-aware buttons */}
-      <div className="shrink-0 px-[clamp(0.75rem,3vmin,1.5rem)] py-[clamp(0.5rem,1.5vmin,0.75rem)] border-t bg-background flex gap-[clamp(0.5rem,1.2vmin,0.75rem)]">
-        <Button
-          variant="outline"
-          size="touch"
-          onClick={() => navigate('/')}
-          className={cn(
-            'flex-1 gap-[clamp(0.25rem,0.6vmin,0.375rem)]',
-            'text-[clamp(0.8rem,1.8vmin,1rem)]',
-            'py-[clamp(0.625rem,2vmin,1rem)] rounded-xl',
-            'border-border text-foreground',
-            'active:scale-[0.98] active:bg-muted/50 transition-all'
-          )}
-        >
-          <ArrowLeft className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
-          {t('common.back')}
-        </Button>
-        {!showResult ? (
-          /* Numpad view: show Look Up button */
+          {/* Search button */}
           <Button
             size="touch"
             onClick={handleSearch}
             disabled={!hasDigits}
             className={cn(
-              'flex-1 gap-[clamp(0.25rem,0.6vmin,0.375rem)]',
-              'bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-white',
-              'text-[clamp(0.8rem,1.8vmin,1rem)] font-semibold',
-              'py-[clamp(0.625rem,2vmin,1rem)] rounded-xl',
+              'mt-[clamp(0.5rem,1.5vmin,1rem)] w-full max-w-[clamp(10rem,28vmin,16rem)]',
+              'gap-[clamp(0.25rem,0.6vmin,0.375rem)]',
+              'bg-secondary hover:bg-secondary active:bg-secondary/80 text-white',
+              'text-[clamp(0.75rem,1.6vmin,0.9375rem)] font-semibold',
+              'py-[clamp(0.5rem,1.5vmin,0.875rem)] rounded-xl',
               'active:scale-[0.98] transition-all',
               'disabled:opacity-40 disabled:cursor-not-allowed'
             )}
           >
-            <Search className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
+            <Search className="w-[clamp(0.75rem,1.6vmin,0.9375rem)] h-[clamp(0.75rem,1.6vmin,0.9375rem)]" />
             {t('tracking.lookup')}
           </Button>
-        ) : (
-          /* Result view: show Search Another button */
-          <Button
-            size="touch"
-            onClick={handleSearchAnother}
-            className={cn(
-              'flex-1 gap-[clamp(0.25rem,0.6vmin,0.375rem)]',
-              'bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-white',
-              'text-[clamp(0.8rem,1.8vmin,1rem)] font-semibold',
-              'py-[clamp(0.625rem,2vmin,1rem)] rounded-xl',
-              'active:scale-[0.98] transition-all'
+
+          <p className="text-[clamp(0.55rem,1.1vmin,0.7rem)] text-muted-foreground mt-[clamp(0.375rem,1vmin,0.625rem)] text-center">
+            {t('tracking.enterHint')}
+          </p>
+        </div>
+
+        {/* Right side - Results */}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <AnimatePresence mode="wait">
+            {!hasResult ? (
+              /* Empty state */
+              <motion.div
+                key="empty"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col items-center justify-center text-center px-[clamp(1rem,4vmin,2rem)]"
+              >
+                <div className="w-[clamp(4rem,10vmin,6rem)] h-[clamp(4rem,10vmin,6rem)] bg-muted/50 rounded-full flex items-center justify-center mb-[clamp(0.75rem,2vmin,1.25rem)]">
+                  <Search className="w-[clamp(1.5rem,4vmin,2.5rem)] h-[clamp(1.5rem,4vmin,2.5rem)] text-muted-foreground/50" />
+                </div>
+                <p className="text-[clamp(0.875rem,2vmin,1.125rem)] font-medium text-muted-foreground">
+                  {t('tracking.emptyState')}
+                </p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="result"
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0 }}
+                className="flex-1 flex flex-col overflow-hidden"
+              >
+                {/* Loading */}
+                {isLoading && (
+                  <div className="flex-1 flex items-center justify-center">
+                    <div className="animate-spin w-[clamp(2rem,5vmin,3rem)] h-[clamp(2rem,5vmin,3rem)] border-4 border-primary border-t-transparent rounded-full" />
+                  </div>
+                )}
+
+                {/* Not found */}
+                {error && !isLoading && (
+                  <div className="flex-1 flex flex-col items-center justify-center text-center px-[clamp(1rem,4vmin,2rem)]">
+                    <div className="w-[clamp(3rem,8vmin,4.5rem)] h-[clamp(3rem,8vmin,4.5rem)] bg-destructive/10 rounded-full flex items-center justify-center mb-[clamp(0.5rem,1.5vmin,1rem)]">
+                      <Search className="w-[clamp(1.25rem,3.5vmin,2rem)] h-[clamp(1.25rem,3.5vmin,2rem)] text-destructive" />
+                    </div>
+                    <h3 className="text-[clamp(1rem,2.5vmin,1.375rem)] font-bold mb-[clamp(0.25rem,0.6vmin,0.375rem)]">
+                      {t('tracking.notFound')}
+                    </h3>
+                    <p className="text-[clamp(0.75rem,1.6vmin,0.9375rem)] text-muted-foreground">
+                      {t('tracking.notFoundDesc')}
+                    </p>
+                  </div>
+                )}
+
+                {/* Order found */}
+                {order && !isLoading && (
+                  <div className="flex-1 flex flex-col px-[clamp(0.75rem,3vmin,1.5rem)] py-[clamp(0.75rem,2vmin,1.25rem)] overflow-y-auto">
+                    <div className="max-w-[clamp(22rem,55vmin,30rem)] mx-auto w-full space-y-[clamp(0.5rem,1.5vmin,1rem)]">
+                      {/* Order header */}
+                      <div className="text-center">
+                        <p className="text-[clamp(1.75rem,5vmin,2.75rem)] font-black text-primary tracking-wide">
+                          {order.order_number}
+                        </p>
+                        <p className="text-[clamp(0.75rem,1.6vmin,1rem)] text-muted-foreground">
+                          {order.customer_name}
+                        </p>
+                      </div>
+
+                      {/* Status badge */}
+                      <OrderStatusBadge status={order.status} />
+
+                      {/* Wait time */}
+                      {(order.status === 'new' || order.status === 'preparing') && waitTime && (
+                        <div className="bg-amber-50 rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.625rem,2vmin,1rem)] text-center border border-amber-200">
+                          <p className="text-[clamp(0.6rem,1.2vmin,0.75rem)] text-amber-600 mb-[clamp(0.0625rem,0.2vmin,0.125rem)]">
+                            {t('confirmation.estimatedWait')}
+                          </p>
+                          <p className="text-[clamp(1.25rem,3.5vmin,2rem)] font-bold text-amber-700">
+                            {formatWaitTime(waitTime.estimatedMinutes)}
+                          </p>
+                          <p className="text-[clamp(0.6rem,1.2vmin,0.75rem)] text-amber-600">
+                            {waitTime.ordersAhead} {t('confirmation.ordersAhead')}
+                          </p>
+                        </div>
+                      )}
+
+                      {/* Ready celebration */}
+                      {order.status === 'ready' && (
+                        <motion.div
+                          initial={{ scale: 0.9 }}
+                          animate={{ scale: 1 }}
+                          className="bg-green-50 rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.75rem,2.5vmin,1.25rem)] text-center border-2 border-green-300"
+                        >
+                          <p className="text-[clamp(1.125rem,3vmin,1.75rem)] font-bold text-green-700">
+                            {t('tracking.readyPickup')}
+                          </p>
+                          <p className="text-[clamp(0.65rem,1.4vmin,0.8125rem)] text-green-600 mt-[clamp(0.0625rem,0.2vmin,0.125rem)]">
+                            {t('tracking.readyDesc')}
+                          </p>
+                        </motion.div>
+                      )}
+
+                      {/* Timeline */}
+                      <div className="bg-white rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.5rem,1.5vmin,0.875rem)] shadow-card">
+                        <h3 className="font-semibold text-[clamp(0.75rem,1.6vmin,0.9375rem)] mb-[clamp(0.25rem,0.8vmin,0.5rem)]">
+                          {t('tracking.timeline')}
+                        </h3>
+                        <OrderTimeline order={order} />
+                      </div>
+
+                      {/* Order items */}
+                      <div className="bg-white rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.5rem,1.5vmin,0.875rem)] shadow-card">
+                        <h3 className="font-semibold text-[clamp(0.75rem,1.6vmin,0.9375rem)] mb-[clamp(0.1875rem,0.6vmin,0.375rem)]">
+                          {t('tracking.yourItems')}
+                        </h3>
+                        <div className="space-y-[clamp(0.125rem,0.4vmin,0.25rem)]">
+                          {order.order_items?.map((item, idx) => (
+                            <div
+                              key={idx}
+                              className="flex justify-between items-center py-[clamp(0.1875rem,0.6vmin,0.375rem)] border-b last:border-0"
+                            >
+                              <div className="min-w-0 flex-1">
+                                <p className="font-medium text-[clamp(0.7rem,1.5vmin,0.875rem)] truncate">
+                                  {item.quantity}x{' '}
+                                  {item.type === 'combo'
+                                    ? `${item.sauce_name} Combo`
+                                    : item.sauce_name || 'Item'}
+                                </p>
+                                {item.type === 'combo' && item.main_dishes?.length > 0 && (
+                                  <p className="text-[clamp(0.55rem,1.1vmin,0.6875rem)] text-muted-foreground truncate">
+                                    {item.main_dishes.join(', ')}
+                                  </p>
+                                )}
+                              </div>
+                              <span className="font-medium text-[clamp(0.7rem,1.5vmin,0.875rem)] ml-[clamp(0.25rem,0.6vmin,0.375rem)] shrink-0">
+                                {formatPrice(item.total_price)}
+                              </span>
+                            </div>
+                          ))}
+                        </div>
+                        <div className="flex justify-between items-center pt-[clamp(0.25rem,0.8vmin,0.5rem)] mt-[clamp(0.25rem,0.8vmin,0.5rem)] border-t font-bold text-[clamp(0.75rem,1.6vmin,0.9375rem)]">
+                          <span>{t('cart.total')}</span>
+                          <span className="text-secondary">{formatPrice(order.total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                )}
+              </motion.div>
             )}
-          >
-            <Search className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
-            {t('tracking.searchAnother')}
-          </Button>
-        )}
+          </AnimatePresence>
+        </div>
+      </div>
+
+      {/* Footer */}
+      <div className="shrink-0 px-[clamp(0.75rem,3vmin,1.5rem)] py-[clamp(0.5rem,1.5vmin,0.75rem)] border-t bg-background">
+        <Button
+          variant="outline"
+          size="touch"
+          onClick={() => navigate('/')}
+          className={cn(
+            'w-full gap-[clamp(0.25rem,0.6vmin,0.375rem)]',
+            'text-[clamp(0.8rem,1.8vmin,1rem)]',
+            'py-[clamp(0.625rem,2vmin,1rem)] rounded-xl',
+            'border-primary/30 text-primary',
+            'active:scale-[0.98] active:bg-primary/5 transition-all'
+          )}
+        >
+          <ArrowLeft className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
+          {t('common.back')}
+        </Button>
       </div>
     </div>
   );
