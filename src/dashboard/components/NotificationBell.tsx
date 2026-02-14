@@ -100,7 +100,7 @@ export default function NotificationBell() {
       >
         <Bell className="w-5 h-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#E6411C] text-white text-xs rounded-full flex items-center justify-center font-bold animate-pulse">
+          <span className="absolute -top-1 -right-1 w-5 h-5 bg-[#E6411C] text-white text-xs rounded-full flex items-center justify-center font-bold">
             {unreadCount > 9 ? "9+" : unreadCount}
           </span>
         )}
@@ -112,7 +112,7 @@ export default function NotificationBell() {
             className="fixed inset-0 z-40"
             onClick={() => setOpen(false)}
           />
-          <div className="absolute right-0 top-full mt-2 w-80 bg-card rounded-xl border shadow-xl z-50 overflow-hidden">
+          <div className="fixed left-16 top-14 w-80 bg-card rounded-xl border shadow-xl z-50 overflow-hidden sm:absolute sm:left-0 sm:top-full sm:mt-2">
             {/* Header */}
             <div className="px-4 py-3 border-b flex items-center justify-between bg-gradient-to-r from-[#212282]/5 to-transparent">
               <span className="font-semibold text-sm">Notifications</span>

@@ -1158,7 +1158,7 @@ export default function ComboBuilder({
                     {combo.sauce && (
                       <img
                         src={combo.sauce.image_url}
-                        alt=""
+                        alt={combo.sauce.name}
                         className="size-10 sm:size-12 rounded-lg sm:rounded-xl object-cover"
                       />
                     )}
@@ -1187,7 +1187,7 @@ export default function ComboBuilder({
                     {combo.sideDish && (
                       <img
                         src={sideDishes.find((s) => s.name === combo.sideDish)?.image_url || ''}
-                        alt=""
+                        alt={combo.sideDish}
                         className="size-10 sm:size-12 rounded-lg sm:rounded-xl object-cover"
                       />
                     )}

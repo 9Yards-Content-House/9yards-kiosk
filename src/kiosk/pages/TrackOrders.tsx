@@ -103,8 +103,12 @@ export default function TrackOrders() {
     try {
       const audio = new Audio('/sounds/order-ready.mp3');
       audio.volume = 0.7;
-      audio.play().catch(() => {});
-    } catch {}
+      audio.play().catch((err) => {
+        if (import.meta.env.DEV) console.warn('Audio play failed:', err);
+      });
+    } catch (err) {
+      if (import.meta.env.DEV) console.warn('Audio creation failed:', err);
+    }
   };
 
   const preparingOrders = (orders || []).filter(

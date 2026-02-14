@@ -107,8 +107,9 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
               setError("Payment was declined");
               setStep("failed");
             }
-          } catch {
-            // Continue polling
+          } catch (err) {
+            // Continue polling on network errors - don't interrupt payment flow
+            if (import.meta.env.DEV) console.warn('Payment status poll failed:', err);
           }
         }, 3000);
 

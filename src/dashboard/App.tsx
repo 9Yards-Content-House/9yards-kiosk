@@ -1,6 +1,7 @@
 import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { hasPermission, UserRole } from "@shared/types/auth";
 import { useOrdersRealtime } from "@shared/hooks/useOrders";
 import ErrorBoundary from "@shared/components/ErrorBoundary";
 import NetworkStatus from "./components/NetworkStatus";
@@ -66,99 +67,176 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <ProtectedLayout>{children}</ProtectedLayout>;
 }
 
+// Role-protected route that checks specific permissions
+function RoleRoute({ 
+  children, 
+  permission,
+  fallbackPath = "/"
+}: { 
+  children: React.ReactNode; 
+  permission: string;
+  fallbackPath?: string;
+}) {
+  const { user, role, loading } = useAuth();
+
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-secondary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) return <Navigate to="/login" replace />;
+  
+  // Check if user has permission for this route
+  if (role && !hasPermission(role, permission)) {
+    return <Navigate to={getDefaultRouteForRole(role)} replace />;
+  }
+
+  return <ProtectedLayout>{children}</ProtectedLayout>;
+}
+
+// Get the default route for each role
+function getDefaultRouteForRole(role: UserRole): string {
+  switch (role) {
+    case "rider":
+      return "/deliveries";
+    case "kitchen":
+      return "/orders";
+    case "reception":
+      return "/reception";
+    case "admin":
+    default:
+      return "/orders";
+  }
+}
+
+// Smart home route that redirects based on role
+function RoleBasedHome() {
+  const { user, role, loading } = useAuth();
+  
+  if (loading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <div className="animate-spin w-10 h-10 border-4 border-secondary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
+  
+  if (!user) return <Navigate to="/login" replace />;
+  
+  return <Navigate to={role ? getDefaultRouteForRole(role) : "/orders"} replace />;
+}
+
 export default function App() {
   return (
     <ErrorBoundary>
       <Suspense fallback={<PageLoader />}>
         <Routes>
           <Route path="/login" element={<Login />} />
-        <Route
-          path="/"
-          element={
-            <ProtectedRoute>
-              <Orders />
-            </ProtectedRoute>
-          }
-      />
-      <Route
-        path="/orders"
-        element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/orders/:id"
-        element={
-          <ProtectedRoute>
-            <OrderDetail />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/menu"
-        element={
-          <ProtectedRoute>
-            <MenuManagement />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/menu/:id"
-        element={
-          <ProtectedRoute>
-            <MenuItemEdit />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/staff"
-        element={
-          <ProtectedRoute>
-            <Staff />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/analytics"
-        element={
-          <ProtectedRoute>
-            <Analytics />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/settings"
-        element={
-          <ProtectedRoute>
-            <Settings />
-          </ProtectedRoute>
-        }
-      />
-      <Route
-        path="/deliveries"
-        element={
-          <ProtectedRoute>
-            <MyDeliveries />
-          </ProtectedRoute>
-        }
-      />
-      {/* Kitchen Display - Full screen, no sidebar */}
-      <Route
-        path="/kitchen"
-        element={<KitchenDisplay />}
-      />
-      {/* Reception Dashboard */}
-      <Route
-        path="/reception"
-        element={
-          <ProtectedRoute>
-            <Reception />
-          </ProtectedRoute>
-        }
-      />
-      <Route path="*" element={<Navigate to="/" replace />} />
+          
+          {/* Home - redirects based on user role */}
+          <Route path="/" element={<RoleBasedHome />} />
+          
+          {/* Orders - accessible by admin, kitchen, rider (for viewing assigned) */}
+          <Route
+            path="/orders"
+            element={
+              <RoleRoute permission="orders:read">
+                <Orders />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/orders/:id"
+            element={
+              <RoleRoute permission="orders:read">
+                <OrderDetail />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Menu Management - admin and kitchen only */}
+          <Route
+            path="/menu"
+            element={
+              <RoleRoute permission="menu:read">
+                <MenuManagement />
+              </RoleRoute>
+            }
+          />
+          <Route
+            path="/menu/:id"
+            element={
+              <RoleRoute permission="menu:update">
+                <MenuItemEdit />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Staff Management - admin only */}
+          <Route
+            path="/staff"
+            element={
+              <RoleRoute permission="staff:read">
+                <Staff />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Analytics - admin only */}
+          <Route
+            path="/analytics"
+            element={
+              <RoleRoute permission="analytics:read">
+                <Analytics />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Settings - all authenticated users can view their profile */}
+          <Route
+            path="/settings"
+            element={
+              <RoleRoute permission="settings:read">
+                <Settings />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Deliveries - riders and admin */}
+          <Route
+            path="/deliveries"
+            element={
+              <RoleRoute permission="deliveries:read">
+                <MyDeliveries />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Kitchen Display - orders:read permission */}
+          <Route
+            path="/kitchen"
+            element={
+              <RoleRoute permission="orders:read">
+                <KitchenDisplay />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Reception Dashboard */}
+          <Route
+            path="/reception"
+            element={
+              <RoleRoute permission="reception:read">
+                <Reception />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Catch-all redirect */}
+          <Route path="*" element={<Navigate to="/" replace />} />
         </Routes>
       </Suspense>
     </ErrorBoundary>

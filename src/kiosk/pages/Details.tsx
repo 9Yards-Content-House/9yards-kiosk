@@ -244,11 +244,13 @@ export default function Details() {
             </label>
             <input
               ref={nameInputRef}
+              id="name-input"
               type="text"
               value={name}
               onChange={(e) => setName(e.target.value)}
               onBlur={() => setNameTouched(true)}
               placeholder="Enter your name"
+              aria-label="Your name"
               className={cn(
                 "w-full h-16 px-5 text-xl font-medium rounded-2xl border-2 transition-all outline-none",
                 "placeholder:text-gray-400",
@@ -287,16 +289,19 @@ export default function Details() {
               
               {/* Phone Input */}
               <input
+                id="phone-input"
                 type="tel"
                 inputMode="numeric"
                 value={phone}
                 onChange={(e) => setPhone(e.target.value)}
                 onBlur={() => setPhoneTouched(true)}
                 placeholder="7XX XXX XXX"
+                aria-label="Phone number"
+                aria-describedby="phone-hint"
                 className="flex-1 h-full px-4 text-xl font-medium bg-transparent outline-none placeholder:text-gray-400"
               />
             </div>
-            <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+            <p id="phone-hint" className="text-sm text-gray-500 mt-2 flex items-center gap-2">
               Required for order notifications
               {networkOperator && (
                 <span 

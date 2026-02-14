@@ -22,6 +22,16 @@ export const KIOSK = {
   ORDER_SOURCE: "kiosk" as const,
 };
 
+// Order Time Thresholds (in milliseconds)
+export const TIME_THRESHOLDS = {
+  /** Order is urgent if older than this (10 minutes) */
+  URGENT_ORDER_MS: 10 * 60 * 1000,
+  /** Customer waiting too long at reception (15 minutes) */
+  WAITING_TOO_LONG_MS: 15 * 60 * 1000,
+  /** New order notification toast duration */
+  NEW_ORDER_TOAST_MS: 10_000,
+};
+
 // Kitchen location (Kigo)
 export const KITCHEN_LOCATION = {
   lat: 0.2,

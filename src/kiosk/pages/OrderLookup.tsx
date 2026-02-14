@@ -115,29 +115,14 @@ export default function OrderLookup() {
     }
   }, [urlOrderNumber]);
 
-  // Subscribe to order updates (skip in mock mode - polling handles it)
+  // Note: Realtime subscription is handled above (lines 63-78) - this duplicate was removed
+  // The first subscription already calls refetch() on updates
+  
+  // Invalidate query cache when order is updated (via the subscription above)
   useEffect(() => {
-    if (!order || USE_MOCK_DATA || !supabase) return;
-
-    const channel = supabase
-      .channel(`order-${order.id}`)
-      .on(
-        'postgres_changes',
-        {
-          event: 'UPDATE',
-          schema: 'public',
-          table: 'orders',
-          filter: `id=eq.${order.id}`,
-        },
-        () => {
-          refetch();
-          queryClient.invalidateQueries({ queryKey: ['order-lookup'] });
-        }
-      )
-      .subscribe();
-
+    if (!order?.id) return;
+    // Already handled by subscription
     return () => {
-      if (supabase) supabase.removeChannel(channel);
     };
   }, [order?.id, refetch, queryClient]);
 

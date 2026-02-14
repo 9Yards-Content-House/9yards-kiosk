@@ -118,7 +118,10 @@ export default function ConfirmationNew() {
       setCopied(true);
       play('select');
       setTimeout(() => setCopied(false), 2000);
-    } catch {}
+    } catch (err) {
+      // Clipboard API may fail in some contexts - fail silently for UX
+      if (import.meta.env.DEV) console.warn('Clipboard write failed:', err);
+    }
   }, [orderDetails, play]);
 
   const handlePrintReceipt = useCallback(() => {
