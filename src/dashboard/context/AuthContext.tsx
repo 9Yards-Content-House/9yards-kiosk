@@ -44,6 +44,7 @@ interface AuthContextValue {
   signIn: (email: string, password: string) => Promise<void>;
   signInWithPin: (pin: string) => Promise<void>;
   signOut: () => Promise<void>;
+  refreshProfile: () => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -171,6 +172,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     setProfile(null);
   };
 
+  const refreshProfile = useCallback(async () => {
+    if (user?.id) {
+      await fetchProfile(user.id);
+    }
+  }, [user?.id, fetchProfile]);
+
   return (
     <AuthContext.Provider
       value={{
@@ -181,6 +188,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         signIn,
         signInWithPin,
         signOut,
+        refreshProfile,
       }}
     >
       {children}

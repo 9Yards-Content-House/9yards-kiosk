@@ -98,6 +98,8 @@ const mockOrdersStore: Order[] = [
     prepared_at: null,
     ready_at: null,
     delivered_at: null,
+    rider_id: null,
+    assigned_at: null,
     items: [
       { id: "item-1", order_id: "order-1", type: "combo", main_dishes: ["Posho", "Rice"], sauce_name: "Groundnut Sauce", sauce_preparation: "Mild", sauce_size: "Regular", side_dish: "Greens", extras: null, quantity: 1, unit_price: 22000, total_price: 22000 },
       { id: "item-2", order_id: "order-1", type: "single", main_dishes: [], sauce_name: null, sauce_preparation: null, sauce_size: null, side_dish: null, extras: null, quantity: 1, unit_price: 5000, total_price: 5000 },
@@ -122,6 +124,8 @@ const mockOrdersStore: Order[] = [
     prepared_at: new Date(Date.now() - 10 * 60000).toISOString(),
     ready_at: null,
     delivered_at: null,
+    rider_id: null,
+    assigned_at: null,
     items: [
       { id: "item-3", order_id: "order-2", type: "combo", main_dishes: ["Matooke"], sauce_name: "Chicken Stew", sauce_preparation: null, sauce_size: "Large", side_dish: "Beans", extras: null, quantity: 1, unit_price: 28000, total_price: 28000 },
     ],
@@ -145,6 +149,8 @@ const mockOrdersStore: Order[] = [
     prepared_at: new Date(Date.now() - 15 * 60000).toISOString(),
     ready_at: new Date(Date.now() - 5 * 60000).toISOString(),
     delivered_at: null,
+    rider_id: null,
+    assigned_at: null,
     items: [
       { id: "item-4", order_id: "order-3", type: "single", main_dishes: [], sauce_name: null, sauce_preparation: null, sauce_size: null, side_dish: null, extras: null, quantity: 1, unit_price: 12000, total_price: 12000 },
       { id: "item-5", order_id: "order-3", type: "single", main_dishes: [], sauce_name: null, sauce_preparation: null, sauce_size: null, side_dish: null, extras: null, quantity: 1, unit_price: 5000, total_price: 5000 },
@@ -169,6 +175,8 @@ const mockOrdersStore: Order[] = [
     prepared_at: new Date(Date.now() - 50 * 60000).toISOString(),
     ready_at: new Date(Date.now() - 40 * 60000).toISOString(),
     delivered_at: new Date(Date.now() - 30 * 60000).toISOString(),
+    rider_id: null,
+    assigned_at: null,
     items: [
       { id: "item-6", order_id: "order-4", type: "combo", main_dishes: ["Posho", "Rice", "Matooke"], sauce_name: "Beef Stew", sauce_preparation: null, sauce_size: "Large", side_dish: "Greens", extras: [{ name: "Extra Sauce", price: 5000, quantity: 1 }], quantity: 2, unit_price: 22500, total_price: 45000 },
     ],
@@ -290,6 +298,37 @@ export function useTodaysOrders() {
   });
 }
 
+/** Fetch all orders (for analytics and historical views) */
+export function useAllOrders() {
+  return useQuery<Order[]>({
+    queryKey: ["orders", "all"],
+    queryFn: async () => {
+      if (USE_MOCK_DATA) {
+        console.log("📦 Mock mode: returning all mock orders");
+        return applyOverlayToList(mockOrdersStore)
+          .sort((a, b) => 
+            new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+          );
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*, items:order_items(*)")
+          .order("created_at", { ascending: false })
+          .limit(500); // Limit to last 500 orders for performance
+        if (error) throw error;
+        
+        return applyOverlayToList((data || []) as Order[]);
+      } catch (err) {
+        console.warn("Failed to fetch all orders, using mock data:", err);
+        return applyOverlayToList(mockOrdersStore);
+      }
+    },
+    refetchInterval: USE_MOCK_DATA ? 5_000 : 60_000, // Slower refresh for all orders
+  });
+}
+
 // Helper to create a mock order object
 function createMockOrder(orderData: Omit<CreateOrderPayload, "items">, items: CreateOrderPayload["items"]): Order {
   const id = `order-${Date.now()}`;
@@ -314,6 +353,8 @@ function createMockOrder(orderData: Omit<CreateOrderPayload, "items">, items: Cr
     prepared_at: null,
     ready_at: null,
     delivered_at: null,
+    rider_id: null,
+    assigned_at: null,
     items: items.map((item, idx) => ({
       id: `${id}-item-${idx}`,
       order_id: id,

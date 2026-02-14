@@ -25,9 +25,18 @@ export interface Order {
   prepared_at: string | null;
   ready_at: string | null;
   delivered_at: string | null;
+  // Rider assignment
+  rider_id: string | null;
+  assigned_at: string | null;
   // Joined (Supabase returns as order_items, we alias as items)
   items?: OrderItem[];
   order_items?: OrderItem[];
+  // Joined rider profile (optional)
+  rider?: {
+    id: string;
+    full_name: string;
+    phone: string | null;
+  } | null;
 }
 
 export interface OrderItem {

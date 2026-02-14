@@ -27,6 +27,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "orders:read",
     "orders:update",
     "orders:cancel",
+    "orders:assign", // can assign riders to orders
     "menu:read",
     "menu:create",
     "menu:update",
@@ -39,6 +40,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "settings:read",
     "settings:update",
     "deliveries:read",
+    "deliveries:assign",
   ],
   kitchen: [
     "orders:read",
@@ -46,11 +48,13 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "orders:cancel",
     "menu:read",
     "menu:update", // toggle availability
+    "settings:read", // can view own profile
   ],
   rider: [
     "orders:read", // own assigned only
     "orders:update", // ready → delivered only
     "deliveries:read",
+    "settings:read", // can view own profile
   ],
 };
 

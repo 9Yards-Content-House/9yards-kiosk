@@ -95,12 +95,12 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
       {DISPLAY_STATUSES.map((status) => (
         <div 
           key={status} 
-          className="min-w-[280px]"
+          className="kanban-column"
           onDragOver={(e) => handleDragOver(e, status)}
           onDragLeave={handleDragLeave}
           onDrop={(e) => handleDrop(e, status)}
         >
-          <div className="flex items-center gap-2 mb-3">
+          <div className="flex items-center gap-2 mb-3 px-2">
             <div
               className={`w-3 h-3 rounded-full ${
                 status === "new"
@@ -119,7 +119,7 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
           </div>
 
           <div 
-            className={`space-y-3 min-h-[200px] rounded-xl p-2 transition-colors ${
+            className={`kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 transition-colors ${
               dragOverStatus === status 
                 ? "bg-secondary/10 border-2 border-dashed border-secondary" 
                 : "border-2 border-transparent"

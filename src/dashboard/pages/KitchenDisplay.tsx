@@ -11,35 +11,39 @@ import {
   RefreshCw,
   Timer,
   Flame,
+  GripVertical,
 } from "lucide-react";
 import type { Order, OrderItem, OrderStatus, PaymentStatus } from "@shared/types";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
-import { formatPrice } from "@shared/lib/utils";
+import { formatPrice, cn } from "@shared/lib/utils";
 
-// Status configurations
+// Status configurations matching Kanban colors (solid, no gradients)
 const STATUS_CONFIG = {
   new: {
     label: "New Order",
-    color: "bg-yellow-500",
-    textColor: "text-yellow-600",
-    bgColor: "bg-yellow-50",
-    borderColor: "border-yellow-200",
+    color: "bg-blue-500",
+    textColor: "text-blue-600",
+    bgColor: "bg-blue-50 dark:bg-blue-900/20",
+    borderColor: "border-blue-200 dark:border-blue-800",
+    headerBg: "bg-blue-500",
     icon: AlertTriangle,
   },
   preparing: {
     label: "Preparing",
-    color: "bg-blue-500",
-    textColor: "text-blue-600",
-    bgColor: "bg-blue-50",
-    borderColor: "border-blue-200",
+    color: "bg-yellow-500",
+    textColor: "text-yellow-600",
+    bgColor: "bg-yellow-50 dark:bg-yellow-900/20",
+    borderColor: "border-yellow-200 dark:border-yellow-800",
+    headerBg: "bg-yellow-500",
     icon: Flame,
   },
   ready: {
     label: "Ready",
     color: "bg-green-500",
     textColor: "text-green-600",
-    bgColor: "bg-green-50",
-    borderColor: "border-green-200",
+    bgColor: "bg-green-50 dark:bg-green-900/20",
+    borderColor: "border-green-200 dark:border-green-800",
+    headerBg: "bg-green-500",
     icon: Check,
   },
 } as const;
@@ -93,6 +97,8 @@ const generateMockKDSOrders = (): Order[] => {
       prepared_at: null,
       ready_at: null,
       delivered_at: null,
+      rider_id: null,
+      assigned_at: null,
       items: partial.items,
     };
   };
@@ -207,10 +213,14 @@ const generateMockKDSOrders = (): Order[] => {
   ];
 };
 
+type KDSView = "all" | "new" | "preparing" | "ready";
+
 export default function KitchenDisplay() {
   const [orders, setOrders] = useState<Order[]>([]);
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
+  const [activeView, setActiveView] = useState<KDSView>("all");
+  const [draggedOrder, setDraggedOrder] = useState<Order | null>(null);
   const prevOrderCountRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
 
@@ -330,130 +340,273 @@ export default function KitchenDisplay() {
     }
   };
 
+  // Drag and drop handlers
+  const handleDragStart = (order: Order) => {
+    setDraggedOrder(order);
+  };
+
+  const handleDragOver = (e: React.DragEvent) => {
+    e.preventDefault();
+  };
+
+  const handleDrop = (targetStatus: OrderStatus) => {
+    if (draggedOrder && draggedOrder.status !== targetStatus) {
+      updateOrderStatus(draggedOrder.id, targetStatus);
+    }
+    setDraggedOrder(null);
+  };
+
+  const handleDragEnd = () => {
+    setDraggedOrder(null);
+  };
+
   return (
-    <div className="min-h-screen bg-gray-900 text-white">
+    <div className="min-h-screen bg-slate-100 dark:bg-slate-900">
       {/* Header */}
-      <div className="bg-gray-800 border-b border-gray-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="flex items-center gap-2">
-              <ChefHat className="w-8 h-8 text-secondary" />
-              <h1 className="text-2xl font-bold">Kitchen Display</h1>
+      <div className="bg-white dark:bg-slate-800 border-b px-4 md:px-6 py-3 md:py-4 sticky top-0 z-10 shadow-sm">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-3">
+          <div className="flex items-center justify-between md:justify-start gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-xl bg-secondary">
+                <ChefHat className="w-5 h-5 md:w-6 md:h-6 text-white" />
+              </div>
+              <h1 className="text-xl md:text-2xl font-bold">
+                Kitchen Display
+              </h1>
             </div>
-            <div className="text-gray-400">|</div>
-            <div className="flex items-center gap-2 text-gray-400">
+            <div className="hidden md:flex items-center gap-2 text-muted-foreground">
+              <div className="w-px h-6 bg-border"></div>
               <Clock className="w-5 h-5" />
-              <span>{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
+              <span className="font-medium">{new Date().toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" })}</span>
             </div>
           </div>
 
-          <div className="flex items-center gap-3">
-            {/* Stats */}
-            <div className="flex items-center gap-4 mr-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-500">{pendingOrders.length}</div>
-                <div className="text-xs text-gray-400">New</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-500">{preparingOrders.length}</div>
-                <div className="text-xs text-gray-400">Cooking</div>
-              </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-500">{readyOrders.length}</div>
-                <div className="text-xs text-gray-400">Ready</div>
-              </div>
+          <div className="flex items-center justify-between md:justify-end gap-3">
+            {/* Stats - horizontal on mobile */}
+            <div className="flex items-center gap-2 md:gap-3 md:mr-4">
+              <button
+                onClick={() => setActiveView(activeView === "new" ? "all" : "new")}
+                className={cn(
+                  "text-center px-3 py-2 rounded-xl transition-all",
+                  activeView === "new" 
+                    ? "bg-blue-100 dark:bg-blue-900/30 ring-2 ring-blue-500" 
+                    : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
+                )}
+              >
+                <div className="text-xl md:text-2xl font-bold text-blue-600 dark:text-blue-400">{pendingOrders.length}</div>
+                <div className="text-xs text-muted-foreground font-medium">New</div>
+              </button>
+              <button
+                onClick={() => setActiveView(activeView === "preparing" ? "all" : "preparing")}
+                className={cn(
+                  "text-center px-3 py-2 rounded-xl transition-all",
+                  activeView === "preparing" 
+                    ? "bg-yellow-100 dark:bg-yellow-900/30 ring-2 ring-yellow-500" 
+                    : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
+                )}
+              >
+                <div className="text-xl md:text-2xl font-bold text-yellow-600 dark:text-yellow-400">{preparingOrders.length}</div>
+                <div className="text-xs text-muted-foreground font-medium">Cooking</div>
+              </button>
+              <button
+                onClick={() => setActiveView(activeView === "ready" ? "all" : "ready")}
+                className={cn(
+                  "text-center px-3 py-2 rounded-xl transition-all",
+                  activeView === "ready" 
+                    ? "bg-green-100 dark:bg-green-900/30 ring-2 ring-green-500" 
+                    : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
+                )}
+              >
+                <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">{readyOrders.length}</div>
+                <div className="text-xs text-muted-foreground font-medium">Ready</div>
+              </button>
             </div>
 
             {/* Controls */}
-            <button
-              onClick={refreshOrders}
-              className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
-            >
-              <RefreshCw className="w-5 h-5" />
-            </button>
-            <button
-              onClick={() => setSoundEnabled(!soundEnabled)}
-              className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
-            >
-              {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-            </button>
-            <button
-              onClick={toggleFullscreen}
-              className="p-2 rounded-lg bg-gray-700 hover:bg-gray-600 transition-colors"
-            >
-              <Maximize2 className="w-5 h-5" />
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                onClick={refreshOrders}
+                className="p-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-border transition-all"
+              >
+                <RefreshCw className="w-5 h-5 text-muted-foreground" />
+              </button>
+              <button
+                onClick={() => setSoundEnabled(!soundEnabled)}
+                className={cn(
+                  "p-2.5 rounded-xl border transition-all",
+                  soundEnabled 
+                    ? "bg-secondary/10 border-secondary text-secondary" 
+                    : "bg-slate-200 dark:bg-slate-700 border-border text-muted-foreground"
+                )}
+              >
+                {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+              </button>
+              <button
+                onClick={toggleFullscreen}
+                className="hidden md:block p-2.5 rounded-xl bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600 border border-border transition-all"
+              >
+                <Maximize2 className="w-5 h-5 text-muted-foreground" />
+              </button>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Order Grid */}
-      <div className="p-6 grid grid-cols-3 gap-6">
+      {/* Mobile View Tabs */}
+      <div className="md:hidden flex border-b overflow-x-auto bg-white dark:bg-slate-800">
+        <button
+          onClick={() => setActiveView("all")}
+          className={cn(
+            "flex-1 min-w-[80px] px-4 py-3 text-sm font-medium transition-colors",
+            activeView === "all" ? "text-primary border-b-2 border-primary bg-primary/5" : "text-muted-foreground"
+          )}
+        >
+          All
+        </button>
+        <button
+          onClick={() => setActiveView("new")}
+          className={cn(
+            "flex-1 min-w-[80px] px-4 py-3 text-sm font-medium transition-colors",
+            activeView === "new" ? "text-blue-600 border-b-2 border-blue-500 bg-blue-50 dark:bg-blue-900/20" : "text-muted-foreground"
+          )}
+        >
+          New ({pendingOrders.length})
+        </button>
+        <button
+          onClick={() => setActiveView("preparing")}
+          className={cn(
+            "flex-1 min-w-[80px] px-4 py-3 text-sm font-medium transition-colors",
+            activeView === "preparing" ? "text-yellow-600 border-b-2 border-yellow-500 bg-yellow-50 dark:bg-yellow-900/20" : "text-muted-foreground"
+          )}
+        >
+          Cooking ({preparingOrders.length})
+        </button>
+        <button
+          onClick={() => setActiveView("ready")}
+          className={cn(
+            "flex-1 min-w-[80px] px-4 py-3 text-sm font-medium transition-colors",
+            activeView === "ready" ? "text-green-600 border-b-2 border-green-500 bg-green-50 dark:bg-green-900/20" : "text-muted-foreground"
+          )}
+        >
+          Ready ({readyOrders.length})
+        </button>
+      </div>
+
+      {/* Order Grid - responsive columns with drag-drop */}
+      <div className="p-4 md:p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6">
         {/* Column: New Orders */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-yellow-500 flex items-center gap-2">
-            <AlertTriangle className="w-5 h-5" />
-            New Orders ({pendingOrders.length})
-          </h2>
-          <div className="space-y-4">
-            <AnimatePresence>
-              {pendingOrders.map((order) => (
-                <KDSOrderCard
-                  key={order.id}
-                  order={order}
-                  status="new"
-                  timeElapsed={getTimeElapsed(order.created_at)}
-                  isUrgent={isUrgent(order.created_at)}
-                  onStartCooking={() => updateOrderStatus(order.id, "preparing")}
-                />
-              ))}
-            </AnimatePresence>
+        {(activeView === "all" || activeView === "new") && (
+          <div 
+            className="space-y-4"
+            onDragOver={handleDragOver}
+            onDrop={() => handleDrop("new")}
+          >
+            <h2 className="hidden md:flex text-lg font-semibold text-blue-600 dark:text-blue-400 items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                <AlertTriangle className="w-4 h-4" />
+              </div>
+              New Orders ({pendingOrders.length})
+            </h2>
+            <div className="space-y-4">
+              <AnimatePresence>
+                {pendingOrders.map((order) => (
+                  <KDSOrderCard
+                    key={order.id}
+                    order={order}
+                    status="new"
+                    timeElapsed={getTimeElapsed(order.created_at)}
+                    isUrgent={isUrgent(order.created_at)}
+                    onStartCooking={() => updateOrderStatus(order.id, "preparing")}
+                    onDragStart={() => handleDragStart(order)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedOrder?.id === order.id}
+                  />
+                ))}
+              </AnimatePresence>
+              {pendingOrders.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground bg-white dark:bg-slate-800 rounded-xl border border-dashed">
+                  No new orders
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Column: Preparing */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-blue-500 flex items-center gap-2">
-            <Flame className="w-5 h-5" />
-            Preparing ({preparingOrders.length})
-          </h2>
-          <div className="space-y-4">
-            <AnimatePresence>
-              {preparingOrders.map((order) => (
-                <KDSOrderCard
-                  key={order.id}
-                  order={order}
-                  status="preparing"
-                  timeElapsed={getTimeElapsed(order.created_at)}
-                  isUrgent={isUrgent(order.created_at)}
-                  onMarkReady={() => updateOrderStatus(order.id, "ready")}
-                />
-              ))}
-            </AnimatePresence>
+        {(activeView === "all" || activeView === "preparing") && (
+          <div 
+            className="space-y-4"
+            onDragOver={handleDragOver}
+            onDrop={() => handleDrop("preparing")}
+          >
+            <h2 className="hidden md:flex text-lg font-semibold text-yellow-600 dark:text-yellow-400 items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-yellow-100 dark:bg-yellow-900/30">
+                <Flame className="w-4 h-4" />
+              </div>
+              Preparing ({preparingOrders.length})
+            </h2>
+            <div className="space-y-4">
+              <AnimatePresence>
+                {preparingOrders.map((order) => (
+                  <KDSOrderCard
+                    key={order.id}
+                    order={order}
+                    status="preparing"
+                    timeElapsed={getTimeElapsed(order.created_at)}
+                    isUrgent={isUrgent(order.created_at)}
+                    onMarkReady={() => updateOrderStatus(order.id, "ready")}
+                    onDragStart={() => handleDragStart(order)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedOrder?.id === order.id}
+                  />
+                ))}
+              </AnimatePresence>
+              {preparingOrders.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground bg-white dark:bg-slate-800 rounded-xl border border-dashed">
+                  No orders cooking
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
 
         {/* Column: Ready */}
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-green-500 flex items-center gap-2">
-            <Check className="w-5 h-5" />
-            Ready ({readyOrders.length})
-          </h2>
-          <div className="space-y-4">
-            <AnimatePresence>
-              {readyOrders.map((order) => (
-                <KDSOrderCard
-                  key={order.id}
-                  order={order}
-                  status="ready"
-                  timeElapsed={getTimeElapsed(order.created_at)}
-                  isUrgent={false}
-                  onComplete={() => updateOrderStatus(order.id, "delivered")}
-                />
-              ))}
-            </AnimatePresence>
+        {(activeView === "all" || activeView === "ready") && (
+          <div 
+            className="space-y-4"
+            onDragOver={handleDragOver}
+            onDrop={() => handleDrop("ready")}
+          >
+            <h2 className="hidden md:flex text-lg font-semibold text-green-600 dark:text-green-400 items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
+                <Check className="w-4 h-4" />
+              </div>
+              Ready ({readyOrders.length})
+            </h2>
+            <div className="space-y-4">
+              <AnimatePresence>
+                {readyOrders.map((order) => (
+                  <KDSOrderCard
+                    key={order.id}
+                    order={order}
+                    status="ready"
+                    timeElapsed={getTimeElapsed(order.created_at)}
+                    isUrgent={false}
+                    onComplete={() => updateOrderStatus(order.id, "delivered")}
+                    onDragStart={() => handleDragStart(order)}
+                    onDragEnd={handleDragEnd}
+                    isDragging={draggedOrder?.id === order.id}
+                  />
+                ))}
+              </AnimatePresence>
+              {readyOrders.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground bg-white dark:bg-slate-800 rounded-xl border border-dashed">
+                  No ready orders
+                </div>
+              )}
+            </div>
           </div>
-        </div>
+        )}
       </div>
     </div>
   );
@@ -467,6 +620,9 @@ interface KDSOrderCardProps {
   onStartCooking?: () => void;
   onMarkReady?: () => void;
   onComplete?: () => void;
+  onDragStart?: () => void;
+  onDragEnd?: () => void;
+  isDragging?: boolean;
 }
 
 function KDSOrderCard({
@@ -477,6 +633,9 @@ function KDSOrderCard({
   onStartCooking,
   onMarkReady,
   onComplete,
+  onDragStart,
+  onDragEnd,
+  isDragging,
 }: KDSOrderCardProps) {
   const config = STATUS_CONFIG[status];
   const StatusIcon = config.icon;
@@ -484,39 +643,63 @@ function KDSOrderCard({
   return (
     <motion.div
       layout
-      initial={{ opacity: 0, scale: 0.9 }}
-      animate={{ opacity: 1, scale: 1 }}
-      exit={{ opacity: 0, scale: 0.9 }}
-      className={`rounded-xl border-2 overflow-hidden ${
-        isUrgent ? "border-red-500 animate-pulse" : "border-gray-700"
-      } ${config.bgColor.replace("bg-", "bg-gray-800/")}`}
+      initial={{ opacity: 0, y: 20, scale: 0.95 }}
+      animate={{ opacity: 1, y: 0, scale: isDragging ? 1.02 : 1 }}
+      exit={{ opacity: 0, y: -20, scale: 0.95 }}
+      transition={{ type: "spring", stiffness: 500, damping: 30 }}
+      draggable
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      className={cn(
+        "rounded-xl border overflow-hidden bg-white dark:bg-slate-800 shadow-sm cursor-grab active:cursor-grabbing",
+        isUrgent 
+          ? "border-red-500 ring-2 ring-red-500/20" 
+          : config.borderColor,
+        isDragging && "opacity-50"
+      )}
     >
       {/* Header */}
-      <div className={`px-4 py-3 flex items-center justify-between ${config.color}`}>
-        <div className="flex items-center gap-2">
-          <span className="text-2xl font-bold">#{order.order_number}</span>
+      <div className={cn("px-4 py-3 flex items-center justify-between text-white", config.headerBg)}>
+        <div className="flex items-center gap-3">
+          <GripVertical className="w-4 h-4 opacity-50" />
+          <span className="text-2xl font-bold tracking-tight">#{order.order_number}</span>
+          {isUrgent && (
+            <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-semibold">
+              URGENT
+            </span>
+          )}
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 bg-black/20 rounded-lg px-2.5 py-1">
           <Timer className="w-4 h-4" />
-          <span className={`font-medium ${isUrgent ? "text-red-200" : ""}`}>{timeElapsed}</span>
+          <span className={cn("font-semibold text-sm", isUrgent && "text-red-200")}>{timeElapsed}</span>
         </div>
       </div>
 
       {/* Items */}
-      <div className="p-4 space-y-2">
+      <div className="p-4 space-y-3">
         {order.items?.map((item) => (
-          <div key={item.id} className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <span className="w-8 h-8 rounded-lg bg-gray-700 flex items-center justify-center font-bold text-lg">
-                {item.quantity}
+          <div key={item.id} className="flex items-start gap-3">
+            <span className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 border flex items-center justify-center font-bold text-lg">
+              {item.quantity}
+            </span>
+            <div className="flex-1 min-w-0">
+              <span className="font-medium block">
+                {item.main_dishes?.length ? item.main_dishes.join(" + ") : "Item"}
               </span>
-              <span className="font-medium text-white">
-                {[
-                  ...(item.main_dishes?.length ? [item.main_dishes.join(" + ")] : []),
-                  ...(item.sauce_name ? [`Sauce: ${item.sauce_name}`] : []),
-                  ...(item.side_dish ? [`Side: ${item.side_dish}`] : []),
-                ].join(" • ") || "Item"}
-              </span>
+              {(item.sauce_name || item.side_dish) && (
+                <div className="flex flex-wrap gap-1.5 mt-1.5">
+                  {item.sauce_name && (
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-muted-foreground text-xs">
+                      Sauce: {item.sauce_name}
+                    </span>
+                  )}
+                  {item.side_dish && (
+                    <span className="px-2 py-0.5 rounded-md bg-slate-100 dark:bg-slate-700 text-muted-foreground text-xs">
+                      Side: {item.side_dish}
+                    </span>
+                  )}
+                </div>
+              )}
             </div>
           </div>
         ))}
@@ -527,7 +710,7 @@ function KDSOrderCard({
         {status === "new" && onStartCooking && (
           <button
             onClick={onStartCooking}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-3 bg-yellow-500 hover:bg-yellow-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
           >
             <Flame className="w-5 h-5" />
             Start Cooking
@@ -536,7 +719,7 @@ function KDSOrderCard({
         {status === "preparing" && onMarkReady && (
           <button
             onClick={onMarkReady}
-            className="w-full py-3 bg-green-600 hover:bg-green-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
           >
             <Check className="w-5 h-5" />
             Mark Ready
@@ -545,7 +728,7 @@ function KDSOrderCard({
         {status === "ready" && onComplete && (
           <button
             onClick={onComplete}
-            className="w-full py-3 bg-gray-600 hover:bg-gray-700 rounded-lg font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
           >
             <Check className="w-5 h-5" />
             Complete & Clear

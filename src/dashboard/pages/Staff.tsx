@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Plus, Loader2, UserX, UserCheck, Trash2, Edit2, RefreshCw } from "lucide-react";
+import { Plus, Loader2, UserX, UserCheck, Trash2, Edit2, RefreshCw, Search, Mail, Phone, Calendar } from "lucide-react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Profile, UserRole } from "@shared/types/auth";
 import { useAuth } from "../context/AuthContext";
@@ -28,12 +28,20 @@ import {
 } from "@shared/components/ui/alert-dialog";
 import { toast } from "sonner";
 
+// Role badge colors
+const ROLE_COLORS: Record<UserRole, string> = {
+  admin: "bg-purple-100 text-purple-700 border-purple-200",
+  kitchen: "bg-amber-100 text-amber-700 border-amber-200",
+  rider: "bg-blue-100 text-blue-700 border-blue-200",
+};
+
 // Mock staff data for development
-const MOCK_STAFF: Profile[] = [
+const MOCK_STAFF: (Profile & { email?: string })[] = [
   {
     id: "user-1",
     full_name: "John Katende",
     phone: "+256700111222",
+    email: "john@9yards.co.ug",
     role: "kitchen",
     active: true,
     created_at: new Date().toISOString(),
@@ -42,6 +50,7 @@ const MOCK_STAFF: Profile[] = [
     id: "user-2",
     full_name: "Sarah Namugalu",
     phone: "+256700333444",
+    email: "sarah@9yards.co.ug",
     role: "rider",
     active: true,
     created_at: new Date().toISOString(),
@@ -50,6 +59,7 @@ const MOCK_STAFF: Profile[] = [
     id: "user-3",
     full_name: "Moses Ocheng",
     phone: "+256700555666",
+    email: "moses@9yards.co.ug",
     role: "admin",
     active: true,
     created_at: new Date().toISOString(),
@@ -58,6 +68,20 @@ const MOCK_STAFF: Profile[] = [
 
 // In-memory store for mock mode
 let mockStaffStore = [...MOCK_STAFF];
+
+// Format relative time
+const formatRelativeTime = (dateString: string) => {
+  const date = new Date(dateString);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return "Today";
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays} days ago`;
+  if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
+  return date.toLocaleDateString();
+};
 
 export default function Staff() {
   const { role, user, loading: authLoading } = useAuth();
@@ -110,11 +134,23 @@ export default function Staff() {
   }, [queryClient]);
 
   const [showInvite, setShowInvite] = useState(false);
+  const [search, setSearch] = useState("");
+  const [roleFilter, setRoleFilter] = useState<UserRole | "all">("all");
   const [inviteEmail, setInviteEmail] = useState("");
   const [invitePassword, setInvitePassword] = useState("");
   const [inviteName, setInviteName] = useState("");
   const [invitePhone, setInvitePhone] = useState("");
   const [inviteRole, setInviteRole] = useState<UserRole>("kitchen");
+  
+  // Filter staff
+  const filteredStaff = staff?.filter((member) => {
+    const matchesSearch = !search || 
+      member.full_name.toLowerCase().includes(search.toLowerCase()) ||
+      member.phone?.toLowerCase().includes(search.toLowerCase()) ||
+      (member as any).email?.toLowerCase().includes(search.toLowerCase());
+    const matchesRole = roleFilter === "all" || member.role === roleFilter;
+    return matchesSearch && matchesRole;
+  });
   
   // Edit state
   const [editingMember, setEditingMember] = useState<Profile | null>(null);
@@ -321,7 +357,7 @@ export default function Staff() {
 
   return (
     <div className="p-4 md:p-6">
-      <div className="flex items-center justify-between mb-6">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
         <div>
           <h1 className="text-2xl font-bold">Staff Management</h1>
           <p className="text-muted-foreground">{staff?.length || 0} team members</p>
@@ -400,6 +436,29 @@ export default function Staff() {
         </Dialog>
       </div>
 
+      {/* Search and Filter */}
+      <div className="flex flex-col sm:flex-row gap-3 mb-6">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          <Input
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            placeholder="Search by name, phone, or email..."
+            className="pl-10"
+          />
+        </div>
+        <select
+          value={roleFilter}
+          onChange={(e) => setRoleFilter(e.target.value as UserRole | "all")}
+          className="h-10 px-3 rounded-md border bg-background text-sm min-w-[140px]"
+        >
+          <option value="all">All Roles</option>
+          <option value="admin">Admin</option>
+          <option value="kitchen">Kitchen</option>
+          <option value="rider">Rider</option>
+        </select>
+      </div>
+
       {/* Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
         <DialogContent>
@@ -454,32 +513,46 @@ export default function Staff() {
         </div>
       ) : (
         <div className="bg-card rounded-xl border overflow-hidden">
-          <div className="hidden md:grid grid-cols-[1fr_100px_100px_140px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
+          <div className="hidden md:grid grid-cols-[1fr_140px_100px_100px_100px_140px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
             <span>Name</span>
+            <span>Contact</span>
             <span>Role</span>
             <span>Status</span>
+            <span>Joined</span>
             <span>Actions</span>
           </div>
-          {staff?.map((member) => {
+          {filteredStaff?.map((member) => {
             const isCurrentUser = member.id === user?.id;
+            const memberEmail = (member as any).email;
             return (
               <div
                 key={member.id}
-                className="grid grid-cols-1 md:grid-cols-[1fr_100px_100px_140px] gap-2 md:gap-4 items-center px-4 py-3 border-b"
+                className="grid grid-cols-1 md:grid-cols-[1fr_140px_100px_100px_100px_140px] gap-2 md:gap-4 items-center px-4 py-3 border-b hover:bg-muted/30 transition-colors"
               >
                 <div>
                   <p className="font-medium">
                     {member.full_name}
                     {isCurrentUser && (
-                      <span className="ml-2 text-xs text-muted-foreground">(You)</span>
+                      <Badge variant="outline" className="ml-2 text-[10px] py-0">You</Badge>
                     )}
                   </p>
+                </div>
+                <div className="space-y-0.5">
+                  {memberEmail && (
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Mail className="w-3 h-3" />
+                      <span className="truncate">{memberEmail}</span>
+                    </div>
+                  )}
                   {member.phone && (
-                    <p className="text-xs text-muted-foreground">{member.phone}</p>
+                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                      <Phone className="w-3 h-3" />
+                      <span>{member.phone}</span>
+                    </div>
                   )}
                 </div>
                 <div>
-                  <Badge variant="secondary" className="capitalize">
+                  <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]}`}>
                     {member.role}
                   </Badge>
                 </div>
@@ -487,6 +560,10 @@ export default function Staff() {
                   <Badge variant={member.active ? "default" : "destructive"}>
                     {member.active ? "Active" : "Inactive"}
                   </Badge>
+                </div>
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+                  <Calendar className="w-3 h-3" />
+                  <span>{formatRelativeTime(member.created_at)}</span>
                 </div>
                 <div className="flex items-center gap-1">
                   <Button
@@ -544,9 +621,9 @@ export default function Staff() {
               </div>
             );
           })}
-          {(!staff || staff.length === 0) && (
+          {(!filteredStaff || filteredStaff.length === 0) && (
             <div className="p-8 text-center text-muted-foreground">
-              No staff members yet
+              {search || roleFilter !== "all" ? "No staff members match your filters" : "No staff members yet"}
             </div>
           )}
         </div>

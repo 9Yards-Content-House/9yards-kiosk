@@ -13,6 +13,7 @@ import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
 import StatusBadge from "../components/StatusBadge";
 import OrderTimeline from "../components/OrderTimeline";
+import PrintReceipt from "../components/PrintReceipt";
 import { toast } from "sonner";
 
 export default function OrderDetail() {
@@ -83,6 +84,7 @@ export default function OrderDetail() {
           <h1 className="text-2xl font-bold">{order.order_number}</h1>
           <p className="text-muted-foreground">{timeAgo(order.created_at)}</p>
         </div>
+        <PrintReceipt order={order} />
         <StatusBadge status={order.status} />
       </div>
 

@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Upload, Trash2, Image as ImageIcon, X, Plus } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, Trash2, Image as ImageIcon, X, Plus, Copy } from "lucide-react";
 import { useCategories } from "@shared/hooks/useMenu";
 import { useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from "@shared/hooks/useMenuMutations";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
@@ -198,6 +198,27 @@ export default function MenuItemEdit() {
     }
   };
 
+  const handleDuplicate = async () => {
+    try {
+      const duplicatePayload = {
+        ...form,
+        name: `${form.name} (Copy)`,
+        preparations: form.preparations.length > 0 ? form.preparations : null,
+        sizes: form.sizes.length > 0 ? form.sizes : null,
+      };
+      const result = await createMenuItem.mutateAsync(duplicatePayload);
+      toast.success("Item duplicated");
+      // Navigate to the new item
+      if (result?.id) {
+        navigate(`/menu/${result.id}`);
+      } else {
+        navigate("/menu");
+      }
+    } catch {
+      toast.error("Failed to duplicate item");
+    }
+  };
+
   const isPending = createMenuItem.isPending || updateMenuItem.isPending;
 
   const update = (field: string, value: unknown) =>
@@ -270,28 +291,38 @@ export default function MenuItemEdit() {
           </h1>
         </div>
         {!isNew && (
-          <AlertDialog>
-            <AlertDialogTrigger asChild>
-              <Button variant="destructive" size="sm">
-                <Trash2 className="w-4 h-4 mr-2" />
-                Delete
-              </Button>
-            </AlertDialogTrigger>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Menu Item?</AlertDialogTitle>
-                <AlertDialogDescription>
-                  This will permanently delete "{form.name}" from the menu. This action cannot be undone.
-                </AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+          <div className="flex items-center gap-2">
+            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={createMenuItem.isPending}>
+              {createMenuItem.isPending ? (
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+              ) : (
+                <Copy className="w-4 h-4 mr-2" />
+              )}
+              Duplicate
+            </Button>
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button variant="destructive" size="sm">
+                  <Trash2 className="w-4 h-4 mr-2" />
                   Delete
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete Menu Item?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This will permanently delete "{form.name}" from the menu. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                    Delete
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         )}
       </div>
 

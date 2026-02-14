@@ -74,7 +74,7 @@ export default function OrderCard({ order, isNew }: OrderCardProps) {
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <Package className="w-3.5 h-3.5" />
-          {order.items?.length || 0} items • {formatPrice(order.total)}
+          {order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items • {formatPrice(order.total)}
         </div>
         <div className="flex items-center gap-2 text-muted-foreground">
           <Clock className="w-3.5 h-3.5" />

@@ -8,15 +8,24 @@ import {
   Search,
   UtensilsCrossed,
   MessageCircle,
+  Loader2,
 } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
 import { QRCodeFallback } from '@shared/components/QRCode';
+import { supabase } from '@shared/lib/supabase';
 import KioskHeader from '../components/KioskHeader';
 import { Confetti, SuccessCheckmark } from '../components/SuccessCelebration';
 import { useSound } from '../hooks/useSound';
+
+interface OrderDetails {
+  orderNumber: string;
+  total: number;
+  customerName: string;
+  customerPhone: string;
+}
 
 export default function ConfirmationNew() {
   const navigate = useNavigate();
@@ -29,18 +38,67 @@ export default function ConfirmationNew() {
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [showConfetti, setShowConfetti] = useState(true);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  // Get order details from navigation state
-  const orderNumber = location.state?.orderNumber || '9Y-0000';
-  const total = location.state?.total || 0;
-  const customerName = location.state?.customerName || '';
-  const customerPhone = location.state?.customerPhone || '';
+  // Try to get order details from navigation state first, then sessionStorage, then Supabase
+  useEffect(() => {
+    const loadOrderDetails = async () => {
+      // 1. Check navigation state (preferred - from Payment.tsx)
+      if (location.state?.orderNumber) {
+        setOrderDetails({
+          orderNumber: location.state.orderNumber,
+          total: location.state.total || 0,
+          customerName: location.state.customerName || '',
+          customerPhone: location.state.customerPhone || '',
+        });
+        // Store in sessionStorage as backup
+        sessionStorage.setItem('kiosk_last_order_number', location.state.orderNumber);
+        setLoading(false);
+        return;
+      }
+
+      // 2. Check sessionStorage for order number (fallback for page refresh)
+      const storedOrderNumber = sessionStorage.getItem('kiosk_last_order_number');
+      if (storedOrderNumber) {
+        try {
+          const { data: order } = await supabase
+            .from('orders')
+            .select('order_number, total, customer_name, customer_phone')
+            .eq('order_number', storedOrderNumber)
+            .single();
+
+          if (order) {
+            setOrderDetails({
+              orderNumber: order.order_number,
+              total: order.total,
+              customerName: order.customer_name || '',
+              customerPhone: order.customer_phone || '',
+            });
+            setLoading(false);
+            return;
+          }
+        } catch (error) {
+          console.error('Failed to fetch order:', error);
+        }
+      }
+
+      // 3. No order found - redirect to home
+      setLoading(false);
+      navigate('/', { replace: true });
+    };
+
+    loadOrderDetails();
+  }, [location.state, navigate]);
 
   // Auto-reset countdown
   useEffect(() => {
+    if (!orderDetails) return;
+
     const timer = setInterval(() => {
       setCountdown((prev) => {
         if (prev <= 1) {
+          sessionStorage.removeItem('kiosk_last_order_number');
           setLanguage('en');
           navigate('/');
           return 0;
@@ -50,25 +108,45 @@ export default function ConfirmationNew() {
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [navigate]);
+  }, [orderDetails, navigate, setLanguage]);
 
   const handleCopy = useCallback(async () => {
+    if (!orderDetails) return;
     try {
-      await navigator.clipboard.writeText(orderNumber);
+      await navigator.clipboard.writeText(orderDetails.orderNumber);
       setCopied(true);
       play('select');
       setTimeout(() => setCopied(false), 2000);
     } catch {}
-  }, [orderNumber, play]);
+  }, [orderDetails, play]);
 
   const handleNewOrder = useCallback(() => {
+    sessionStorage.removeItem('kiosk_last_order_number');
     setLanguage('en');
     navigate('/');
   }, [navigate, setLanguage]);
 
   const handleTrackOrder = useCallback(() => {
-    navigate(`/lookup/${orderNumber}`);
-  }, [navigate, orderNumber]);
+    if (!orderDetails) return;
+    navigate(`/lookup/${orderDetails.orderNumber}`);
+  }, [navigate, orderDetails]);
+
+  // Loading state
+  if (loading) {
+    return (
+      <div className="kiosk-screen flex flex-col items-center justify-center bg-white">
+        <Loader2 className="w-12 h-12 animate-spin text-[#E6411C]" />
+        <p className="mt-4 text-gray-500">Loading order details...</p>
+      </div>
+    );
+  }
+
+  // No order found
+  if (!orderDetails) {
+    return null;
+  }
+
+  const { orderNumber, customerPhone } = orderDetails;
 
   return (
     <div className="kiosk-screen flex flex-col bg-gradient-to-b from-green-50 to-white">
