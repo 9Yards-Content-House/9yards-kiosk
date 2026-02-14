@@ -1,6 +1,6 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion } from "framer-motion";
-import { Loader2, Smartphone, ArrowLeft } from "lucide-react";
+import { Loader2, Smartphone, ArrowLeft, RefreshCw } from "lucide-react";
 import { formatPrice } from "@shared/lib/utils";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { Button } from "@shared/components/ui/button";
@@ -14,7 +14,9 @@ interface MoMoPaymentProps {
   onCancel: () => void;
 }
 
-type MoMoStep = "enter" | "waiting" | "success" | "failed";
+type MoMoStep = "enter" | "waiting" | "success" | "failed" | "timeout";
+
+const PAYMENT_TIMEOUT_SECONDS = 90;
 
 function detectNetwork(phone: string): "MTN" | "Airtel" | "Unknown" {
   const cleaned = phone.replace(/\D/g, "");
@@ -27,8 +29,40 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
   const [momoPhone, setMomoPhone] = useState(phone);
   const [step, setStep] = useState<MoMoStep>("enter");
   const [error, setError] = useState<string | null>(null);
+  const [countdown, setCountdown] = useState(PAYMENT_TIMEOUT_SECONDS);
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const countdownRef = useRef<NodeJS.Timeout | null>(null);
 
   const network = detectNetwork(momoPhone);
+
+  // Cleanup timers on unmount
+  useEffect(() => {
+    return () => {
+      if (timeoutRef.current) clearTimeout(timeoutRef.current);
+      if (countdownRef.current) clearInterval(countdownRef.current);
+    };
+  }, []);
+
+  // Countdown timer when waiting
+  useEffect(() => {
+    if (step === "waiting") {
+      setCountdown(PAYMENT_TIMEOUT_SECONDS);
+      countdownRef.current = setInterval(() => {
+        setCountdown((prev) => {
+          if (prev <= 1) {
+            if (countdownRef.current) clearInterval(countdownRef.current);
+            setStep("timeout");
+            return 0;
+          }
+          return prev - 1;
+        });
+      }, 1000);
+
+      return () => {
+        if (countdownRef.current) clearInterval(countdownRef.current);
+      };
+    }
+  }, [step]);
 
   const handleSubmit = async () => {
     setStep("waiting");
@@ -37,7 +71,7 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
     // Mock mode - simulate successful payment
     if (USE_MOCK_DATA) {
       console.log("📦 Mock MoMo payment:", { phone: momoPhone, amount, network });
-      setTimeout(() => {
+      timeoutRef.current = setTimeout(() => {
         setStep("success");
         setTimeout(onSuccess, 1500);
       }, 2000);
@@ -56,12 +90,33 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
       if (fnError) throw fnError;
 
       if (data?.status === "pending") {
-        // Poll or wait for callback — simplified: just wait with a timer
-        setTimeout(() => {
-          // In production, this would poll the payment status
-          setStep("success");
-          setTimeout(onSuccess, 1500);
-        }, 5000);
+        // Poll for payment status with timeout
+        const pollInterval = setInterval(async () => {
+          try {
+            const { data: statusData } = await supabase.functions.invoke("momo-status", {
+              body: { reference: data.reference },
+            });
+
+            if (statusData?.status === "success") {
+              clearInterval(pollInterval);
+              if (timeoutRef.current) clearTimeout(timeoutRef.current);
+              setStep("success");
+              setTimeout(onSuccess, 1500);
+            } else if (statusData?.status === "failed") {
+              clearInterval(pollInterval);
+              setError("Payment was declined");
+              setStep("failed");
+            }
+          } catch {
+            // Continue polling
+          }
+        }, 3000);
+
+        // Store interval ref for cleanup
+        timeoutRef.current = setTimeout(() => {
+          clearInterval(pollInterval);
+          // Timeout will be handled by countdown effect
+        }, PAYMENT_TIMEOUT_SECONDS * 1000);
       } else {
         throw new Error("Payment initiation failed");
       }
@@ -92,7 +147,44 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
           <p className="text-sm text-muted-foreground mt-6">
             Approve the transaction on your phone to complete payment
           </p>
+          <div className="mt-6 text-amber-600 font-medium">
+            Time remaining: {Math.floor(countdown / 60)}:{(countdown % 60).toString().padStart(2, '0')}
+          </div>
         </motion.div>
+      </div>
+    );
+  }
+
+  if (step === "timeout") {
+    return (
+      <div className="kiosk-screen flex flex-col items-center justify-center bg-background p-8">
+        <RefreshCw className="w-16 h-16 text-amber-500 mb-6" />
+        <h2 className="text-2xl font-bold mb-2">No Response Received</h2>
+        <p className="text-muted-foreground mb-2 text-center max-w-sm">
+          We didn't receive a payment confirmation. This could mean:
+        </p>
+        <ul className="text-muted-foreground text-sm mb-6 list-disc list-inside">
+          <li>You didn't receive the prompt</li>
+          <li>The prompt expired on your phone</li>
+          <li>Network issues occurred</li>
+        </ul>
+        <div className="flex gap-4">
+          <Button variant="outline" size="touch" onClick={onCancel}>
+            <ArrowLeft className="w-5 h-5 mr-2" />
+            Change Method
+          </Button>
+          <Button
+            size="touch"
+            className="bg-secondary hover:bg-secondary/90"
+            onClick={() => {
+              setStep("enter");
+              setCountdown(PAYMENT_TIMEOUT_SECONDS);
+            }}
+          >
+            <RefreshCw className="w-5 h-5 mr-2" />
+            Try Again
+          </Button>
+        </div>
       </div>
     );
   }

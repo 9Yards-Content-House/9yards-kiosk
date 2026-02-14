@@ -1,8 +1,8 @@
-import { useState, useCallback } from "react";
+import { useState, useCallback, useMemo } from "react";
+import { CheckCircle2, XCircle } from "lucide-react";
 import {
   ORDER_STATUS_FLOW,
   ORDER_STATUS_LABELS,
-  ORDER_STATUS_COLORS,
 } from "@shared/types/orders";
 import type { Order, OrderStatus } from "@shared/types/orders";
 import { useUpdateOrderStatus } from "@shared/hooks/useOrders";
@@ -13,12 +13,37 @@ interface OrderBoardProps {
   grouped: Record<OrderStatus, Order[]>;
 }
 
-const DISPLAY_STATUSES: OrderStatus[] = ["new", "preparing", "ready", "delivered"];
+// Active workflow statuses
+const WORKFLOW_STATUSES: OrderStatus[] = ["new", "preparing", "ready"];
+
+// Time limit for completed/cancelled orders to remain visible (2 hours)
+const COMPLETED_ORDER_VISIBILITY_MS = 2 * 60 * 60 * 1000;
 
 export default function OrderBoard({ grouped }: OrderBoardProps) {
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<OrderStatus | null>(null);
   const updateStatus = useUpdateOrderStatus();
+
+  // Filter completed orders to only show recent ones
+  const recentCompletedOrders = useMemo(() => {
+    const now = Date.now();
+    const delivered = grouped.delivered || [];
+    const cancelled = grouped.cancelled || [];
+    
+    const recentDelivered = delivered.filter(order => {
+      const orderTime = new Date(order.updated_at || order.created_at).getTime();
+      return now - orderTime < COMPLETED_ORDER_VISIBILITY_MS;
+    });
+    
+    const recentCancelled = cancelled.filter(order => {
+      const orderTime = new Date(order.updated_at || order.created_at).getTime();
+      return now - orderTime < COMPLETED_ORDER_VISIBILITY_MS;
+    });
+    
+    return [...recentDelivered, ...recentCancelled].sort((a, b) => 
+      new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
+    );
+  }, [grouped.delivered, grouped.cancelled]);
 
   const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     const orderId = e.currentTarget.dataset.orderId;
@@ -59,7 +84,7 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
 
     // Find the order across all groups
     let order: Order | undefined;
-    for (const status of DISPLAY_STATUSES) {
+    for (const status of WORKFLOW_STATUSES) {
       order = grouped[status]?.find(o => o.id === orderId);
       if (order) break;
     }
@@ -92,7 +117,8 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
 
   return (
     <div className="kanban-board">
-      {DISPLAY_STATUSES.map((status) => (
+      {/* Active workflow columns */}
+      {WORKFLOW_STATUSES.map((status) => (
         <div 
           key={status} 
           className="kanban-column"
@@ -107,9 +133,7 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
                   ? "bg-blue-500"
                   : status === "preparing"
                   ? "bg-yellow-500"
-                  : status === "ready"
-                  ? "bg-green-500"
-                  : "bg-gray-400"
+                  : "bg-green-500"
               }`}
             />
             <h3 className="font-semibold">{ORDER_STATUS_LABELS[status]}</h3>
@@ -128,7 +152,7 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
             {grouped[status]?.map((order) => (
               <div
                 key={order.id}
-                draggable={order.status !== "delivered" && order.status !== "cancelled"}
+                draggable
                 onDragStart={handleDragStart}
                 onDragEnd={handleDragEnd}
                 data-order-id={order.id}
@@ -150,6 +174,39 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
           </div>
         </div>
       ))}
+
+      {/* Completed/Cancelled column - shows recent orders only (last 2 hours) */}
+      <div className="kanban-column">
+        <div className="flex items-center gap-2 mb-3 px-2">
+          <div className="w-3 h-3 rounded-full bg-gray-400" />
+          <h3 className="font-semibold">Completed</h3>
+          <span className="text-sm text-muted-foreground ml-auto">
+            {recentCompletedOrders.length}
+          </span>
+        </div>
+
+        <div className="kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 border-2 border-transparent">
+          {recentCompletedOrders.map((order) => (
+            <div key={order.id} className="relative">
+              {/* Status indicator overlay */}
+              <div className={`absolute -top-1 -right-1 z-10 w-5 h-5 rounded-full flex items-center justify-center ${
+                order.status === "delivered" ? "bg-green-500" : "bg-red-500"
+              }`}>
+                {order.status === "delivered" 
+                  ? <CheckCircle2 className="w-3 h-3 text-white" />
+                  : <XCircle className="w-3 h-3 text-white" />
+                }
+              </div>
+              <OrderCard order={order} isNew={false} />
+            </div>
+          ))}
+          {recentCompletedOrders.length === 0 && (
+            <div className="text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed">
+              No recent orders
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

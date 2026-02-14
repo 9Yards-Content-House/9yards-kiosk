@@ -10,12 +10,14 @@ import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Profile, UserRole } from "@shared/types/auth";
 import type { User, Session } from "@supabase/supabase-js";
 
-// Dev mode credentials for local testing
-const DEV_EMAIL = "dev@test.com";
-const DEV_PASSWORD = "devtest123";
-const DEV_PIN = "1234";
+// Dev mode credentials from environment variables ONLY
+// Never hardcode credentials - they must be in .env.local
+const DEV_EMAIL = import.meta.env.VITE_DEV_EMAIL || '';
+const DEV_PASSWORD = import.meta.env.VITE_DEV_PASSWORD || '';
+const DEV_PIN = import.meta.env.VITE_DEV_PIN || '';
 const IS_DEV = import.meta.env.DEV;
-const CAN_USE_DEV_BYPASS_AUTH = IS_DEV && USE_MOCK_DATA;
+// Only allow dev bypass if: running in dev mode, mock data enabled, AND credentials are set
+const CAN_USE_DEV_BYPASS_AUTH = IS_DEV && USE_MOCK_DATA && DEV_EMAIL && DEV_PASSWORD;
 
 // Mock user for dev mode
 const DEV_USER: User = {
@@ -141,8 +143,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   };
 
   const signInWithPin = async (pin: string) => {
-    // Dev mode bypass for local testing
-    if (CAN_USE_DEV_BYPASS_AUTH && pin === DEV_PIN) {
+    // Dev mode bypass for local testing (only if env vars are set)
+    if (CAN_USE_DEV_BYPASS_AUTH && DEV_PIN && pin === DEV_PIN) {
       console.log("🔧 Dev mode PIN login activated");
       localStorage.setItem("dev_mode", "true");
       setUser(DEV_USER);
@@ -151,10 +153,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       return;
     }
 
-    // Production parity: PIN-based pseudo-auth does not create a Supabase session,
-    // so any RLS-protected writes (order updates, menu edits) will fail.
-    // Keep PIN login disabled unless implemented via Supabase Auth or an Edge Function.
-    throw new Error("PIN login isn't enabled. Please use Email login.");
+    // PIN login requires server-side implementation
+    // Look up profile by PIN and create session via Edge Function
+    const { data, error } = await supabase.functions.invoke("pin-login", {
+      body: { pin },
+    });
+
+    if (error || !data?.session) {
+      throw new Error("Invalid PIN. Please try again or use email login.");
+    }
+
+    // Set the session from the Edge Function response
+    const { error: sessionError } = await supabase.auth.setSession(data.session);
+    if (sessionError) throw sessionError;
   };
 
   const signOut = async () => {

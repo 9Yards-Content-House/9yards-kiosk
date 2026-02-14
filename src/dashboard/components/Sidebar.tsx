@@ -56,11 +56,11 @@ export default function Sidebar() {
     <TooltipProvider delayDuration={0}>
       <aside className={cn("dashboard-sidebar", collapsed && "dashboard-sidebar-collapsed")}>
         {/* Logo */}
-        <div className={cn("p-4 border-b flex items-center gap-3", collapsed && "justify-center p-3")}>
+        <div className={cn("p-4 border-b flex items-center gap-3", collapsed && "flex-col items-center justify-center p-3 gap-2")}>
           <img
             src="/images/logo/9Yards-Food-Coloured-favicon.jpg"
             alt="9Yards Food"
-            className="w-10 h-10 rounded-lg object-contain flex-shrink-0"
+            className={cn("rounded-lg object-contain flex-shrink-0", collapsed ? "w-8 h-8" : "w-10 h-10")}
           />
           {!collapsed && (
             <>
@@ -70,13 +70,49 @@ export default function Sidebar() {
               </div>
             </>
           )}
+          {collapsed && (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div className="flex items-center justify-center">
+                  <NotificationBell />
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>Notifications</TooltipContent>
+            </Tooltip>
+          )}
         </div>
 
         {/* Nav */}
-        <nav className={cn("flex-1 p-3 space-y-1", collapsed && "p-2")}>
+        <nav className={cn("flex-1 p-3 space-y-1", collapsed && "p-2 space-y-2 flex flex-col items-center")}>
           {links.map((link) => {
             const Icon = link.icon;
-            const navLink = (
+
+            if (collapsed) {
+              return (
+                <Tooltip key={link.to}>
+                  <TooltipTrigger asChild>
+                    <NavLink
+                      to={link.to}
+                      className={({ isActive }) =>
+                        cn(
+                          "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200",
+                          isActive
+                            ? "bg-primary text-white shadow-sm"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105"
+                        )
+                      }
+                    >
+                      <Icon className="w-5 h-5" />
+                    </NavLink>
+                  </TooltipTrigger>
+                  <TooltipContent side="right" sideOffset={8}>
+                    {link.label}
+                  </TooltipContent>
+                </Tooltip>
+              );
+            }
+
+            return (
               <NavLink
                 key={link.to}
                 to={link.to}
@@ -85,48 +121,50 @@ export default function Sidebar() {
                     "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
                     isActive
                       ? "bg-primary text-white"
-                      : "text-muted-foreground hover:bg-muted hover:text-foreground",
-                    collapsed && "justify-center px-2"
+                      : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )
                 }
               >
                 <Icon className="w-5 h-5 flex-shrink-0" />
-                {!collapsed && link.label}
+                <span>{link.label}</span>
               </NavLink>
             );
-
-            if (collapsed) {
-              return (
-                <Tooltip key={link.to}>
-                  <TooltipTrigger asChild>
-                    {navLink}
-                  </TooltipTrigger>
-                  <TooltipContent side="right">
-                    {link.label}
-                  </TooltipContent>
-                </Tooltip>
-              );
-            }
-
-            return navLink;
           })}
         </nav>
 
         {/* Collapse toggle */}
-        <div className={cn("px-3 pb-2", collapsed && "px-2")}>
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => setCollapsed(!collapsed)}
-            className={cn("w-full justify-start gap-2", collapsed && "justify-center px-2")}
-          >
-            {collapsed ? <PanelLeft className="w-4 h-4" /> : <PanelLeftClose className="w-4 h-4" />}
-            {!collapsed && "Collapse"}
-          </Button>
+        <div className={cn("px-3 pb-2", collapsed && "px-2 flex justify-center")}>
+          {collapsed ? (
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setCollapsed(false)}
+                  className="w-10 h-10 flex items-center justify-center p-0 hover:scale-105 transition-transform"
+                >
+                  <PanelLeft className="w-5 h-5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="right" sideOffset={8}>
+                Expand
+              </TooltipContent>
+            </Tooltip>
+          ) : (
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => setCollapsed(true)}
+              className="w-full justify-start gap-2"
+            >
+              <PanelLeftClose className="w-4 h-4" />
+              Collapse
+            </Button>
+          )}
         </div>
 
         {/* Footer */}
-        <div className={cn("p-4 border-t", collapsed && "p-2")}>
+        <div className={cn("p-4 border-t", collapsed && "p-2 flex flex-col items-center")}>
           {!collapsed && (
             <div className="flex items-center gap-3 mb-3">
               <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center text-sm font-bold text-primary">
@@ -144,12 +182,12 @@ export default function Sidebar() {
               <TooltipTrigger asChild>
                 <button
                   onClick={handleSignOut}
-                  className="flex items-center justify-center w-full p-2 text-muted-foreground hover:text-foreground transition-colors rounded-lg hover:bg-muted"
+                  className="flex items-center justify-center w-10 h-10 text-muted-foreground hover:text-foreground transition-all rounded-lg hover:bg-muted hover:scale-105"
                 >
-                  <LogOut className="w-4 h-4" />
+                  <LogOut className="w-5 h-5" />
                 </button>
               </TooltipTrigger>
-              <TooltipContent side="right">Sign Out</TooltipContent>
+              <TooltipContent side="right" sideOffset={8}>Sign Out</TooltipContent>
             </Tooltip>
           ) : (
             <button

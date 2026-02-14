@@ -142,9 +142,10 @@ export default function Analytics() {
         });
       }
       
+      // Query orders with their items - order_items stores item names directly, not via FK
       let query = supabase
         .from('orders')
-        .select('*, order_items(*, menu_item:menu_items(name, category_id, category:categories(name)))')
+        .select('*, order_items(*)')
         .neq('status', 'cancelled')
         .order('created_at', { ascending: true });
 
@@ -157,11 +158,16 @@ export default function Analytics() {
       }
 
       const { data, error } = await query;
-      if (error) throw error;
+      if (error) {
+        console.error("Analytics query error:", error);
+        throw error;
+      }
+      
+      console.log(`📊 Analytics: fetched ${data?.length || 0} orders`);
       
       return (data || []).map(order => ({
         ...order,
-        items: order.order_items,
+        items: order.order_items || [],
       }));
     },
     enabled: canView,
@@ -206,13 +212,28 @@ export default function Analytics() {
     orders.forEach((o) => {
       const orderItems = o.order_items || o.items || [];
       orderItems.forEach((item: any) => {
+        // Get item name from available fields
         const name = item.sauce_name || item.menu_item?.name || (item.main_dishes?.[0]) || 'Unknown';
         if (name && name !== 'Unknown') {
           if (!itemCounts[name]) itemCounts[name] = { count: 0, revenue: 0 };
           itemCounts[name].count += item.quantity || 1;
           itemCounts[name].revenue += (item.unit_price || 0) * (item.quantity || 1);
         }
-        const category = item.menu_item?.category?.name || 'Other';
+        
+        // Infer category from item data - real order_items don't have menu_item relationship
+        let category = 'Other';
+        if (item.menu_item?.category?.name) {
+          category = item.menu_item.category.name;
+        } else if (item.type === 'combo') {
+          category = 'Combos';
+        } else if (item.main_dishes && item.main_dishes.length > 0) {
+          category = 'Main Dishes';
+        } else if (item.sauce_name) {
+          category = 'Sauces';
+        } else if (item.side_dish) {
+          category = 'Side Dishes';
+        }
+        
         if (!categoryCounts[category]) categoryCounts[category] = { count: 0, revenue: 0 };
         categoryCounts[category].count += item.quantity || 1;
         categoryCounts[category].revenue += (item.unit_price || 0) * (item.quantity || 1);

@@ -7,6 +7,13 @@
     <meta name="description" content="9Yards Food — Kitchen order management dashboard" />
     <meta name="theme-color" content="#212282" />
     <meta name="robots" content="noindex, nofollow" />
+    
+    <!-- PWA Support -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta name="apple-mobile-web-app-title" content="9Yards Kitchen" />
+    <link rel="manifest" href="/manifest-dashboard.json" />
 
     <!-- Font -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -38,5 +45,15 @@
   <body>
     <div id="root"></div>
     <script type="module" src="/src/dashboard/main.tsx"></script>
+    <script>
+      // Register service worker for PWA and push notifications
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js')
+            .then(reg => console.log('[Dashboard] SW registered:', reg.scope))
+            .catch(err => console.warn('[Dashboard] SW registration failed:', err));
+        });
+      }
+    </script>
   </body>
 </html>

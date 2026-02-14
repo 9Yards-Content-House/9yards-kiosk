@@ -140,15 +140,26 @@ export default function MyDeliveries() {
         return mockDeliveriesStore.filter(o => o.status === "ready" && !o.rider_id);
       }
       
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, items:order_items(*)")
-        .eq("status", "ready")
-        .is("rider_id", null)
-        .order("ready_at", { ascending: true })
-        .limit(50);
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*, items:order_items(*)")
+          .eq("status", "ready")
+          .is("rider_id", null)
+          .order("ready_at", { ascending: true })
+          .limit(50);
+        
+        if (error) {
+          console.error("Available orders query error:", error);
+          throw error;
+        }
+        
+        console.log(`📦 Deliveries: ${data?.length || 0} orders available for pickup`);
+        return data || [];
+      } catch (err) {
+        console.warn("Failed to fetch available orders:", err);
+        return [];
+      }
     },
     refetchInterval: 10_000,
   });
@@ -162,15 +173,27 @@ export default function MyDeliveries() {
       }
       
       if (!user?.id) return [];
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, items:order_items(*)")
-        .eq("rider_id", user.id)
-        .in("status", ["ready", "preparing"])
-        .order("assigned_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data;
+      
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*, items:order_items(*)")
+          .eq("rider_id", user.id)
+          .in("status", ["ready", "preparing"])
+          .order("assigned_at", { ascending: false })
+          .limit(50);
+        
+        if (error) {
+          console.error("My orders query error:", error);
+          throw error;
+        }
+        
+        console.log(`📦 Deliveries: ${data?.length || 0} orders assigned to me`);
+        return data || [];
+      } catch (err) {
+        console.warn("Failed to fetch my orders:", err);
+        return [];
+      }
     },
     enabled: !!user?.id,
     refetchInterval: 15_000,
@@ -185,19 +208,31 @@ export default function MyDeliveries() {
       }
       
       if (!user?.id) return [];
+      
       const today = new Date();
       today.setHours(0, 0, 0, 0);
       
-      const { data, error } = await supabase
-        .from("orders")
-        .select("*, items:order_items(*)")
-        .eq("rider_id", user.id)
-        .eq("status", "delivered")
-        .gte("delivered_at", today.toISOString())
-        .order("delivered_at", { ascending: false })
-        .limit(50);
-      if (error) throw error;
-      return data;
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*, items:order_items(*)")
+          .eq("rider_id", user.id)
+          .eq("status", "delivered")
+          .gte("delivered_at", today.toISOString())
+          .order("delivered_at", { ascending: false })
+          .limit(50);
+        
+        if (error) {
+          console.error("Delivered orders query error:", error);
+          throw error;
+        }
+        
+        console.log(`📦 Deliveries: ${data?.length || 0} orders delivered today`);
+        return data || [];
+      } catch (err) {
+        console.warn("Failed to fetch delivered orders:", err);
+        return [];
+      }
     },
     enabled: !!user?.id,
     refetchInterval: 30_000,
@@ -227,27 +262,6 @@ export default function MyDeliveries() {
       toast.error("Couldn't claim order. It may have been taken.");
     },
   });
-
-  // Calculate wait time since order was ready
-  const getWaitTime = (readyAt: string | null) => {
-    if (!readyAt) return null;
-    const minutes = Math.floor((Date.now() - new Date(readyAt).getTime()) / 60000);
-    if (minutes < 1) return "Just ready";
-    if (minutes === 1) return "1 min waiting";
-    return `${minutes} mins waiting`;
-  };
-
-  // Check if order is urgent (waiting > 10 mins)
-  const isUrgent = (readyAt: string | null) => {
-    if (!readyAt) return false;
-    return (Date.now() - new Date(readyAt).getTime()) > 10 * 60 * 1000;
-  };
-
-  const handleCallCustomer = (phone: string | null) => {
-    if (phone) {
-      window.location.href = `tel:${phone}`;
-    }
-  };
 
   const handleDeliver = async (order: Order) => {
     try {

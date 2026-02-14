@@ -306,31 +306,37 @@ export default function MenuNew() {
 
   return (
     <div className="kiosk-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Hero Section - Primary Blue Background */}
-      <div className="bg-[#212282] text-white py-6 px-4 shrink-0">
-        <div className="flex items-center gap-3 mb-4">
-          <button
-            onClick={() => navigate('/')}
-            aria-label={t('common.back')}
-            className="w-10 h-10 flex items-center justify-center rounded-full bg-white/10 active:bg-white/20 active:scale-95 transition-all"
-          >
-            <ArrowLeft className="w-5 h-5" />
-          </button>
-          <img
-            src="/images/logo/9yards-logo-white.png"
-            alt="9Yards Food"
-            className="h-8 w-auto"
-            onError={(e) => {
-              e.currentTarget.style.display = 'none';
-            }}
-          />
+      {/* Hero Section - Enhanced Design */}
+      <div className="relative bg-gradient-to-br from-[#212282] via-[#2d2e9e] to-[#1a1a6e] text-white py-6 px-4 shrink-0 overflow-hidden">
+        {/* Decorative elements */}
+        <div className="absolute top-0 right-0 w-32 h-32 bg-[#E6411C]/20 rounded-full blur-3xl" />
+        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
+        
+        <div className="relative z-10">
+          <div className="flex items-center justify-between mb-4">
+            <button
+              onClick={() => navigate('/')}
+              aria-label={t('common.back')}
+              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-sm active:bg-white/25 active:scale-95 transition-all"
+            >
+              <ArrowLeft className="w-5 h-5" />
+            </button>
+            <img
+              src="/images/logo/9yards-logo-white.png"
+              alt="9Yards Food"
+              className="h-10 w-auto drop-shadow-lg"
+              onError={(e) => {
+                e.currentTarget.style.display = 'none';
+              }}
+            />
+          </div>
+          <h1 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-sm">
+            What are you craving?
+          </h1>
+          <p className="text-white/80 text-sm md:text-base">
+            Fresh, delicious meals made with love 🍲
+          </p>
         </div>
-        <h1 className="text-2xl md:text-3xl font-bold mb-2">
-          Discover Authentic Ugandan Flavors
-        </h1>
-        <p className="text-white/80 text-sm md:text-base">
-          Fresh ingredients, traditional recipes, unforgettable taste
-        </p>
       </div>
 
       {/* Sticky Search & Category Bar */}

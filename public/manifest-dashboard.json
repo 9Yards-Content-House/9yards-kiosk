@@ -1,0 +1,58 @@
+{
+  "name": "9Yards Kitchen Dashboard",
+  "short_name": "9Yards Kitchen",
+  "description": "Restaurant management dashboard for 9Yards Food",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#212282",
+  "orientation": "any",
+  "icons": [
+    {
+      "src": "/images/logo/9Yards-Food-Coloured-favicon.jpg",
+      "sizes": "192x192",
+      "type": "image/jpeg",
+      "purpose": "any"
+    },
+    {
+      "src": "/images/logo/9Yards-Food-Coloured-favicon.jpg",
+      "sizes": "512x512",
+      "type": "image/jpeg",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["food", "business", "productivity"],
+  "screenshots": [
+    {
+      "src": "/images/logo/9Yards-Food-White-Logo-colored.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Orders",
+      "short_name": "Orders",
+      "description": "View and manage orders",
+      "url": "/orders",
+      "icons": [{ "src": "/icons/orders.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Kitchen Display",
+      "short_name": "Kitchen",
+      "description": "Kitchen display system",
+      "url": "/kitchen",
+      "icons": [{ "src": "/icons/kitchen.png", "sizes": "96x96" }]
+    },
+    {
+      "name": "Menu",
+      "short_name": "Menu",
+      "description": "Manage menu items",
+      "url": "/menu",
+      "icons": [{ "src": "/icons/menu.png", "sizes": "96x96" }]
+    }
+  ],
+  "related_applications": [],
+  "prefer_related_applications": false
+}

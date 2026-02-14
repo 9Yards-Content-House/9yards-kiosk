@@ -96,7 +96,7 @@ export function useOrderRealtime(callbacks?: {
   useRealtime({
     table: "orders",
     event: "*",
-    invalidateKeys: [["orders"], ["orders", "today"]],
+    invalidateKeys: [["orders"], ["orders", "today"], ["orders", "all"]],
     onInsert: callbacks?.onNewOrder,
     onUpdate: callbacks?.onOrderUpdate,
   });

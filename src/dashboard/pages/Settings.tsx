@@ -19,7 +19,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@shared/components/ui/select";
-import { Bell, Volume2, Smartphone, User, Edit2, Loader2, Store, Printer, Clock, Save, Check, MapPin, BellOff } from "lucide-react";
+import { Bell, Volume2, Smartphone, User, Edit2, Loader2, Store, Printer, Clock, Save, Check, MapPin, BellOff, Key, Eye, EyeOff, Shield } from "lucide-react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { toast } from "sonner";
 
@@ -65,6 +65,41 @@ export default function Settings() {
   const [editName, setEditName] = useState(profile?.full_name || "");
   const [editPhone, setEditPhone] = useState(profile?.phone || "");
   const [isSaving, setIsSaving] = useState(false);
+
+  // PIN management state
+  const [pinDialogOpen, setPinDialogOpen] = useState(false);
+  const [currentPin, setCurrentPin] = useState("");
+  const [newPin, setNewPin] = useState("");
+  const [confirmPin, setConfirmPin] = useState("");
+  const [currentPassword, setCurrentPassword] = useState("");
+  const [usePasswordVerify, setUsePasswordVerify] = useState(false);
+  const [showCurrentPin, setShowCurrentPin] = useState(false);
+  const [showNewPin, setShowNewPin] = useState(false);
+  const [isSavingPin, setIsSavingPin] = useState(false);
+  const [hasExistingPin, setHasExistingPin] = useState(false);
+
+  // Check if user has existing PIN
+  useEffect(() => {
+    const checkExistingPin = async () => {
+      if (!user?.id || USE_MOCK_DATA) return;
+      
+      try {
+        const { data, error } = await supabase
+          .from("profiles")
+          .select("pin_hash")
+          .eq("id", user.id)
+          .single();
+        
+        if (!error && data) {
+          setHasExistingPin(!!data.pin_hash);
+        }
+      } catch (err) {
+        console.warn("Failed to check PIN status:", err);
+      }
+    };
+    
+    checkExistingPin();
+  }, [user?.id]);
 
   // Sync profile data when it changes
   useEffect(() => {
@@ -130,6 +165,76 @@ export default function Settings() {
       toast.error("Failed to update profile");
     } finally {
       setIsSaving(false);
+    }
+  };
+
+  // Reset PIN dialog state
+  const resetPinDialog = () => {
+    setCurrentPin("");
+    setNewPin("");
+    setConfirmPin("");
+    setCurrentPassword("");
+    setUsePasswordVerify(false);
+    setShowCurrentPin(false);
+    setShowNewPin(false);
+  };
+
+  // Handle PIN update
+  const handlePinUpdate = async () => {
+    // Validation
+    if (!/^\d{4,6}$/.test(newPin)) {
+      toast.error("PIN must be 4-6 digits");
+      return;
+    }
+    
+    if (newPin !== confirmPin) {
+      toast.error("PINs do not match");
+      return;
+    }
+
+    if (hasExistingPin && !currentPin && !currentPassword) {
+      toast.error("Please enter your current PIN or password to verify");
+      return;
+    }
+
+    setIsSavingPin(true);
+    try {
+      if (USE_MOCK_DATA) {
+        // Mock mode - just show success
+        toast.success("PIN updated (mock)");
+        setPinDialogOpen(false);
+        resetPinDialog();
+        setHasExistingPin(true);
+        setIsSavingPin(false);
+        return;
+      }
+
+      // Call the set-pin Edge Function
+      const { data, error } = await supabase.functions.invoke("set-pin", {
+        body: {
+          newPin,
+          currentPin: usePasswordVerify ? undefined : currentPin,
+          currentPassword: usePasswordVerify ? currentPassword : undefined,
+        },
+      });
+
+      if (error) {
+        throw new Error(error.message || "Failed to update PIN");
+      }
+
+      if (!data.success) {
+        throw new Error(data.error || "Failed to update PIN");
+      }
+
+      toast.success(hasExistingPin ? "PIN updated successfully" : "PIN set successfully");
+      setPinDialogOpen(false);
+      resetPinDialog();
+      setHasExistingPin(true);
+    } catch (err) {
+      console.error("PIN update error:", err);
+      toast.error(err instanceof Error ? err.message : "Failed to update PIN");
+    } finally {
+      setIsSavingPin(false);
     }
   };
 
@@ -216,6 +321,198 @@ export default function Settings() {
           <p><strong>Role:</strong> <span className="capitalize">{profile?.role}</span></p>
           <p><strong>Phone:</strong> {profile?.phone || "Not set"}</p>
           <p><strong>Email:</strong> {user?.email || "Not available"}</p>
+        </div>
+      </section>
+
+      {/* Security / PIN */}
+      <section className="bg-card rounded-xl border p-6 mb-6">
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-purple-600" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-lg">Security</h2>
+              <p className="text-sm text-muted-foreground">Manage your login PIN</p>
+            </div>
+          </div>
+        </div>
+
+        <div className="space-y-4">
+          {/* PIN Status */}
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <Key className="w-5 h-5 text-muted-foreground" />
+              <div>
+                <p className="font-medium">PIN Login</p>
+                <p className="text-sm text-muted-foreground">
+                  {hasExistingPin
+                    ? "PIN is set - use it for quick login"
+                    : "Set a 4-6 digit PIN for faster login"}
+                </p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2">
+              {hasExistingPin && (
+                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                  Active
+                </span>
+              )}
+            </div>
+          </div>
+
+          {/* PIN Action */}
+          <Dialog open={pinDialogOpen} onOpenChange={(open) => {
+            setPinDialogOpen(open);
+            if (!open) resetPinDialog();
+          }}>
+            <DialogTrigger asChild>
+              <Button variant="outline" className="w-full sm:w-auto">
+                <Key className="w-4 h-4 mr-2" />
+                {hasExistingPin ? "Change PIN" : "Set PIN"}
+              </Button>
+            </DialogTrigger>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>
+                  {hasExistingPin ? "Change Your PIN" : "Set Your PIN"}
+                </DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-2">
+                {/* Verify identity if changing PIN */}
+                {hasExistingPin && (
+                  <div className="space-y-3">
+                    <div className="flex items-center gap-2 mb-2">
+                      <span className="text-sm font-medium">Verify your identity:</span>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => setUsePasswordVerify(!usePasswordVerify)}
+                        className="text-xs"
+                      >
+                        {usePasswordVerify ? "Use current PIN instead" : "Forgot PIN? Use password"}
+                      </Button>
+                    </div>
+
+                    {usePasswordVerify ? (
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">Current Password</label>
+                        <Input
+                          type="password"
+                          value={currentPassword}
+                          onChange={(e) => setCurrentPassword(e.target.value)}
+                          placeholder="Enter your password"
+                          autoComplete="current-password"
+                        />
+                      </div>
+                    ) : (
+                      <div>
+                        <label className="block text-sm font-medium mb-1.5">Current PIN</label>
+                        <div className="relative">
+                          <Input
+                            type={showCurrentPin ? "text" : "password"}
+                            value={currentPin}
+                            onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                            placeholder="Enter current PIN"
+                            maxLength={6}
+                            inputMode="numeric"
+                            className="pr-10 font-mono tracking-widest"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => setShowCurrentPin(!showCurrentPin)}
+                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                          >
+                            {showCurrentPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                          </button>
+                        </div>
+                      </div>
+                    )}
+                    <div className="border-t pt-3" />
+                  </div>
+                )}
+
+                {/* New PIN */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">
+                    {hasExistingPin ? "New PIN" : "Create PIN"}
+                  </label>
+                  <div className="relative">
+                    <Input
+                      type={showNewPin ? "text" : "password"}
+                      value={newPin}
+                      onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="Enter 4-6 digit PIN"
+                      maxLength={6}
+                      inputMode="numeric"
+                      className="pr-10 font-mono tracking-widest"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => setShowNewPin(!showNewPin)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                    >
+                      {showNewPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                    </button>
+                  </div>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    Choose a memorable 4-6 digit number
+                  </p>
+                </div>
+
+                {/* Confirm PIN */}
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Confirm PIN</label>
+                  <Input
+                    type="password"
+                    value={confirmPin}
+                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                    placeholder="Re-enter your PIN"
+                    maxLength={6}
+                    inputMode="numeric"
+                    className="font-mono tracking-widest"
+                  />
+                  {confirmPin && newPin && confirmPin !== newPin && (
+                    <p className="text-xs text-red-500 mt-1">PINs do not match</p>
+                  )}
+                  {confirmPin && newPin && confirmPin === newPin && confirmPin.length >= 4 && (
+                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
+                      <Check className="w-3 h-3" /> PINs match
+                    </p>
+                  )}
+                </div>
+
+                <Button
+                  onClick={handlePinUpdate}
+                  disabled={
+                    isSavingPin ||
+                    newPin.length < 4 ||
+                    newPin !== confirmPin ||
+                    (hasExistingPin && !usePasswordVerify && !currentPin) ||
+                    (hasExistingPin && usePasswordVerify && !currentPassword)
+                  }
+                  className="w-full"
+                >
+                  {isSavingPin ? (
+                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                  ) : (
+                    <Key className="w-4 h-4 mr-2" />
+                  )}
+                  {hasExistingPin ? "Update PIN" : "Set PIN"}
+                </Button>
+
+                <p className="text-xs text-muted-foreground text-center">
+                  You can use this PIN for quick login instead of email/password
+                </p>
+              </div>
+            </DialogContent>
+          </Dialog>
+
+          {hasExistingPin && (
+            <p className="text-xs text-muted-foreground">
+              💡 Tip: Enter your PIN on the login page for quick access
+            </p>
+          )}
         </div>
       </section>
 

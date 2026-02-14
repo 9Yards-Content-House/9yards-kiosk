@@ -8,7 +8,8 @@ import { Input } from "@shared/components/ui/input";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@shared/components/ui/tabs";
 import { cn } from "@shared/lib/utils";
 
-const PIN_LENGTH = 4;
+const MIN_PIN_LENGTH = 4;
+const MAX_PIN_LENGTH = 6;
 
 export default function Login() {
   const navigate = useNavigate();
@@ -50,24 +51,28 @@ export default function Login() {
 
   const handlePinInput = async (digit: string) => {
     if (loading) return;
-    if (pin.length >= PIN_LENGTH) return;
+    if (pin.length >= MAX_PIN_LENGTH) return;
     
     const newPin = [...pin, digit];
     setPin(newPin);
     setError(null);
+  };
 
-    // Auto-submit when PIN is complete
-    if (newPin.length === PIN_LENGTH) {
-      setLoading(true);
-      try {
-        await signInWithPin(newPin.join(""));
-        navigate("/", { replace: true });
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Invalid PIN");
-        setPin([]);
-      } finally {
-        setLoading(false);
-      }
+  const handlePinSubmit = async () => {
+    if (pin.length < MIN_PIN_LENGTH) {
+      setError(`PIN must be at least ${MIN_PIN_LENGTH} digits`);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      await signInWithPin(pin.join(""));
+      navigate("/", { replace: true });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Invalid PIN");
+      setPin([]);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -140,8 +145,8 @@ export default function Login() {
             {/* PIN Login */}
             <TabsContent value="pin" className="space-y-6">
               {/* PIN dots display */}
-              <div className="flex justify-center gap-3 mb-4">
-                {Array.from({ length: PIN_LENGTH }).map((_, i) => (
+              <div className="flex justify-center gap-2 mb-4">
+                {Array.from({ length: MAX_PIN_LENGTH }).map((_, i) => (
                   <motion.div
                     key={i}
                     initial={false}
@@ -150,12 +155,17 @@ export default function Login() {
                       backgroundColor: pin[i] ? "hsl(var(--primary))" : "transparent",
                     }}
                     className={cn(
-                      "w-4 h-4 rounded-full border-2 border-primary transition-colors",
+                      "w-3.5 h-3.5 rounded-full border-2 transition-colors",
+                      i < MIN_PIN_LENGTH ? "border-primary" : "border-gray-300",
                       pin[i] && "border-primary"
                     )}
                   />
                 ))}
               </div>
+              
+              <p className="text-center text-xs text-muted-foreground -mt-2">
+                {pin.length} / {MIN_PIN_LENGTH}-{MAX_PIN_LENGTH} digits
+              </p>
 
               {/* Loading indicator */}
               {loading && (
@@ -175,7 +185,7 @@ export default function Login() {
                           variant="ghost"
                           onClick={handlePinClear}
                           disabled={loading || pin.length === 0}
-                          className="h-16 text-lg font-medium text-muted-foreground"
+                          className="h-14 text-sm font-medium text-muted-foreground"
                         >
                           Clear
                         </Button>
@@ -188,9 +198,9 @@ export default function Login() {
                           variant="ghost"
                           onClick={handlePinDelete}
                           disabled={loading || pin.length === 0}
-                          className="h-16"
+                          className="h-14"
                         >
-                          <Delete className="w-6 h-6" />
+                          <Delete className="w-5 h-5" />
                         </Button>
                       );
                     }
@@ -199,8 +209,8 @@ export default function Login() {
                         key={key}
                         variant="outline"
                         onClick={() => handlePinInput(key)}
-                        disabled={loading}
-                        className="h-16 text-2xl font-semibold hover:bg-primary/10"
+                        disabled={loading || pin.length >= MAX_PIN_LENGTH}
+                        className="h-14 text-xl font-semibold hover:bg-primary/10"
                       >
                         {key}
                       </Button>
@@ -209,8 +219,22 @@ export default function Login() {
                 )}
               </div>
 
-              <p className="text-center text-sm text-muted-foreground">
-                Enter your 4-digit staff PIN
+              {/* Submit Button */}
+              <Button
+                onClick={handlePinSubmit}
+                disabled={loading || pin.length < MIN_PIN_LENGTH}
+                className="w-full"
+              >
+                {loading ? (
+                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                ) : (
+                  <LogIn className="w-4 h-4 mr-2" />
+                )}
+                Sign In with PIN
+              </Button>
+
+              <p className="text-center text-xs text-muted-foreground">
+                Set up your PIN in Settings after logging in with email
               </p>
             </TabsContent>
 

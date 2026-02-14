@@ -1,14 +1,24 @@
 import { useState, useCallback, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, User, Phone, CheckCircle2 } from "lucide-react";
+import { ArrowRight, User, Phone, CheckCircle2, Gift } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useTranslation } from "@shared/context/LanguageContext";
 import { formatPrice, vibrate, cn } from "@shared/lib/utils";
-import { normalizePhone } from "@shared/lib/validation";
+import { normalizePhone, requiredPhoneSchema, nameSchema, specialInstructionsSchema } from "@shared/lib/validation";
+import { useLoyaltyPoints, getLoyaltyTier, formatPoints, calculatePointsEarned } from "@shared/hooks/useLoyaltyPoints";
 import KioskHeader from "../components/KioskHeader";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import { Button } from "@shared/components/ui/button";
 import type { PaymentMethod } from "@shared/types/orders";
+
+// Sanitize text input to prevent XSS
+function sanitizeText(input: string): string {
+  return input
+    .replace(/[<>]/g, '') // Remove angle brackets
+    .replace(/javascript:/gi, '') // Remove javascript: protocol
+    .replace(/on\w+=/gi, '') // Remove event handlers
+    .trim();
+}
 
 // Uganda flag SVG component
 const UgandaFlag = () => (
@@ -104,14 +114,22 @@ export default function Details() {
   );
   const [nameTouched, setNameTouched] = useState(false);
 
+  // Lookup loyalty points when phone is entered
+  const normalizedPhone = phone.trim().length >= 10 ? normalizePhone(phone.trim()) : null;
+  const { data: loyaltyData } = useLoyaltyPoints(normalizedPhone);
+  const loyaltyTier = loyaltyData ? getLoyaltyTier(loyaltyData.loyalty_points) : null;
+
+  // Calculate points to be earned
+  const pointsToEarn = calculatePointsEarned(subtotal);
+
   // Auto-save details to sessionStorage as user types
   useEffect(() => {
     const details = {
-      customer_name: name.trim(),
+      customer_name: sanitizeText(name),
       customer_phone: phone.trim() ? normalizePhone(phone.trim()) : null,
       customer_location: null,
       payment_method: paymentMethod,
-      special_instructions: specialInstructions.trim() || null,
+      special_instructions: sanitizeText(specialInstructions) || null,
     };
     sessionStorage.setItem("kiosk_order_details", JSON.stringify(details));
   }, [name, phone, paymentMethod, specialInstructions]);
@@ -135,18 +153,20 @@ export default function Details() {
     vibrate();
     if (!isValid) return;
 
-    // Format phone number for storage
+    // Validate and sanitize inputs
+    const sanitizedName = sanitizeText(name);
+    const sanitizedInstructions = sanitizeText(specialInstructions);
     const formattedPhone = phone.trim() ? normalizePhone(phone.trim()) : null;
 
     // Store details in sessionStorage for the next step
     sessionStorage.setItem(
       "kiosk_order_details",
       JSON.stringify({
-        customer_name: name.trim(),
+        customer_name: sanitizedName,
         customer_phone: formattedPhone,
         customer_location: null,
         payment_method: paymentMethod,
-        special_instructions: specialInstructions.trim() || null,
+        special_instructions: sanitizedInstructions || null,
       })
     );
 
@@ -241,16 +261,6 @@ export default function Details() {
                 placeholder="7XX XXX XXX"
                 className="flex-1 h-full px-4 text-xl font-medium bg-transparent outline-none placeholder:text-gray-400"
               />
-              
-              {/* Network Operator Indicator */}
-              {networkOperator && (
-                <div 
-                  className="flex items-center gap-2 px-4 shrink-0"
-                  title={networkOperator.name}
-                >
-                  {networkOperator.logo}
-                </div>
-              )}
             </div>
             <p className="text-sm text-gray-500 mt-2 flex items-center gap-2">
               {needsPhone ? "Required for Mobile Money payment" : "We'll notify you when ready (optional)"}
@@ -275,6 +285,36 @@ export default function Details() {
               onChange={setPaymentMethod}
             />
           </div>
+
+          {/* Loyalty Points Display */}
+          {loyaltyData && (
+            <div className="mb-6 p-4 rounded-2xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200">
+              <div className="flex items-center gap-3">
+                <div 
+                  className="w-12 h-12 rounded-full flex items-center justify-center"
+                  style={{ backgroundColor: loyaltyTier?.color + '20' }}
+                >
+                  <Gift className="w-6 h-6" style={{ color: loyaltyTier?.color }} />
+                </div>
+                <div className="flex-1">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-[#212282]">
+                      {formatPoints(loyaltyData.loyalty_points)} points
+                    </span>
+                    <span 
+                      className="text-xs px-2 py-0.5 rounded-full font-medium"
+                      style={{ backgroundColor: loyaltyTier?.color + '20', color: loyaltyTier?.color }}
+                    >
+                      {loyaltyTier?.name}
+                    </span>
+                  </div>
+                  <p className="text-sm text-gray-600">
+                    Earn <span className="font-semibold text-green-600">+{pointsToEarn} points</span> with this order!
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
 
           {/* Special Instructions */}
           <div className="mb-6">

@@ -199,6 +199,12 @@ export interface TranslationKeys {
   'error.paymentFailed': string;
   'error.invalidPhone': string;
   'error.requiredField': string;
+  
+  // Feedback
+  'feedback.howWasYourMeal': string;
+  'feedback.leaveFeedback': string;
+  'feedback.title': string;
+  'feedback.thankYou': string;
 }
 
 const translations: Record<Language, TranslationKeys> = {
@@ -396,6 +402,12 @@ const translations: Record<Language, TranslationKeys> = {
     'error.paymentFailed': 'Payment failed. Please try again.',
     'error.invalidPhone': 'Please enter a valid Ugandan phone number',
     'error.requiredField': 'This field is required',
+    
+    // Feedback
+    'feedback.howWasYourMeal': 'How was your meal? We\'d love your feedback!',
+    'feedback.leaveFeedback': 'Leave Feedback',
+    'feedback.title': 'Rate Your Experience',
+    'feedback.thankYou': 'Thank you for your feedback!',
   },
   
   lg: {
@@ -592,6 +604,12 @@ const translations: Record<Language, TranslationKeys> = {
     'error.paymentFailed': 'Okusasula kugazze. Gezaako nate.',
     'error.invalidPhone': 'Wandiika ennamba y\'essimu entuufu',
     'error.requiredField': 'Kino kyetaagibwa',
+    
+    // Feedback
+    'feedback.howWasYourMeal': 'Emmere yali etya? Twagala okumanya ky\'olowooza!',
+    'feedback.leaveFeedback': 'Waayo Ebirowoozo',
+    'feedback.title': 'Tuwandiikire Obude Bwo',
+    'feedback.thankYou': 'Webale nnyo obude bwo!',
   },
 };
 

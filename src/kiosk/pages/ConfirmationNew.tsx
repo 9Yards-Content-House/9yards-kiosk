@@ -14,7 +14,7 @@ import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
-import { QRCodeFallback } from '@shared/components/QRCode';
+import { QRCode } from '@shared/components/QRCode';
 import { supabase } from '@shared/lib/supabase';
 import KioskHeader from '../components/KioskHeader';
 import { Confetti, SuccessCheckmark } from '../components/SuccessCelebration';
@@ -243,7 +243,7 @@ export default function ConfirmationNew() {
               Scan to track your order
             </p>
             <div className="flex justify-center">
-              <QRCodeFallback value={orderNumber} size={160} />
+              <QRCode value={orderNumber} size={160} asTrackingLink />
             </div>
           </motion.div>
 

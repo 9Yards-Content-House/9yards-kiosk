@@ -21,6 +21,15 @@
 
 .dashboard-sidebar-collapsed {
   width: 64px;
+  overflow: hidden;
+}
+
+/* Collapsed sidebar items need to be centered */
+.dashboard-sidebar-collapsed nav,
+.dashboard-sidebar-collapsed > div {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
 }
 
 .dashboard-main {

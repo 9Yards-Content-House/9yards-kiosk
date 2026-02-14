@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import ErrorBoundary from "@shared/components/ErrorBoundary";
 import Login from "./pages/Login";
 import Orders from "./pages/Orders";
 import OrderDetail from "./pages/OrderDetail";
@@ -41,8 +42,9 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 
 export default function App() {
   return (
-    <Routes>
-      <Route path="/login" element={<Login />} />
+    <ErrorBoundary>
+      <Routes>
+        <Route path="/login" element={<Login />} />
       <Route
         path="/"
         element={
@@ -122,5 +124,6 @@ export default function App() {
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
+    </ErrorBoundary>
   );
 }

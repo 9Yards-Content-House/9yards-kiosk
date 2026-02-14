@@ -1,7 +1,7 @@
 import { useState, useCallback, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
-import { ArrowLeft, Search, Check, Clock, ChefHat, Package, Delete } from 'lucide-react';
+import { ArrowLeft, Search, Check, Clock, ChefHat, Package, Delete, MessageSquare } from 'lucide-react';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
@@ -10,6 +10,7 @@ import { Order, OrderItem } from '@shared/types';
 import { Button } from '@shared/components/ui/button';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import { getMockOrdersStore, applyLocalOverlay } from '@shared/hooks/useOrders';
+import FeedbackModal from '../components/FeedbackModal';
 
 export default function OrderLookup() {
   const navigate = useNavigate();
@@ -18,6 +19,7 @@ export default function OrderLookup() {
   const queryClient = useQueryClient();
   const [orderNumber, setOrderNumber] = useState(urlOrderNumber || '');
   const [searchNumber, setSearchNumber] = useState(urlOrderNumber || '');
+  const [showFeedbackModal, setShowFeedbackModal] = useState(false);
 
   const {
     data: order,
@@ -328,6 +330,29 @@ export default function OrderLookup() {
                         </motion.div>
                       )}
 
+                      {/* Delivered - Show feedback button */}
+                      {order.status === 'delivered' && (
+                        <motion.div
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          className="bg-primary/5 rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.75rem,2.5vmin,1.25rem)] text-center border border-primary/20"
+                        >
+                          <p className="text-[clamp(0.875rem,2vmin,1.125rem)] font-bold text-primary mb-2">
+                            {t('tracking.delivered')}
+                          </p>
+                          <p className="text-[clamp(0.65rem,1.4vmin,0.8125rem)] text-muted-foreground mb-3">
+                            {t('feedback.howWasYourMeal')}
+                          </p>
+                          <Button
+                            onClick={() => setShowFeedbackModal(true)}
+                            className="gap-2 bg-secondary hover:bg-secondary/90"
+                          >
+                            <MessageSquare className="w-4 h-4" />
+                            {t('feedback.leaveFeedback')}
+                          </Button>
+                        </motion.div>
+                      )}
+
                       {/* Timeline */}
                       <div className="bg-white rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.5rem,1.5vmin,0.875rem)] shadow-card">
                         <h3 className="font-semibold text-[clamp(0.75rem,1.6vmin,0.9375rem)] mb-[clamp(0.25rem,0.8vmin,0.5rem)]">
@@ -398,6 +423,16 @@ export default function OrderLookup() {
           {t('common.back')}
         </Button>
       </div>
+
+      {/* Feedback Modal */}
+      {order && (
+        <FeedbackModal
+          isOpen={showFeedbackModal}
+          onClose={() => setShowFeedbackModal(false)}
+          orderId={order.id}
+          orderNumber={order.order_number}
+        />
+      )}
     </div>
   );
 }

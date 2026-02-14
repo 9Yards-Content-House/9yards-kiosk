@@ -3,6 +3,7 @@ import { KioskCartProvider } from "./context/KioskCartContext";
 import { FavoritesProvider } from "./context/FavoritesContext";
 import { LanguageProvider } from "@shared/context/LanguageContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
+import { AnnouncerProvider } from "@shared/context/AnnouncerContext";
 import { useInactivityTimer } from "./hooks/useInactivityTimer";
 import { useMenuRealtime } from "@shared/hooks/useMenu";
 import { useOrdersRealtime } from "@shared/hooks/useOrders";
@@ -48,15 +49,17 @@ function KioskRoutes() {
 export default function App() {
   return (
     <ErrorBoundary>
-      <AccessibilityProvider>
-        <LanguageProvider>
-          <FavoritesProvider>
-            <KioskCartProvider>
-              <KioskRoutes />
-            </KioskCartProvider>
-          </FavoritesProvider>
-        </LanguageProvider>
-      </AccessibilityProvider>
+      <AnnouncerProvider>
+        <AccessibilityProvider>
+          <LanguageProvider>
+            <FavoritesProvider>
+              <KioskCartProvider>
+                <KioskRoutes />
+              </KioskCartProvider>
+            </FavoritesProvider>
+          </LanguageProvider>
+        </AccessibilityProvider>
+      </AnnouncerProvider>
     </ErrorBoundary>
   );
 }

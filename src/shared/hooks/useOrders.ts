@@ -1,4 +1,4 @@
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient, useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect } from "react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type {
@@ -628,4 +628,91 @@ export function useOrdersRealtime() {
       if (supabase) supabase.removeChannel(channel);
     };
   }, [queryClient]);
+}
+
+/**
+ * Paginated orders query for infinite scroll in dashboard.
+ * Returns orders in batches with cursor-based pagination.
+ */
+const PAGE_SIZE = 20;
+
+export function usePaginatedOrders(options?: {
+  status?: OrderStatus | "all";
+  searchQuery?: string;
+}) {
+  const { status = "all", searchQuery = "" } = options || {};
+
+  return useInfiniteQuery({
+    queryKey: ["orders", "paginated", status, searchQuery],
+    queryFn: async ({ pageParam = 0 }) => {
+      if (USE_MOCK_DATA) {
+        // Filter mock data
+        let filtered = [...mockOrdersStore];
+        
+        if (status !== "all") {
+          filtered = filtered.filter(o => o.status === status);
+        }
+        
+        if (searchQuery) {
+          const query = searchQuery.toLowerCase();
+          filtered = filtered.filter(o =>
+            o.order_number.toLowerCase().includes(query) ||
+            o.customer_name?.toLowerCase().includes(query) ||
+            o.customer_phone?.includes(query)
+          );
+        }
+        
+        // Sort by created_at descending
+        filtered.sort((a, b) => 
+          new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
+        );
+        
+        // Paginate
+        const start = pageParam;
+        const end = start + PAGE_SIZE;
+        const page = filtered.slice(start, end);
+        
+        return {
+          orders: applyOverlayToList(page),
+          nextCursor: end < filtered.length ? end : null,
+          total: filtered.length,
+        };
+      }
+
+      // Build Supabase query
+      let query = supabase
+        .from("orders")
+        .select("*, items:order_items(*)", { count: "exact" })
+        .order("created_at", { ascending: false })
+        .range(pageParam, pageParam + PAGE_SIZE - 1);
+
+      // Apply status filter
+      if (status !== "all") {
+        query = query.eq("status", status);
+      }
+
+      // Apply search filter (server-side partial match)
+      if (searchQuery) {
+        query = query.or(
+          `order_number.ilike.%${searchQuery}%,customer_name.ilike.%${searchQuery}%,customer_phone.ilike.%${searchQuery}%`
+        );
+      }
+
+      const { data, error, count } = await query;
+
+      if (error) throw error;
+
+      const total = count || 0;
+      const nextCursor = pageParam + PAGE_SIZE < total ? pageParam + PAGE_SIZE : null;
+
+      return {
+        orders: applyOverlayToList((data || []) as Order[]),
+        nextCursor,
+        total,
+      };
+    },
+    initialPageParam: 0,
+    getNextPageParam: (lastPage) => lastPage.nextCursor,
+    staleTime: 30_000,
+  });
 }
