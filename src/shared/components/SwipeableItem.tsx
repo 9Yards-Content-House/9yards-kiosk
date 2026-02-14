@@ -3,6 +3,9 @@ import { motion, AnimatePresence, PanInfo } from 'framer-motion';
 import { Trash2 } from 'lucide-react';
 import { cn } from '@shared/lib/utils';
 
+// Type for the unused event in drag handlers
+type DragEvent = MouseEvent | TouchEvent | PointerEvent;
+
 interface SwipeableItemProps {
   children: React.ReactNode;
   onDelete: () => void;
@@ -21,7 +24,7 @@ export function SwipeableItem({
   const containerRef = useRef<HTMLDivElement>(null);
 
   const handleDragEnd = useCallback(
-    (_: any, info: PanInfo) => {
+    (_event: DragEvent, info: PanInfo) => {
       if (info.offset.x < -deleteThreshold) {
         setIsDeleting(true);
         onDelete();
@@ -32,7 +35,7 @@ export function SwipeableItem({
     [deleteThreshold, onDelete]
   );
 
-  const handleDrag = useCallback((_: any, info: PanInfo) => {
+  const handleDrag = useCallback((_event: DragEvent, info: PanInfo) => {
     // Only allow left swipe
     setDragX(Math.min(0, info.offset.x));
   }, []);

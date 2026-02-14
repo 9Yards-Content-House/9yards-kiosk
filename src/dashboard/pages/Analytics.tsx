@@ -26,7 +26,12 @@ import { DateRangePicker } from '@shared/components/ui/date-range-picker';
 import { Skeleton } from '@shared/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
 import { exportAnalyticsSummary, type AnalyticsSummary } from '@shared/lib/export';
-import type { Order } from '@shared/types/orders';
+import type { Order, OrderItem } from '@shared/types/orders';
+
+// Extended OrderItem type for analytics (includes optional menu_item relationship)
+interface AnalyticsOrderItem extends OrderItem {
+  menu_item?: { name: string; category?: { name: string } };
+}
 import {
   PieChart as RechartsPie,
   Pie,
@@ -80,7 +85,8 @@ function generateMockAnalyticsOrders(): Order[] {
       payment_status: "paid",
       momo_transaction_id: null,
       subtotal: itemsTotal,
-      total: itemsTotal,
+      delivery_fee: 5000,
+      total: itemsTotal + 5000,
       special_instructions: null,
       source: "kiosk",
       created_at: orderDate.toISOString(),
@@ -90,6 +96,11 @@ function generateMockAnalyticsOrders(): Order[] {
       delivered_at: readyDate.toISOString(),
       rider_id: null,
       assigned_at: null,
+      picked_up_at: null,
+      picked_up_by: null,
+      scheduled_for: null,
+      is_scheduled: false,
+      location_id: null,
       items: Array.from({ length: numItems }, (_, j) => {
         const item = menuItemsData[Math.floor(Math.random() * menuItemsData.length)];
         return {
@@ -210,8 +221,8 @@ export default function Analytics() {
     const itemCounts: Record<string, { count: number; revenue: number }> = {};
     const categoryCounts: Record<string, { count: number; revenue: number }> = {};
     orders.forEach((o) => {
-      const orderItems = o.order_items || o.items || [];
-      orderItems.forEach((item: any) => {
+      const orderItems = (o.order_items || o.items || []) as AnalyticsOrderItem[];
+      orderItems.forEach((item) => {
         // Get item name from available fields
         const name = item.sauce_name || item.menu_item?.name || (item.main_dishes?.[0]) || 'Unknown';
         if (name && name !== 'Unknown') {

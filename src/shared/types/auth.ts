@@ -7,6 +7,7 @@ export interface Profile {
   full_name: string;
   role: UserRole;
   phone: string | null;
+  email?: string | null; // From auth.users, joined when fetching staff
   active: boolean;
   created_at: string;
 }

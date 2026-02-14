@@ -1,6 +1,9 @@
 import { useCallback } from 'react';
 import { formatPrice } from '@shared/lib/utils';
 
+// Type for preparation options - can be string, array, or object
+type PreparationType = string | { name?: string; label?: string }[] | Record<string, string> | null;
+
 interface OrderItem {
   id: string;
   menu_item: {
@@ -10,7 +13,7 @@ interface OrderItem {
   quantity: number;
   unit_price: number;
   notes?: string | null;
-  preparations?: any;
+  preparations?: PreparationType;
 }
 
 interface Order {
@@ -361,7 +364,7 @@ function formatPaymentMethod(method: string): string {
   return methods[method] || method;
 }
 
-function formatPreparations(preps: any): string {
+function formatPreparations(preps: PreparationType): string {
   if (!preps) return '';
   if (typeof preps === 'string') return preps;
   if (Array.isArray(preps)) {

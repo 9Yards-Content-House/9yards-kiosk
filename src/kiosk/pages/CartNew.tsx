@@ -30,6 +30,13 @@ import { saveOrderToHistory } from '../components/QuickReorder';
 import { useAllMenuItems, useCategories } from '@shared/hooks/useMenu';
 import { getUpsellSuggestions } from '@shared/lib/recommendations';
 import { useSound } from '../hooks/useSound';
+import type { MenuItem } from '@shared/types/menu';
+
+// Type for order history items
+interface OrderHistoryItem {
+  menuItem: MenuItem;
+  quantity: number;
+}
 
 export default function CartNew() {
   const navigate = useNavigate();
@@ -69,10 +76,9 @@ export default function CartNew() {
     const cartItemNames = new Set(items.map(item => item.label || item.sauceName));
     
     // Convert cart items to MenuItem format for the recommendation engine
-    const cartMenuItems = items.map(item => {
-      const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
-      return menuItem;
-    }).filter(Boolean) as any[];
+    const cartMenuItems = items
+      .map(item => allMenuItems.find(m => m.name === item.sauceName || m.name === item.label))
+      .filter((item): item is MenuItem => item !== undefined);
     
     // Get suggestions and filter out items already in cart
     return getUpsellSuggestions(allMenuItems, categories, cartMenuItems)
@@ -134,10 +140,12 @@ export default function CartNew() {
       setShowUpsell(true);
     } else {
       // Save order to history for quick reorder feature
-      const orderItems = items.map(item => {
-        const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
-        return menuItem ? { menuItem, quantity: item.quantity } : null;
-      }).filter(Boolean) as any[];
+      const orderItems = items
+        .map(item => {
+          const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
+          return menuItem ? { menuItem, quantity: item.quantity } : null;
+        })
+        .filter((item): item is OrderHistoryItem => item !== null);
       if (orderItems.length > 0) {
         saveOrderToHistory(orderItems, subtotal);
       }
@@ -148,17 +156,19 @@ export default function CartNew() {
   const handleSkipUpsell = useCallback(() => {
     setShowUpsell(false);
     // Save order to history
-    const orderItems = items.map(item => {
-      const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
-      return menuItem ? { menuItem, quantity: item.quantity } : null;
-    }).filter(Boolean) as any[];
+    const orderItems = items
+      .map(item => {
+        const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
+        return menuItem ? { menuItem, quantity: item.quantity } : null;
+      })
+      .filter((item): item is OrderHistoryItem => item !== null);
     if (orderItems.length > 0) {
       saveOrderToHistory(orderItems, subtotal);
     }
     navigate('/details');
   }, [items, allMenuItems, subtotal, navigate]);
 
-  const handleAddUpsellItem = useCallback((item: any) => {
+  const handleAddUpsellItem = useCallback((item: MenuItem) => {
     vibrate([30, 30]);
     play('add');
     addItem({

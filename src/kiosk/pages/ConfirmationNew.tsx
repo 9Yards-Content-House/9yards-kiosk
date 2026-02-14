@@ -9,6 +9,7 @@ import {
   UtensilsCrossed,
   MessageCircle,
   Loader2,
+  Printer,
 } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
@@ -120,6 +121,92 @@ export default function ConfirmationNew() {
     } catch {}
   }, [orderDetails, play]);
 
+  const handlePrintReceipt = useCallback(() => {
+    if (!orderDetails) return;
+    play('select');
+    
+    const receiptWindow = window.open('', '_blank', 'width=400,height=600');
+    if (!receiptWindow) return;
+    
+    const receiptHtml = `
+      <!DOCTYPE html>
+      <html>
+      <head>
+        <title>Order Receipt - ${orderDetails.orderNumber}</title>
+        <style>
+          * { margin: 0; padding: 0; box-sizing: border-box; }
+          body { 
+            font-family: 'Courier New', monospace; 
+            padding: 20px; 
+            max-width: 300px; 
+            margin: 0 auto;
+          }
+          .header { text-align: center; margin-bottom: 20px; }
+          .logo { font-size: 24px; font-weight: bold; color: #E6411C; }
+          .tagline { font-size: 12px; color: #666; }
+          .divider { border-top: 1px dashed #333; margin: 10px 0; }
+          .order-number { 
+            text-align: center; 
+            font-size: 32px; 
+            font-weight: bold; 
+            margin: 20px 0; 
+            letter-spacing: 4px;
+          }
+          .info { margin: 10px 0; }
+          .info-row { display: flex; justify-content: space-between; margin: 5px 0; }
+          .label { color: #666; }
+          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
+          @media print {
+            body { padding: 10px; }
+          }
+        </style>
+      </head>
+      <body>
+        <div class="header">
+          <div class="logo">9Yards Food</div>
+          <div class="tagline">Authentic Ugandan Cuisine</div>
+        </div>
+        <div class="divider"></div>
+        <div class="order-number">${orderDetails.orderNumber}</div>
+        <div class="divider"></div>
+        <div class="info">
+          <div class="info-row">
+            <span class="label">Customer:</span>
+            <span>${orderDetails.customerName || 'Guest'}</span>
+          </div>
+          ${orderDetails.customerPhone ? `
+          <div class="info-row">
+            <span class="label">Phone:</span>
+            <span>${orderDetails.customerPhone}</span>
+          </div>
+          ` : ''}
+          <div class="info-row">
+            <span class="label">Total:</span>
+            <span>UGX ${orderDetails.total.toLocaleString()}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Date:</span>
+            <span>${new Date().toLocaleDateString()}</span>
+          </div>
+          <div class="info-row">
+            <span class="label">Time:</span>
+            <span>${new Date().toLocaleTimeString()}</span>
+          </div>
+        </div>
+        <div class="divider"></div>
+        <div class="footer">
+          <p>Thank you for your order!</p>
+          <p>Please show this receipt when collecting.</p>
+        </div>
+      </body>
+      </html>
+    `;
+    
+    receiptWindow.document.write(receiptHtml);
+    receiptWindow.document.close();
+    receiptWindow.print();
+  }, [orderDetails, play]);
+
   const handleNewOrder = useCallback(() => {
     sessionStorage.removeItem('kiosk_last_order_number');
     setLanguage('en');
@@ -208,23 +295,35 @@ export default function ConfirmationNew() {
                 {orderNumber}
               </motion.div>
             
-            <Button
-              variant="outline"
-              onClick={handleCopy}
-              className="gap-2 rounded-full border-gray-200"
-            >
-              {copied ? (
-                <>
-                  <Check className="w-4 h-4 text-green-600" />
-                  Copied!
-                </>
-              ) : (
-                <>
-                  <Copy className="w-4 h-4" />
-                  Copy Number
-                </>
-              )}
-            </Button>
+            <div className="flex gap-2 justify-center">
+              <Button
+                variant="outline"
+                onClick={handleCopy}
+                className="gap-2 rounded-full border-gray-200"
+              >
+                {copied ? (
+                  <>
+                    <Check className="w-4 h-4 text-green-600" />
+                    Copied!
+                  </>
+                ) : (
+                  <>
+                    <Copy className="w-4 h-4" />
+                    Copy Number
+                  </>
+                )}
+              </Button>
+
+              <Button
+                variant="outline"
+                onClick={handlePrintReceipt}
+                className="gap-2 rounded-full border-gray-200"
+                aria-label="Print receipt"
+              >
+                <Printer className="w-4 h-4" />
+                Print
+              </Button>
+            </div>
 
             <p className="text-sm text-gray-500 mt-4">
               {t('confirmation.saveNumber')}

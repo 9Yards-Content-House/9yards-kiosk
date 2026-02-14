@@ -6,13 +6,21 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { cn, timeAgo } from '@shared/lib/utils';
-import { Order } from '@shared/types';
+import { Order, OrderStatus } from '@shared/types';
 import { Button } from '@shared/components/ui/button';
 import KioskHeader from '../components/KioskHeader';
 import { getMockOrdersStore } from '@shared/hooks/useOrders';
 
 interface TrackingOrder extends Order {
   itemCount?: number;
+}
+
+// Type for Supabase realtime order payload
+interface OrderPayload {
+  id: string;
+  order_number: string;
+  status: OrderStatus;
+  [key: string]: unknown;
 }
 
 export default function TrackOrders() {
@@ -47,9 +55,10 @@ export default function TrackOrders() {
 
       if (error) throw error;
 
-      return (data || []).map((order: any) => ({
+      // Supabase returns Order with aggregated order_items count
+      return (data || []).map((order) => ({
         ...order,
-        itemCount: order.order_items?.[0]?.count || 0,
+        itemCount: (order.order_items as { count: number }[] | undefined)?.[0]?.count || 0,
       })) as TrackingOrder[];
     },
     // Poll in mock mode since realtime doesn't work
@@ -73,8 +82,9 @@ export default function TrackOrders() {
           refetch();
           
           // Play sound when order becomes out for delivery
-          if (payload.new && (payload.new as any).status === 'out_for_delivery') {
-            const orderNum = (payload.new as any).order_number;
+          const newOrder = payload.new as OrderPayload | null;
+          if (newOrder && newOrder.status === 'out_for_delivery') {
+            const orderNum = newOrder.order_number;
             if (orderNum !== lastReadyOrder) {
               setLastReadyOrder(orderNum);
               playReadySound();

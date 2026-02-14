@@ -1,20 +1,36 @@
+import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
 import { useOrdersRealtime } from "@shared/hooks/useOrders";
 import ErrorBoundary from "@shared/components/ErrorBoundary";
-import Login from "./pages/Login";
-import Orders from "./pages/Orders";
-import OrderDetail from "./pages/OrderDetail";
-import MenuManagement from "./pages/MenuManagement";
-import MenuItemEdit from "./pages/MenuItemEdit";
-import Staff from "./pages/Staff";
-import Analytics from "./pages/Analytics";
-import Settings from "./pages/Settings";
-import MyDeliveries from "./pages/rider/MyDeliveries";
-import KitchenDisplay from "./pages/KitchenDisplay";
-import Reception from "./pages/Reception";
+import NetworkStatus from "./components/NetworkStatus";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
+
+// Lazy-loaded pages for better performance
+const Login = lazy(() => import("./pages/Login"));
+const Orders = lazy(() => import("./pages/Orders"));
+const OrderDetail = lazy(() => import("./pages/OrderDetail"));
+const MenuManagement = lazy(() => import("./pages/MenuManagement"));
+const MenuItemEdit = lazy(() => import("./pages/MenuItemEdit"));
+const Staff = lazy(() => import("./pages/Staff"));
+const Analytics = lazy(() => import("./pages/Analytics"));
+const Settings = lazy(() => import("./pages/Settings"));
+const MyDeliveries = lazy(() => import("./pages/rider/MyDeliveries"));
+const KitchenDisplay = lazy(() => import("./pages/KitchenDisplay"));
+const Reception = lazy(() => import("./pages/Reception"));
+
+// Loading fallback for lazy-loaded pages
+function PageLoader() {
+  return (
+    <div className="min-h-screen flex items-center justify-center bg-gray-50">
+      <div className="flex flex-col items-center gap-4">
+        <div className="w-12 h-12 border-4 border-secondary border-t-transparent rounded-full animate-spin" />
+        <p className="text-gray-600 font-medium">Loading...</p>
+      </div>
+    </div>
+  );
+}
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
   // Subscribe to order updates globally for the dashboard
@@ -22,8 +38,13 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   
   return (
     <div className="dashboard-layout">
+      <NetworkStatus />
       <Sidebar />
-      <main className="dashboard-main">{children}</main>
+      <main className="dashboard-main">
+        <Suspense fallback={<PageLoader />}>
+          {children}
+        </Suspense>
+      </main>
       <MobileNav />
     </div>
   );
@@ -48,15 +69,16 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
 export default function App() {
   return (
     <ErrorBoundary>
-      <Routes>
-        <Route path="/login" element={<Login />} />
-      <Route
-        path="/"
-        element={
-          <ProtectedRoute>
-            <Orders />
-          </ProtectedRoute>
-        }
+      <Suspense fallback={<PageLoader />}>
+        <Routes>
+          <Route path="/login" element={<Login />} />
+        <Route
+          path="/"
+          element={
+            <ProtectedRoute>
+              <Orders />
+            </ProtectedRoute>
+          }
       />
       <Route
         path="/orders"
@@ -137,7 +159,8 @@ export default function App() {
         }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
-    </Routes>
+        </Routes>
+      </Suspense>
     </ErrorBoundary>
   );
 }

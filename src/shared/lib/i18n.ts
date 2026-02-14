@@ -212,6 +212,10 @@ export interface TranslationKeys {
   'error.invalidPhone': string;
   'error.requiredField': string;
   
+  // Network Status
+  'network.offline': string;
+  'network.online': string;
+  
   // Feedback
   'feedback.howWasYourMeal': string;
   'feedback.leaveFeedback': string;
@@ -427,6 +431,10 @@ const translations: Record<Language, TranslationKeys> = {
     'error.invalidPhone': 'Please enter a valid Ugandan phone number',
     'error.requiredField': 'This field is required',
     
+    // Network Status
+    'network.offline': 'You are offline. Orders will be saved and synced when connection returns.',
+    'network.online': 'Connection restored!',
+    
     // Feedback
     'feedback.howWasYourMeal': 'How was your meal? We\'d love your feedback!',
     'feedback.leaveFeedback': 'Leave Feedback',
@@ -640,6 +648,10 @@ const translations: Record<Language, TranslationKeys> = {
     'error.paymentFailed': 'Okusasula kugazze. Gezaako nate.',
     'error.invalidPhone': 'Wandiika ennamba y\'essimu entuufu',
     'error.requiredField': 'Kino kyetaagibwa',
+    
+    // Network Status
+    'network.offline': 'Tolina nternet. Orders zirikuzitukuzibwa nga connection eddawo.',
+    'network.online': 'Connection eddawo!',
     
     // Feedback
     'feedback.howWasYourMeal': 'Emmere yali etya? Twagala okumanya ky\'olowooza!',

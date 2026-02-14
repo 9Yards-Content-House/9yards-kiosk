@@ -17,6 +17,7 @@ import {
   ORDER_STATUS_LABELS,
   type Order,
   type OrderStatus,
+  type OrderItem,
 } from '@shared/types/orders';
 import { Button } from '@shared/components/ui/button';
 import { usePrintTicket } from '../hooks/usePrintTicket';
@@ -105,7 +106,16 @@ export default function OrderBoardEnhanced({
     (order: Order, e: React.MouseEvent) => {
       e.stopPropagation();
       vibrate();
-      printTicket(order as any, { showPrices: false, copies: 1 });
+      // Adapt Order type to printTicket's expected format
+      const printOrder = {
+        ...order,
+        notes: order.special_instructions,
+        order_items: (order.items || order.order_items || []).map((item) => ({
+          ...item,
+          menu_item: { name: item.sauce_name || 'Item', category: undefined },
+        })),
+      };
+      printTicket(printOrder, { showPrices: false, copies: 1 });
     },
     [printTicket]
   );
@@ -198,9 +208,9 @@ export default function OrderBoardEnhanced({
 
                     {/* Items Preview */}
                     <div className="text-xs text-muted-foreground bg-gray-50 rounded-lg p-2 mb-3">
-                      {order.items?.slice(0, 2).map((item: any, idx: number) => (
+                      {order.items?.slice(0, 2).map((item: OrderItem, idx: number) => (
                         <div key={idx} className="truncate">
-                          {item.quantity}x {item.menu_item?.name || 'Item'}
+                          {item.quantity}x {item.sauce_name || 'Item'}
                         </div>
                       ))}
                       {(order.items?.length || 0) > 2 && (

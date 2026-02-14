@@ -33,6 +33,7 @@ const ROLE_COLORS: Record<UserRole, string> = {
   admin: "bg-purple-100 text-purple-700 border-purple-200",
   kitchen: "bg-amber-100 text-amber-700 border-amber-200",
   rider: "bg-blue-100 text-blue-700 border-blue-200",
+  reception: "bg-green-100 text-green-700 border-green-200",
 };
 
 // Mock staff data for development
@@ -147,7 +148,7 @@ export default function Staff() {
     const matchesSearch = !search || 
       member.full_name.toLowerCase().includes(search.toLowerCase()) ||
       member.phone?.toLowerCase().includes(search.toLowerCase()) ||
-      (member as any).email?.toLowerCase().includes(search.toLowerCase());
+      member.email?.toLowerCase().includes(search.toLowerCase());
     const matchesRole = roleFilter === "all" || member.role === roleFilter;
     return matchesSearch && matchesRole;
   });
@@ -217,7 +218,7 @@ export default function Staff() {
       setInvitePhone("");
       setInviteRole("kitchen");
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       console.error("Failed to create staff:", err);
       toast.error(err.message || "Failed to create staff member");
     },
@@ -314,7 +315,7 @@ export default function Staff() {
       queryClient.invalidateQueries({ queryKey: ["staff"] });
       toast.success("Staff member removed");
     },
-    onError: (err: any) => {
+    onError: (err: Error) => {
       console.error("Delete mutation error:", err);
       toast.error(err.message || "Failed to remove staff member");
     },
@@ -523,7 +524,7 @@ export default function Staff() {
           </div>
           {filteredStaff?.map((member) => {
             const isCurrentUser = member.id === user?.id;
-            const memberEmail = (member as any).email;
+            const memberEmail = member.email;
             return (
               <div
                 key={member.id}

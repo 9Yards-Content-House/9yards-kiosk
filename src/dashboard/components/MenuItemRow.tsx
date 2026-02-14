@@ -28,9 +28,9 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
   const toggleNew = useToggleMenuItemNew();
 
   // Check if item is scheduled
-  const isScheduled = (item as any).available_from || (item as any).available_until;
-  const isPopular = (item as any).is_popular;
-  const isNew = (item as any).is_new;
+  const isScheduled = item.available_from || item.available_until;
+  const isPopular = item.is_popular;
+  const isNew = item.is_new;
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_120px_100px] gap-2 md:gap-4 items-center px-4 py-3 border-b hover:bg-muted/30 transition-colors">
