@@ -1,10 +1,13 @@
 // Order types — mirrors the Supabase DB schema
 
-export type OrderStatus = "new" | "preparing" | "ready" | "delivered" | "cancelled";
+export type OrderStatus = "new" | "preparing" | "out_for_delivery" | "arrived" | "cancelled";
 export type PaymentMethod = "cash" | "mobile_money" | "pay_at_counter";
 export type PaymentStatus = "pending" | "paid" | "failed";
 export type OrderItemType = "combo" | "single";
 export type OrderSource = "kiosk" | "website" | "app";
+
+// Delivery fee constant (UGX)
+export const DELIVERY_FEE = 5000;
 
 export interface Order {
   id: string;
@@ -17,6 +20,7 @@ export interface Order {
   payment_status: PaymentStatus;
   momo_transaction_id: string | null;
   subtotal: number;
+  delivery_fee: number;
   total: number;
   special_instructions: string | null;
   source: OrderSource;
@@ -28,6 +32,14 @@ export interface Order {
   // Rider assignment
   rider_id: string | null;
   assigned_at: string | null;
+  // Pickup tracking
+  picked_up_at: string | null;
+  picked_up_by: string | null;
+  // Scheduling
+  scheduled_for: string | null;
+  is_scheduled: boolean;
+  // Multi-location
+  location_id: string | null;
   // Joined (Supabase returns as order_items, we alias as items)
   items?: OrderItem[];
   order_items?: OrderItem[];
@@ -67,9 +79,12 @@ export interface CreateOrderPayload {
   customer_location?: string;
   payment_method: PaymentMethod;
   subtotal: number;
+  delivery_fee?: number;
   total: number;
   special_instructions?: string;
   source: OrderSource;
+  scheduled_for?: string; // ISO timestamp for pre-orders
+  is_scheduled?: boolean;
   items: CreateOrderItemPayload[];
 }
 
@@ -86,26 +101,26 @@ export interface CreateOrderItemPayload {
   total_price: number;
 }
 
-// Order status progression
+// Order status progression (4-step flow)
 export const ORDER_STATUS_FLOW: OrderStatus[] = [
   "new",
   "preparing",
-  "ready",
-  "delivered",
+  "out_for_delivery",
+  "arrived",
 ];
 
 export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   new: "New",
   preparing: "Preparing",
-  ready: "Ready",
-  delivered: "Delivered",
+  out_for_delivery: "Out for Delivery",
+  arrived: "Arrived",
   cancelled: "Cancelled",
 };
 
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   new: "bg-blue-100 text-blue-800",
   preparing: "bg-yellow-100 text-yellow-800",
-  ready: "bg-green-100 text-green-800",
-  delivered: "bg-gray-100 text-gray-600",
+  out_for_delivery: "bg-purple-100 text-purple-800",
+  arrived: "bg-green-100 text-green-800",
   cancelled: "bg-red-100 text-red-800",
 };

@@ -11,6 +11,6 @@ export type {
   CreateOrderPayload,
   CreateOrderItemPayload,
 } from "./orders";
-export { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "./orders";
+export { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS, ORDER_STATUS_COLORS, DELIVERY_FEE } from "./orders";
 export type { Profile, UserRole, NotificationType } from "./auth";
 export { ROLE_PERMISSIONS, hasPermission } from "./auth";

@@ -25,8 +25,8 @@ import type { Order } from "@shared/types/orders";
 const MOCK_DELIVERIES: Order[] = [
   {
     id: "delivery-1",
-    order_number: "9Y-010",
-    status: "ready",
+    order_number: "381047",
+    status: "out_for_delivery",
     customer_name: "Grace Auma",
     customer_phone: "+256700123456",
     customer_location: "3rd Floor, Office 302",
@@ -50,8 +50,8 @@ const MOCK_DELIVERIES: Order[] = [
   },
   {
     id: "delivery-2",
-    order_number: "9Y-011",
-    status: "ready",
+    order_number: "592184",
+    status: "out_for_delivery",
     customer_name: "David Ochieng",
     customer_phone: "+256700789012",
     customer_location: "Reception Desk",
@@ -76,8 +76,8 @@ const MOCK_DELIVERIES: Order[] = [
   },
   {
     id: "delivery-3",
-    order_number: "9Y-008",
-    status: "delivered",
+    order_number: "847293",
+    status: "arrived",
     customer_name: "Fatuma Nantongo",
     customer_phone: "+256700345678",
     customer_location: "2nd Floor, Room 210",
@@ -137,14 +137,14 @@ export default function MyDeliveries() {
     queryKey: ["deliveries", "available"],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        return mockDeliveriesStore.filter(o => o.status === "ready" && !o.rider_id);
+        return mockDeliveriesStore.filter(o => o.status === "out_for_delivery" && !o.rider_id);
       }
       
       try {
         const { data, error } = await supabase
           .from("orders")
           .select("*, items:order_items(*)")
-          .eq("status", "ready")
+          .eq("status", "out_for_delivery")
           .is("rider_id", null)
           .order("ready_at", { ascending: true })
           .limit(50);
@@ -169,7 +169,7 @@ export default function MyDeliveries() {
     queryKey: ["deliveries", "mine", user?.id],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        return mockDeliveriesStore.filter(o => o.rider_id === user?.id && o.status !== "delivered");
+        return mockDeliveriesStore.filter(o => o.rider_id === user?.id && o.status !== "arrived");
       }
       
       if (!user?.id) return [];
@@ -179,7 +179,7 @@ export default function MyDeliveries() {
           .from("orders")
           .select("*, items:order_items(*)")
           .eq("rider_id", user.id)
-          .in("status", ["ready", "preparing"])
+          .in("status", ["out_for_delivery", "preparing"])
           .order("assigned_at", { ascending: false })
           .limit(50);
         
@@ -204,7 +204,7 @@ export default function MyDeliveries() {
     queryKey: ["deliveries", "delivered", user?.id],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        return mockDeliveriesStore.filter(o => o.status === "delivered");
+        return mockDeliveriesStore.filter(o => o.status === "arrived");
       }
       
       if (!user?.id) return [];
@@ -217,7 +217,7 @@ export default function MyDeliveries() {
           .from("orders")
           .select("*, items:order_items(*)")
           .eq("rider_id", user.id)
-          .eq("status", "delivered")
+          .eq("status", "arrived")
           .gte("delivered_at", today.toISOString())
           .order("delivered_at", { ascending: false })
           .limit(50);
@@ -267,21 +267,21 @@ export default function MyDeliveries() {
     try {
       await updateStatus.mutateAsync({
         orderId: order.id,
-        status: "delivered",
+        status: "arrived",
       });
       
       // Update mock store in mock mode
       if (USE_MOCK_DATA) {
         const mockOrder = mockDeliveriesStore.find(o => o.id === order.id);
         if (mockOrder) {
-          mockOrder.status = "delivered";
+          mockOrder.status = "arrived";
           mockOrder.delivered_at = new Date().toISOString();
         }
       }
       
       setConfirmOrder(null);
       queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-      toast.success(`${order.order_number} marked as delivered`);
+      toast.success(`${order.order_number} marked as arrived`);
     } catch {
       toast.error("Failed to update");
     }

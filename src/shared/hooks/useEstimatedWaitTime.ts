@@ -64,7 +64,7 @@ export function useEstimatedWaitTime(): {
       const { data: completedOrders, error: completedError } = await supabase
         .from("orders")
         .select("created_at, prepared_at, ready_at")
-        .eq("status", "ready")
+        .eq("status", "out_for_delivery")
         .gte("created_at", new Date(Date.now() - 2 * 60 * 60 * 1000).toISOString())
         .not("ready_at", "is", null)
         .limit(20);
@@ -132,8 +132,8 @@ export function useOrderEstimatedTime(orderId: string | undefined) {
         return null;
       }
 
-      // If already ready or delivered, no wait
-      if (order.status === "ready" || order.status === "delivered") {
+      // If already out for delivery or arrived, no wait
+      if (order.status === "out_for_delivery" || order.status === "arrived") {
         return { minutes: 0, formatted: "Ready!" };
       }
 

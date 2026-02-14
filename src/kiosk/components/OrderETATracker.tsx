@@ -10,7 +10,7 @@ import {
   ArrowLeft,
 } from "lucide-react";
 
-type OrderStatus = "pending" | "preparing" | "ready" | "completed";
+type OrderStatus = "pending" | "preparing" | "out_for_delivery" | "arrived";
 
 interface OrderETATrackerProps {
   orderNumber: string;
@@ -22,7 +22,7 @@ interface OrderETATrackerProps {
 const STATUS_STEPS = [
   { key: "pending", label: "Order Received", icon: CheckCircle2 },
   { key: "preparing", label: "Being Prepared", icon: ChefHat },
-  { key: "ready", label: "Ready for Pickup", icon: Package },
+  { key: "out_for_delivery", label: "Ready for Pickup", icon: Package },
 ];
 
 const STATUS_MESSAGES: Record<OrderStatus, { title: string; subtitle: string }> = {
@@ -34,11 +34,11 @@ const STATUS_MESSAGES: Record<OrderStatus, { title: string; subtitle: string }> 
     title: "Cooking in Progress",
     subtitle: "Our chefs are preparing your food",
   },
-  ready: {
+  out_for_delivery: {
     title: "Order Ready!",
     subtitle: "Please collect your order at the counter",
   },
-  completed: {
+  arrived: {
     title: "Order Completed",
     subtitle: "Thank you for ordering with us!",
   },
@@ -62,7 +62,7 @@ export default function OrderETATracker({
         setStatus("preparing");
         setRemainingMinutes(Math.ceil(estimatedMinutes * 0.6));
       } else if (status === "preparing" && remainingMinutes <= 2) {
-        setStatus("ready");
+        setStatus("out_for_delivery");
         setRemainingMinutes(0);
       }
     }, 15000);
@@ -72,7 +72,7 @@ export default function OrderETATracker({
 
   // Countdown timer
   useEffect(() => {
-    if (status === "ready" || status === "completed") return;
+    if (status === "out_for_delivery" || status === "arrived") return;
 
     const timer = setInterval(() => {
       setRemainingMinutes((prev) => Math.max(0, prev - 1 / 60));
@@ -148,7 +148,7 @@ export default function OrderETATracker({
                 exit={{ scale: 0.8, opacity: 0 }}
                 className="mb-4"
               >
-                {status === "ready" ? (
+                {status === "out_for_delivery" ? (
                   <div className="w-24 h-24 mx-auto bg-green-100 rounded-full flex items-center justify-center">
                     <Package className="w-12 h-12 text-green-600" />
                   </div>
@@ -174,7 +174,7 @@ export default function OrderETATracker({
           </div>
 
           {/* ETA Display */}
-          {status !== "ready" && status !== "completed" && (
+          {status !== "out_for_delivery" && status !== "arrived" && (
             <div className="bg-gray-50 rounded-2xl p-6 mb-8 text-center">
               <p className="text-sm text-gray-500 mb-1">Estimated Wait Time</p>
               <div className="flex items-center justify-center gap-2">
@@ -225,7 +225,7 @@ export default function OrderETATracker({
                           : "bg-gray-100 text-gray-400"
                       } ${isCurrent ? "ring-4 ring-secondary/20" : ""}`}
                     >
-                      {isCurrent && status !== "ready" ? (
+                      {isCurrent && status !== "out_for_delivery" ? (
                         <Loader2 className="w-5 h-5 animate-spin" />
                       ) : (
                         <Icon className="w-5 h-5" />
@@ -260,7 +260,7 @@ export default function OrderETATracker({
         </motion.div>
 
         {/* Notification Toggle */}
-        {status !== "ready" && status !== "completed" && (
+        {status !== "out_for_delivery" && status !== "arrived" && (
           <motion.div
             initial={{ y: 20, opacity: 0 }}
             animate={{ y: 0, opacity: 1 }}
@@ -285,7 +285,7 @@ export default function OrderETATracker({
         )}
 
         {/* Ready CTA */}
-        {status === "ready" && (
+        {status === "out_for_delivery" && (
           <motion.div
             initial={{ scale: 0.9, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}

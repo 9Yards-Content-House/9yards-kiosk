@@ -1,12 +1,13 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed, CreditCard, Banknote, Smartphone } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed, CreditCard, Banknote, Smartphone, Truck } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useCreateOrder } from "@shared/hooks/useOrders";
 import { useAllMenuItems } from "@shared/hooks/useMenu";
 import { cn, formatPrice } from "@shared/lib/utils";
 import { KIOSK } from "@shared/lib/constants";
+import { DELIVERY_FEE } from "@shared/types/orders";
 import KioskHeader from "../components/KioskHeader";
 import MoMoPayment from "../components/MoMoPayment";
 import { Button } from "@shared/components/ui/button";
@@ -44,6 +45,7 @@ export default function Payment() {
 
   const paymentMethod: PaymentMethod = details.payment_method;
   const isMoMo = paymentMethod === "mobile_money";
+  const total = subtotal + DELIVERY_FEE;
 
   const handlePlaceOrder = async () => {
     setStep("submitting");
@@ -54,9 +56,12 @@ export default function Payment() {
       customer_location: details.customer_location,
       payment_method: paymentMethod,
       subtotal,
-      total: subtotal,
+      delivery_fee: DELIVERY_FEE,
+      total,
       special_instructions: details.special_instructions,
       source: KIOSK.ORDER_SOURCE,
+      is_scheduled: details.is_scheduled || false,
+      scheduled_for: details.scheduled_for || undefined,
       items: items.map((item) => ({
         type: item.type,
         main_dishes: item.mainDishes,
@@ -225,10 +230,23 @@ export default function Payment() {
             );})}
           </div>
           
-          {/* Total */}
-          <div className="flex justify-between items-center pt-4 mt-4 border-t border-gray-200">
-            <span className="font-bold text-lg text-[#212282]">Total</span>
-            <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
+          {/* Pricing Breakdown */}
+          <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500">Subtotal</span>
+              <span className="text-gray-700">{formatPrice(subtotal)}</span>
+            </div>
+            <div className="flex justify-between items-center text-sm">
+              <span className="text-gray-500 flex items-center gap-1">
+                <Truck className="w-4 h-4" />
+                Delivery Fee
+              </span>
+              <span className="text-gray-700">{formatPrice(DELIVERY_FEE)}</span>
+            </div>
+            <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+              <span className="font-bold text-lg text-[#212282]">Total</span>
+              <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(total)}</span>
+            </div>
           </div>
         </div>
 

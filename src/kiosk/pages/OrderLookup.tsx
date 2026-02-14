@@ -92,7 +92,8 @@ export default function OrderLookup() {
       setOrderNumber((prev) => prev.slice(0, -1));
     } else {
       setOrderNumber((prev) => {
-        if (prev.replace(/\D/g, '').length >= 4) return prev;
+        // Allow up to 6 digits for numeric order numbers
+        if (prev.length >= 6) return prev;
         return prev + digit;
       });
     }
@@ -102,8 +103,8 @@ export default function OrderLookup() {
   const handleSearch = useCallback(() => {
     const digits = orderNumber.replace(/\D/g, '');
     if (digits.length > 0) {
-      const formatted = `9Y-${digits.padStart(4, '0')}`;
-      setSearchNumber(formatted);
+      // Search with plain numeric order number
+      setSearchNumber(digits);
     }
   }, [orderNumber]);
 
@@ -141,9 +142,10 @@ export default function OrderLookup() {
   }, [order?.id, refetch, queryClient]);
 
   const digits = orderNumber.replace(/\D/g, '');
+  // Display as plain number (6 digits max)
   const displayNumber = digits.length > 0
-    ? `9Y-${digits.padStart(4, '0')}`
-    : '9Y-____';
+    ? digits.padEnd(6, '_')
+    : '______';
 
   const hasDigits = digits.length > 0;
   const hasResult = !!searchNumber && (isLoading || !!order || !!error);
@@ -314,8 +316,8 @@ export default function OrderLookup() {
                         </div>
                       )}
 
-                      {/* Ready celebration */}
-                      {order.status === 'ready' && (
+                      {/* Out for Delivery celebration */}
+                      {order.status === 'out_for_delivery' && (
                         <motion.div
                           initial={{ scale: 0.9 }}
                           animate={{ scale: 1 }}
@@ -330,8 +332,8 @@ export default function OrderLookup() {
                         </motion.div>
                       )}
 
-                      {/* Delivered - Show feedback button */}
-                      {order.status === 'delivered' && (
+                      {/* Arrived - Show feedback button */}
+                      {order.status === 'arrived' && (
                         <motion.div
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}

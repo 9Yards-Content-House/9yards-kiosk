@@ -75,8 +75,8 @@ export default function Orders() {
     const groups: Record<OrderStatus, Order[]> = {
       new: [],
       preparing: [],
-      ready: [],
-      delivered: [],
+      out_for_delivery: [],
+      arrived: [],
       cancelled: [],
     };
 

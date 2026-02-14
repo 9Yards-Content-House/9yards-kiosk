@@ -170,7 +170,7 @@ export default function OrderDetail() {
       </div>
 
       {/* Actions */}
-      {order.status !== "delivered" && order.status !== "cancelled" && (
+      {order.status !== "arrived" && order.status !== "cancelled" && (
         <div className="flex gap-3">
           {nextStatus && (
             <Button

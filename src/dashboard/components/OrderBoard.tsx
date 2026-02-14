@@ -14,7 +14,7 @@ interface OrderBoardProps {
 }
 
 // Active workflow statuses
-const WORKFLOW_STATUSES: OrderStatus[] = ["new", "preparing", "ready"];
+const WORKFLOW_STATUSES: OrderStatus[] = ["new", "preparing", "out_for_delivery"];
 
 // Time limit for completed/cancelled orders to remain visible (2 hours)
 const COMPLETED_ORDER_VISIBILITY_MS = 2 * 60 * 60 * 1000;
@@ -27,10 +27,10 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
   // Filter completed orders to only show recent ones
   const recentCompletedOrders = useMemo(() => {
     const now = Date.now();
-    const delivered = grouped.delivered || [];
+    const arrived = grouped.arrived || [];
     const cancelled = grouped.cancelled || [];
     
-    const recentDelivered = delivered.filter(order => {
+    const recentArrived = arrived.filter(order => {
       const orderTime = new Date(order.updated_at || order.created_at).getTime();
       return now - orderTime < COMPLETED_ORDER_VISIBILITY_MS;
     });
@@ -40,10 +40,10 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
       return now - orderTime < COMPLETED_ORDER_VISIBILITY_MS;
     });
     
-    return [...recentDelivered, ...recentCancelled].sort((a, b) => 
+    return [...recentArrived, ...recentCancelled].sort((a, b) => 
       new Date(b.updated_at || b.created_at).getTime() - new Date(a.updated_at || a.created_at).getTime()
     );
-  }, [grouped.delivered, grouped.cancelled]);
+  }, [grouped.arrived, grouped.cancelled]);
 
   const handleDragStart = useCallback((e: React.DragEvent<HTMLDivElement>) => {
     const orderId = e.currentTarget.dataset.orderId;
@@ -190,9 +190,9 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
             <div key={order.id} className="relative">
               {/* Status indicator overlay */}
               <div className={`absolute -top-1 -right-1 z-10 w-5 h-5 rounded-full flex items-center justify-center ${
-                order.status === "delivered" ? "bg-green-500" : "bg-red-500"
+                order.status === "arrived" ? "bg-green-500" : "bg-red-500"
               }`}>
-                {order.status === "delivered" 
+                {order.status === "arrived" 
                   ? <CheckCircle2 className="w-3 h-3 text-white" />
                   : <XCircle className="w-3 h-3 text-white" />
                 }

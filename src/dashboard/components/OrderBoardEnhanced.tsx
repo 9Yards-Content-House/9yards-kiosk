@@ -28,21 +28,21 @@ interface OrderBoardEnhancedProps {
   onStatusChange?: (orderId: string, newStatus: OrderStatus) => void;
 }
 
-const DISPLAY_STATUSES: OrderStatus[] = ['new', 'preparing', 'ready', 'delivered'];
+const DISPLAY_STATUSES: OrderStatus[] = ['new', 'preparing', 'out_for_delivery', 'arrived'];
 
 const STATUS_COLORS: Record<OrderStatus, string> = {
   new: 'bg-blue-500',
   preparing: 'bg-amber-500',
-  ready: 'bg-green-500',
-  delivered: 'bg-gray-400',
+  out_for_delivery: 'bg-green-500',
+  arrived: 'bg-gray-400',
   cancelled: 'bg-red-500',
 };
 
 const STATUS_BG: Record<OrderStatus, string> = {
   new: 'bg-blue-50',
   preparing: 'bg-amber-50',
-  ready: 'bg-green-50',
-  delivered: 'bg-gray-50',
+  out_for_delivery: 'bg-green-50',
+  arrived: 'bg-gray-50',
   cancelled: 'bg-red-50',
 };
 
@@ -71,7 +71,7 @@ export default function OrderBoardEnhanced({
           if (mockOrder) {
             mockOrder.status = newStatus;
             mockOrder.updated_at = new Date().toISOString();
-            if (newStatus === 'ready') {
+            if (newStatus === 'out_for_delivery') {
               mockOrder.ready_at = new Date().toISOString();
             }
             console.log(`📦 Mock order ${mockOrder.order_number} → ${newStatus}`);
@@ -84,7 +84,7 @@ export default function OrderBoardEnhanced({
           .from('orders')
           .update({
             status: newStatus,
-            ...(newStatus === 'ready' && {
+            ...(newStatus === 'out_for_delivery' && {
               estimated_ready_at: new Date().toISOString(),
             }),
           })

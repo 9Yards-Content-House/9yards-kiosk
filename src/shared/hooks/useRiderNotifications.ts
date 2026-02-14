@@ -94,14 +94,14 @@ export function useRiderNotifications(options: UseRiderNotificationsOptions = {}
           event: "UPDATE",
           schema: "public",
           table: "orders",
-          filter: "status=eq.ready",
+          filter: "status=eq.out_for_delivery",
         },
         (payload) => {
           const newOrder = payload.new as Order;
           const oldOrder = payload.old as Partial<Order>;
           
-          // Only notify on transition to "ready" status
-          if (newOrder.status === "ready" && oldOrder.status !== "ready") {
+          // Only notify on transition to "out_for_delivery" status
+          if (newOrder.status === "out_for_delivery" && oldOrder.status !== "out_for_delivery") {
             console.log("🔔 Order ready for pickup:", newOrder.order_number);
             handleOrderReady(newOrder);
             queryClient.invalidateQueries({ queryKey: ["orders"] });

@@ -128,10 +128,13 @@ self.addEventListener('fetch', (event) => {
             const id = await queueOrder(body);
             console.log('[SW] Order queued for offline sync:', id);
             
+            // Generate a 6-digit numeric order number for offline orders
+            const offlineOrderNum = String(100000 + (id % 900000));
+            
             // Return a synthetic response
             return new Response(JSON.stringify({
               id: `offline-${id}`,
-              order_number: `9Y-OFFLINE-${id}`,
+              order_number: offlineOrderNum,
               status: 'queued',
               offline: true,
               message: 'Order saved offline. Will sync when connection restored.',

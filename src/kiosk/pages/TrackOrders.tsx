@@ -31,7 +31,7 @@ export default function TrackOrders() {
       if (USE_MOCK_DATA) {
         const mockOrders = getMockOrdersStore();
         return mockOrders
-          .filter(o => ['new', 'preparing', 'ready'].includes(o.status) && new Date(o.created_at) >= today)
+          .filter(o => ['new', 'preparing', 'out_for_delivery'].includes(o.status) && new Date(o.created_at) >= today)
           .map(o => ({ ...o, itemCount: o.items?.length || 0 })) as TrackingOrder[];
       }
 
@@ -41,7 +41,7 @@ export default function TrackOrders() {
           *,
           order_items(count)
         `)
-        .in('status', ['new', 'preparing', 'ready'])
+        .in('status', ['new', 'preparing', 'out_for_delivery'])
         .gte('created_at', today.toISOString())
         .order('created_at', { ascending: true });
 
@@ -72,8 +72,8 @@ export default function TrackOrders() {
         (payload) => {
           refetch();
           
-          // Play sound when order becomes ready
-          if (payload.new && (payload.new as any).status === 'ready') {
+          // Play sound when order becomes out for delivery
+          if (payload.new && (payload.new as any).status === 'out_for_delivery') {
             const orderNum = (payload.new as any).order_number;
             if (orderNum !== lastReadyOrder) {
               setLastReadyOrder(orderNum);
@@ -100,7 +100,7 @@ export default function TrackOrders() {
   const preparingOrders = (orders || []).filter(
     (o) => o.status === 'new' || o.status === 'preparing'
   );
-  const readyOrders = (orders || []).filter((o) => o.status === 'ready');
+  const outForDeliveryOrders = (orders || []).filter((o) => o.status === 'out_for_delivery');
 
   return (
     <div className="kiosk-screen flex flex-col bg-background">
@@ -157,7 +157,7 @@ export default function TrackOrders() {
           </div>
         </div>
 
-        {/* Ready Column */}
+        {/* Out for Delivery Column */}
         <div className="flex flex-col rounded-2xl bg-green-50 border-2 border-green-200 overflow-hidden">
           <div className="bg-green-500 text-white px-4 py-3 flex items-center justify-between">
             <div className="flex items-center gap-2">
@@ -166,22 +166,22 @@ export default function TrackOrders() {
             </div>
             <div className="flex items-center gap-1 bg-white/20 rounded-full px-2 py-0.5 text-sm">
               <Users className="w-4 h-4" />
-              {readyOrders.length}
+              {outForDeliveryOrders.length}
             </div>
           </div>
           
           <div className="flex-1 overflow-y-auto p-4 space-y-3">
             <AnimatePresence mode="popLayout">
-              {readyOrders.length === 0 ? (
+              {outForDeliveryOrders.length === 0 ? (
                 <p className="text-center text-green-600/60 py-8">
                   {t('board.noOrders')}
                 </p>
               ) : (
-                readyOrders.map((order) => (
+                outForDeliveryOrders.map((order) => (
                   <OrderBoardCard
                     key={order.id}
                     order={order}
-                    status="ready"
+                    status="out_for_delivery"
                   />
                 ))
               )}
@@ -208,11 +208,11 @@ export default function TrackOrders() {
 
 interface OrderBoardCardProps {
   order: TrackingOrder;
-  status: 'preparing' | 'ready';
+  status: 'preparing' | 'out_for_delivery';
 }
 
 function OrderBoardCard({ order, status }: OrderBoardCardProps) {
-  const isReady = status === 'ready';
+  const isOutForDelivery = status === 'out_for_delivery';
 
   return (
     <motion.div
@@ -222,7 +222,7 @@ function OrderBoardCard({ order, status }: OrderBoardCardProps) {
       exit={{ opacity: 0, scale: 0.9, x: 100 }}
       className={cn(
         'rounded-xl p-4 shadow-sm',
-        isReady
+        isOutForDelivery
           ? 'bg-white border-2 border-green-400 animate-pulse-glow'
           : 'bg-white border border-amber-200'
       )}
@@ -231,7 +231,7 @@ function OrderBoardCard({ order, status }: OrderBoardCardProps) {
       <div
         className={cn(
           'text-2xl md:text-3xl font-black text-center mb-2',
-          isReady ? 'text-green-600' : 'text-amber-600'
+          isOutForDelivery ? 'text-green-600' : 'text-amber-600'
         )}
       >
         {order.order_number}

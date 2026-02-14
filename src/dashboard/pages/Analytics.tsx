@@ -71,8 +71,8 @@ function generateMockAnalyticsOrders(): Order[] {
     
     orders.push({
       id: `analytics-order-${i}`,
-      order_number: `9Y-${String(i + 100).padStart(3, '0')}`,
-      status: "delivered",
+      order_number: String(Math.floor(100000 + Math.random() * 900000)),
+      status: "arrived",
       customer_name: customers[Math.floor(Math.random() * customers.length)],
       customer_phone: `+25670${Math.floor(Math.random() * 10000000).toString().padStart(7, '0')}`,
       customer_location: `Office ${Math.floor(Math.random() * 500)}`,

@@ -310,18 +310,25 @@ create policy "Users can manage own push subscriptions"
 create or replace function public.generate_order_number()
 returns trigger as $$
 declare
-  next_num int;
+  rand_num int;
   new_number text;
+  exists_check boolean;
 begin
-  -- Get next sequential number for today
-  select coalesce(max(
-    cast(substring(order_number from 4) as int)
-  ), 0) + 1 into next_num
-  from public.orders
-  where created_at::date = current_date
-    and order_number ~ '^9Y-[0-9]+$';
+  -- Generate a 6-digit random number (100000-999999)
+  loop
+    rand_num := floor(100000 + random() * 900000)::int;
+    new_number := rand_num::text;
+    
+    -- Check if this number already exists today
+    select exists(
+      select 1 from public.orders 
+      where order_number = new_number 
+        and created_at::date = current_date
+    ) into exists_check;
+    
+    exit when not exists_check;
+  end loop;
   
-  new_number := '9Y-' || lpad(next_num::text, 4, '0');
   new.order_number := new_number;
   return new;
 end;

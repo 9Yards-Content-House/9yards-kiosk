@@ -7,15 +7,11 @@ import type {
   CreateOrderPayload,
 } from "@shared/types/orders";
 
-// Generate a memorable order number like "9Y-XK42"
-// Format: 9Y + 2 letters + 2 digits for easy verbal communication
+// Generate a random 6-digit numeric order number
+// Format: 6 random digits (100000-999999) for easy kiosk numpad entry
 function generateOrderNumber(): string {
-  const letters = 'ABCDEFGHJKLMNPQRSTUVWXYZ'; // Removed I and O to avoid confusion with 1 and 0
-  const l1 = letters[Math.floor(Math.random() * letters.length)];
-  const l2 = letters[Math.floor(Math.random() * letters.length)];
-  const d1 = Math.floor(Math.random() * 10);
-  const d2 = Math.floor(Math.random() * 10);
-  return `9Y-${l1}${l2}${d1}${d2}`;
+  const num = Math.floor(100000 + Math.random() * 900000);
+  return num.toString();
 }
 
 // Storage key for localStorage persistence
@@ -78,10 +74,14 @@ if (typeof BroadcastChannel !== "undefined") {
 }
 
 // In-memory store for mock mode - allows full CRUD operations
-const mockOrdersStore: Order[] = [
+// Persisted to localStorage for cross-tab/cross-app sharing
+const MOCK_ORDERS_STORAGE_KEY = "9yards_mock_orders";
+
+// Default mock orders
+const DEFAULT_MOCK_ORDERS: Order[] = [
   {
     id: "order-1",
-    order_number: "9Y-AB12",
+    order_number: "847291",
     status: "new",
     customer_name: "John Doe",
     customer_phone: "+256700111222",
@@ -107,7 +107,7 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-2",
-    order_number: "9Y-CD34",
+    order_number: "592031",
     status: "preparing",
     customer_name: "Jane Smith",
     customer_phone: "+256700333444",
@@ -132,8 +132,8 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-3",
-    order_number: "9Y-EF56",
-    status: "ready",
+    order_number: "103847",
+    status: "out_for_delivery",
     customer_name: "Peter Otieno",
     customer_phone: "+256700555666",
     customer_location: "Office 305",
@@ -158,8 +158,8 @@ const mockOrdersStore: Order[] = [
   },
   {
     id: "order-4",
-    order_number: "9Y-GH78",
-    status: "delivered",
+    order_number: "729485",
+    status: "arrived",
     customer_name: "Mary Nakato",
     customer_phone: "+256700777888",
     customer_location: "Meeting Room 2",
@@ -182,6 +182,58 @@ const mockOrdersStore: Order[] = [
     ],
   },
 ];
+
+// Load or initialize mock orders store
+function loadMockOrdersStore(): Order[] {
+  try {
+    const stored = localStorage.getItem(MOCK_ORDERS_STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as Order[];
+      console.log("📦 Loaded", parsed.length, "orders from localStorage");
+      return parsed;
+    }
+  } catch (err) {
+    console.warn("Failed to load mock orders from storage:", err);
+  }
+  // Return default orders if nothing stored
+  return [...DEFAULT_MOCK_ORDERS];
+}
+
+// Save mock orders to localStorage
+function saveMockOrdersStore() {
+  try {
+    localStorage.setItem(MOCK_ORDERS_STORAGE_KEY, JSON.stringify(mockOrdersStore));
+    
+    // Also broadcast to other tabs
+    if (typeof BroadcastChannel !== "undefined") {
+      const channel = new BroadcastChannel("9yards_mock_orders");
+      channel.postMessage({ type: "mock_orders_update" });
+      channel.close();
+    }
+  } catch (err) {
+    console.warn("Failed to save mock orders to storage:", err);
+  }
+}
+
+// The actual mock orders store, loaded from localStorage
+const mockOrdersStore: Order[] = loadMockOrdersStore();
+
+// Listen for updates from other tabs
+if (typeof BroadcastChannel !== "undefined") {
+  const mockOrdersChannel = new BroadcastChannel("9yards_mock_orders");
+  mockOrdersChannel.onmessage = () => {
+    // Reload from localStorage when another tab updates
+    const freshOrders = loadMockOrdersStore();
+    mockOrdersStore.length = 0;
+    mockOrdersStore.push(...freshOrders);
+    console.log("📦 Reloaded mock orders from another tab");
+  };
+}
+
+/** Export mock store getter for other components */
+export function getMockOrdersStore(): Order[] {
+  return mockOrdersStore;
+}
 
 // Helper to apply local overlay to an order
 function applyOverlay(order: Order): Order {
@@ -224,6 +276,8 @@ export function useOrderByNumber(orderNumber: string | null) {
       }
     },
     enabled: !!orderNumber,
+    // Poll for updates - real-time subscription provides instant updates in addition
+    refetchInterval: USE_MOCK_DATA ? 3_000 : 10_000,
   });
 }
 
@@ -384,6 +438,7 @@ export function useCreateOrder() {
         // Create mock order with memorable order number
         const newOrder = createMockOrder(orderData, items);
         mockOrdersStore.unshift(newOrder);
+        saveMockOrdersStore(); // Persist to localStorage
         console.log("📦 Mock order created:", newOrder.order_number);
         return newOrder;
       }
@@ -433,6 +488,7 @@ export function useCreateOrder() {
         console.warn("⚠️ Supabase failed, creating mock order instead:", err);
         const newOrder = createMockOrder(orderData, items);
         mockOrdersStore.unshift(newOrder);
+        saveMockOrdersStore(); // Persist to localStorage
         console.log("📦 Fallback mock order created:", newOrder.order_number);
         return newOrder;
       }
@@ -463,8 +519,8 @@ export function useUpdateOrderStatus() {
         updated_at: now,
       };
       if (status === "preparing") updates.prepared_at = now;
-      if (status === "ready") updates.ready_at = now;
-      if (status === "delivered") updates.delivered_at = now;
+      if (status === "out_for_delivery") updates.ready_at = now;
+      if (status === "arrived") updates.delivered_at = now;
       
       // Mock mode - use in-memory store
       if (USE_MOCK_DATA) {
@@ -472,6 +528,7 @@ export function useUpdateOrderStatus() {
         if (!order) throw new Error("Order not found");
         
         Object.assign(order, updates);
+        saveMockOrdersStore(); // Persist to localStorage
         console.log(`📦 Mock order ${order.order_number} status updated to: ${status}`);
         return order;
       }
@@ -567,9 +624,6 @@ export function useCancelOrder() {
   });
 }
 
-// Export getter for mock store (used by OrderLookup to share state)
-export const getMockOrdersStore = () => mockOrdersStore;
-
 // Export function to apply local overlay to an order (for kiosk tracking sync)
 export const applyLocalOverlay = (order: Order): Order => applyOverlay(order);
 
@@ -580,15 +634,39 @@ export const getOrderOverlay = (orderId: string): Partial<Order> | undefined =>
 /**
  * Subscribe to order changes via Supabase realtime.
  * Use in dashboard and kiosk to keep orders synced.
+ * Also handles mock mode via BroadcastChannel.
  */
 export function useOrdersRealtime() {
   const queryClient = useQueryClient();
 
   useEffect(() => {
-    if (USE_MOCK_DATA || !supabase) {
-      console.log("📦 Mock mode: Orders realtime subscription disabled");
-      return;
+    // Mock mode: Use BroadcastChannel for cross-tab sync
+    if (USE_MOCK_DATA) {
+      if (typeof BroadcastChannel === "undefined") return;
+      
+      console.log("📦 Mock mode: Setting up BroadcastChannel for order sync");
+      const channel = new BroadcastChannel("9yards_mock_orders");
+      
+      channel.onmessage = () => {
+        console.log("📦 Mock orders updated from another tab, invalidating queries");
+        // Reload mock orders store
+        const freshOrders = loadMockOrdersStore();
+        mockOrdersStore.length = 0;
+        mockOrdersStore.push(...freshOrders);
+        // Invalidate all order queries to trigger refetch
+        queryClient.invalidateQueries({ queryKey: ['orders'] });
+        queryClient.invalidateQueries({ queryKey: ['order'] });
+        queryClient.invalidateQueries({ queryKey: ['order-lookup'] });
+        queryClient.invalidateQueries({ queryKey: ['tracking-orders'] });
+      };
+      
+      return () => {
+        channel.close();
+      };
     }
+
+    // Real Supabase mode
+    if (!supabase) return;
 
     console.log("🔌 Setting up orders realtime subscription...");
 
@@ -605,6 +683,8 @@ export function useOrdersRealtime() {
           console.log('🔄 Order change detected:', payload.eventType, payload.new);
           queryClient.invalidateQueries({ queryKey: ['orders'] });
           queryClient.invalidateQueries({ queryKey: ['order'] });
+          queryClient.invalidateQueries({ queryKey: ['order-lookup'] });
+          queryClient.invalidateQueries({ queryKey: ['tracking-orders'] });
         }
       )
       .on(

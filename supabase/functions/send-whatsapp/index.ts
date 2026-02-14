@@ -7,11 +7,16 @@ const corsHeaders = {
 };
 
 interface WhatsAppPayload {
+  // For new order notifications (existing)
   orderNumber: string;
   customerName: string;
-  total: number;
-  itemsSummary: string;
-  paymentMethod: string;
+  total?: number;
+  itemsSummary?: string;
+  paymentMethod?: string;
+  // For arrival notifications (new)
+  to?: string;
+  type?: "new_order" | "arrival";
+  message?: string;
 }
 
 serve(async (req) => {
@@ -20,8 +25,8 @@ serve(async (req) => {
   }
 
   try {
-    const { orderNumber, customerName, total, itemsSummary, paymentMethod } =
-      (await req.json()) as WhatsAppPayload;
+    const payload = (await req.json()) as WhatsAppPayload;
+    const { orderNumber, customerName, total, itemsSummary, paymentMethod, to, type, message } = payload;
 
     const whatsappToken = Deno.env.get("WHATSAPP_BUSINESS_TOKEN");
     const whatsappPhoneId = Deno.env.get("WHATSAPP_PHONE_NUMBER_ID");
@@ -35,6 +40,29 @@ serve(async (req) => {
       );
     }
 
+    // Determine recipient and message based on notification type
+    let recipientPhone: string;
+    let messageBody: string;
+
+    if (type === "arrival" && to && message) {
+      // Customer arrival notification
+      recipientPhone = to;
+      messageBody = message;
+    } else {
+      // Default: Kitchen notification for new order
+      recipientPhone = kitchenPhone;
+      messageBody = [
+        `🆕 *New Order: ${orderNumber}*`,
+        `👤 ${customerName}`,
+        `💰 ${total?.toLocaleString() || 0} UGX (${paymentMethod})`,
+        ``,
+        `📋 *Items:*`,
+        itemsSummary || "No items",
+        ``,
+        `Open dashboard: https://kitchen.9yards.co.ug/orders`,
+      ].join("\n");
+    }
+
     // Send via WhatsApp Business Cloud API
     const response = await fetch(
       `https://graph.facebook.com/v18.0/${whatsappPhoneId}/messages`,
@@ -46,19 +74,10 @@ serve(async (req) => {
         },
         body: JSON.stringify({
           messaging_product: "whatsapp",
-          to: kitchenPhone,
+          to: recipientPhone,
           type: "text",
           text: {
-            body: [
-              `🆕 *New Order: ${orderNumber}*`,
-              `👤 ${customerName}`,
-              `💰 ${total.toLocaleString()} UGX (${paymentMethod})`,
-              ``,
-              `📋 *Items:*`,
-              itemsSummary,
-              ``,
-              `Open dashboard: https://kitchen.9yards.co.ug/orders`,
-            ].join("\n"),
+            body: messageBody,
           },
         }),
       }

@@ -32,6 +32,7 @@ export interface TranslationKeys {
   'welcome.subtitle': string;
   'welcome.startOrder': string;
   'welcome.trackOrder': string;
+  'welcome.viewQueue': string;
   'welcome.tapAnywhere': string;
   'welcome.poweredBy': string;
   'welcome.wereOpen': string;
@@ -182,6 +183,17 @@ export interface TranslationKeys {
   'board.readyColumn': string;
   'board.noOrders': string;
   
+  // Queue Display
+  'queue.title': string;
+  'queue.loading': string;
+  'queue.backToOrder': string;
+  'queue.orders': string;
+  'queue.order': string;
+  'queue.noOrders': string;
+  'queue.justNow': string;
+  'queue.min': string;
+  'queue.mins': string;
+  
   // Inactivity
   'inactivity.title': string;
   'inactivity.stillThere': string;
@@ -235,6 +247,7 @@ const translations: Record<Language, TranslationKeys> = {
     'welcome.subtitle': 'Order fresh Ugandan meals, ready in minutes',
     'welcome.startOrder': 'Place Your Order',
     'welcome.trackOrder': 'Track My Order',
+    'welcome.viewQueue': 'View Order Queue',
     'welcome.tapAnywhere': 'Touch anywhere to begin',
     'welcome.poweredBy': 'Powered by 9Yards',
     'welcome.wereOpen': "We're Open!",
@@ -385,6 +398,17 @@ const translations: Record<Language, TranslationKeys> = {
     'board.readyColumn': 'Ready for Pickup',
     'board.noOrders': 'No orders at the moment',
     
+    // Queue Display
+    'queue.title': 'Order Queue',
+    'queue.loading': 'Loading queue...',
+    'queue.backToOrder': 'Back to Order',
+    'queue.orders': 'orders',
+    'queue.order': 'order',
+    'queue.noOrders': 'No orders',
+    'queue.justNow': 'Just now',
+    'queue.min': '1 min',
+    'queue.mins': 'mins',
+    
     // Inactivity
     'inactivity.stillThere': 'Still there?',
     'inactivity.tapToContinue': 'Tap anywhere to continue',
@@ -437,6 +461,7 @@ const translations: Record<Language, TranslationKeys> = {
     'welcome.subtitle': 'Funa emmere ennungi eya Uganda, eneetegekebwa mangu',
     'welcome.startOrder': 'Teekawo Order Yo',
     'welcome.trackOrder': 'Goberera Order Yange',
+    'welcome.viewQueue': 'Laba Oluliri lwa Orders',
     'welcome.tapAnywhere': 'Koma wonna okutandika',
     'welcome.poweredBy': 'Eteekebwawo 9Yards',
     'welcome.wereOpen': 'Tuli Bbawo!',
@@ -586,6 +611,17 @@ const translations: Record<Language, TranslationKeys> = {
     'board.preparingColumn': 'Zifumbibwa Kati',
     'board.readyColumn': 'Zeetegese',
     'board.noOrders': 'Tewali orders kati',
+    
+    // Queue Display
+    'queue.title': 'Oluliri lwa Orders',
+    'queue.loading': 'Tutikka oluliri...',
+    'queue.backToOrder': 'Ddayo ku Order',
+    'queue.orders': 'orders',
+    'queue.order': 'order',
+    'queue.noOrders': 'Tewali orders',
+    'queue.justNow': 'Kati kati',
+    'queue.min': '1 ddakiika',
+    'queue.mins': 'ddakiika',
     
     // Inactivity
     'inactivity.stillThere': 'Okyaliwo?',

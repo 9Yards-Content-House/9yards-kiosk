@@ -1,24 +1,66 @@
 import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 import { motion } from "framer-motion";
-import { CheckCircle2 } from "lucide-react";
-import { KIOSK } from "@shared/lib/constants";
+import { CheckCircle2, User, Phone } from "lucide-react";
 import { Button } from "@shared/components/ui/button";
 import OrderNumber from "../components/OrderNumber";
 
+interface OrderDetails {
+  customerName: string;
+  customerPhone: string;
+}
+
+interface LocationState {
+  orderNumber?: string;
+  customerName?: string;
+  customerPhone?: string;
+}
+
 export default function Confirmation() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const state = location.state as LocationState | null;
+  
   const [orderNumber, setOrderNumber] = useState<string | null>(null);
+  const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [countdown, setCountdown] = useState(90);
 
   useEffect(() => {
-    const stored = sessionStorage.getItem("kiosk_order_number");
-    if (!stored) {
+    // Try to get data from Router state first, then fallback to sessionStorage
+    let foundOrderNumber = state?.orderNumber;
+    let foundName = state?.customerName;
+    let foundPhone = state?.customerPhone;
+    
+    if (!foundOrderNumber) {
+      foundOrderNumber = sessionStorage.getItem("kiosk_order_number") || undefined;
+    }
+    
+    if (!foundOrderNumber) {
       navigate("/", { replace: true });
       return;
     }
-    setOrderNumber(stored);
-  }, [navigate]);
+    
+    setOrderNumber(foundOrderNumber);
+    
+    // Get customer details from state or sessionStorage
+    if (foundName || foundPhone) {
+      setOrderDetails({
+        customerName: foundName || "",
+        customerPhone: foundPhone || "",
+      });
+    } else {
+      const detailsStr = sessionStorage.getItem("kiosk_order_details");
+      if (detailsStr) {
+        try {
+          const details = JSON.parse(detailsStr);
+          setOrderDetails({
+            customerName: details.customerName || "",
+            customerPhone: details.customerPhone || "",
+          });
+        } catch {}
+      }
+    }
+  }, [navigate, state]);
 
   // Auto-reset countdown
   useEffect(() => {
@@ -56,13 +98,31 @@ export default function Confirmation() {
         <CheckCircle2 className="w-20 h-20 text-green-500 mx-auto mb-6" />
 
         <h1 className="text-3xl font-bold mb-2">Order Placed!</h1>
-        <p className="text-lg text-muted-foreground mb-8">
+        <p className="text-lg text-muted-foreground mb-6">
           Your order has been sent to the kitchen
         </p>
 
         <OrderNumber number={orderNumber} />
 
-        <p className="text-muted-foreground mt-8 mb-2">
+        {/* Customer details - prominent display */}
+        {orderDetails && (
+          <div className="mt-6 bg-muted/50 rounded-2xl p-4 max-w-sm mx-auto space-y-2">
+            {orderDetails.customerName && (
+              <div className="flex items-center justify-center gap-2 text-lg">
+                <User className="w-5 h-5 text-muted-foreground" />
+                <span className="font-semibold">{orderDetails.customerName}</span>
+              </div>
+            )}
+            {orderDetails.customerPhone && (
+              <div className="flex items-center justify-center gap-2 text-base text-muted-foreground">
+                <Phone className="w-4 h-4" />
+                <span>{orderDetails.customerPhone}</span>
+              </div>
+            )}
+          </div>
+        )}
+
+        <p className="text-muted-foreground mt-6 mb-2">
           Remember your order number!
         </p>
         <p className="text-sm text-muted-foreground mb-12">

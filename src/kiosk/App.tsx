@@ -19,6 +19,7 @@ import Payment from "./pages/Payment";
 import ConfirmationNew from "./pages/ConfirmationNew";
 import TrackOrders from "./pages/TrackOrders";
 import OrderLookup from "./pages/OrderLookup";
+import QueueDisplay from "./pages/QueueDisplay";
 
 function KioskRoutes() {
   const { isInactive, resetTimer } = useInactivityTimer();
@@ -40,6 +41,7 @@ function KioskRoutes() {
         <Route path="/track" element={<TrackOrders />} />
         <Route path="/lookup" element={<OrderLookup />} />
         <Route path="/lookup/:orderNumber" element={<OrderLookup />} />
+        <Route path="/queue" element={<QueueDisplay />} />
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
     </>

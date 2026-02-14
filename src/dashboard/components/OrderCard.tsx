@@ -49,7 +49,7 @@ export default function OrderCard({ order, isNew }: OrderCardProps) {
     }
   };
 
-  const canModify = order.status !== "delivered" && order.status !== "cancelled";
+  const canModify = order.status !== "arrived" && order.status !== "cancelled";
 
   return (
     <div

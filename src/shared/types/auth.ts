@@ -1,6 +1,6 @@
 // Auth & user types
 
-export type UserRole = "admin" | "kitchen" | "rider";
+export type UserRole = "admin" | "kitchen" | "rider" | "reception";
 
 export interface Profile {
   id: string;
@@ -41,6 +41,7 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
     "settings:update",
     "deliveries:read",
     "deliveries:assign",
+    "reception:read",
   ],
   kitchen: [
     "orders:read",
@@ -52,8 +53,16 @@ export const ROLE_PERMISSIONS: Record<UserRole, string[]> = {
   ],
   rider: [
     "orders:read", // own assigned only
-    "orders:update", // ready → delivered only
+    "orders:update", // out_for_delivery → arrived only
     "deliveries:read",
+    "settings:read", // can view own profile
+  ],
+  reception: [
+    "orders:read", // arrived orders only
+    "orders:update", // mark as picked up
+    "reception:read",
+    "reception:pickup", // mark orders as picked up
+    "reception:notify", // send arrival notifications
     "settings:read", // can view own profile
   ],
 };

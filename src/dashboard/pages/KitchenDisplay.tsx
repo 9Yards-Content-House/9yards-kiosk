@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   Clock,
@@ -13,8 +13,8 @@ import {
   Flame,
   GripVertical,
 } from "lucide-react";
-import type { Order, OrderItem, OrderStatus, PaymentStatus } from "@shared/types";
-import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
+import type { Order, OrderStatus } from "@shared/types";
+import { useAllOrders, useUpdateOrderStatus, useOrdersRealtime } from "@shared/hooks/useOrders";
 import { formatPrice, cn } from "@shared/lib/utils";
 
 // Status configurations matching Kanban colors (solid, no gradients)
@@ -37,192 +37,38 @@ const STATUS_CONFIG = {
     headerBg: "bg-yellow-500",
     icon: Flame,
   },
-  ready: {
-    label: "Ready",
-    color: "bg-green-500",
-    textColor: "text-green-600",
-    bgColor: "bg-green-50 dark:bg-green-900/20",
-    borderColor: "border-green-200 dark:border-green-800",
-    headerBg: "bg-green-500",
+  out_for_delivery: {
+    label: "Out for Delivery",
+    color: "bg-purple-500",
+    textColor: "text-purple-600",
+    bgColor: "bg-purple-50 dark:bg-purple-900/20",
+    borderColor: "border-purple-200 dark:border-purple-800",
+    headerBg: "bg-purple-500",
     icon: Check,
   },
 } as const;
 
-// Mock KDS orders for development
-const generateMockKDSOrders = (): Order[] => {
-  const now = Date.now();
-
-  const makeItem = (partial: Partial<OrderItem> & { id: string; order_id: string }): OrderItem => ({
-    id: partial.id,
-    order_id: partial.order_id,
-    type: partial.type ?? "single",
-    main_dishes: partial.main_dishes ?? [],
-    sauce_name: partial.sauce_name ?? null,
-    sauce_preparation: partial.sauce_preparation ?? null,
-    sauce_size: partial.sauce_size ?? null,
-    side_dish: partial.side_dish ?? null,
-    extras: partial.extras ?? null,
-    quantity: partial.quantity ?? 1,
-    unit_price: partial.unit_price ?? 0,
-    total_price: partial.total_price ?? 0,
-  });
-
-  const makeOrder = (partial: {
-    id: string;
-    order_number: string;
-    status: OrderStatus;
-    createdAtMsAgo: number;
-    total: number;
-    payment_status: PaymentStatus;
-    items: OrderItem[];
-  }): Order => {
-    const created_at = new Date(now - partial.createdAtMsAgo).toISOString();
-    const updated_at = new Date().toISOString();
-    return {
-      id: partial.id,
-      order_number: partial.order_number,
-      status: partial.status,
-      customer_name: "Walk-in",
-      customer_phone: null,
-      customer_location: null,
-      payment_method: "cash",
-      payment_status: partial.payment_status,
-      momo_transaction_id: null,
-      subtotal: partial.total,
-      total: partial.total,
-      special_instructions: null,
-      source: "kiosk",
-      created_at,
-      updated_at,
-      prepared_at: null,
-      ready_at: null,
-      delivered_at: null,
-      rider_id: null,
-      assigned_at: null,
-      items: partial.items,
-    };
-  };
-
-  return [
-    makeOrder({
-      id: "kds-1",
-      order_number: "9Y-101",
-      status: "new",
-      createdAtMsAgo: 2 * 60 * 1000,
-      total: 35000,
-      payment_status: "pending",
-      items: [
-        makeItem({
-          id: "1",
-          order_id: "kds-1",
-          quantity: 1,
-          unit_price: 35000,
-          total_price: 35000,
-          type: "combo",
-          main_dishes: ["Chicken Pilao"],
-          side_dish: "Kachumbari",
-        }),
-      ],
-    }),
-    makeOrder({
-      id: "kds-2",
-      order_number: "9Y-102",
-      status: "preparing",
-      createdAtMsAgo: 5 * 60 * 1000,
-      total: 45000,
-      payment_status: "paid",
-      items: [
-        makeItem({
-          id: "2",
-          order_id: "kds-2",
-          quantity: 1,
-          unit_price: 45000,
-          total_price: 45000,
-          type: "single",
-          main_dishes: ["Whole Chicken Lusaniya"],
-        }),
-      ],
-    }),
-    makeOrder({
-      id: "kds-3",
-      order_number: "9Y-103",
-      status: "preparing",
-      createdAtMsAgo: 8 * 60 * 1000,
-      total: 25000,
-      payment_status: "paid",
-      items: [
-        makeItem({
-          id: "3",
-          order_id: "kds-3",
-          quantity: 1,
-          unit_price: 25000,
-          total_price: 25000,
-          type: "combo",
-          main_dishes: ["Beef Stew"],
-          sauce_name: "Stew",
-        }),
-      ],
-    }),
-    makeOrder({
-      id: "kds-4",
-      order_number: "9Y-104",
-      status: "ready",
-      createdAtMsAgo: 12 * 60 * 1000,
-      total: 20000,
-      payment_status: "paid",
-      items: [
-        makeItem({
-          id: "4",
-          order_id: "kds-4",
-          quantity: 2,
-          unit_price: 10000,
-          total_price: 20000,
-          type: "single",
-          main_dishes: ["Rice"],
-        }),
-      ],
-    }),
-    makeOrder({
-      id: "kds-5",
-      order_number: "9Y-105",
-      status: "new",
-      createdAtMsAgo: 1 * 60 * 1000,
-      total: 55000,
-      payment_status: "pending",
-      items: [
-        makeItem({
-          id: "5",
-          order_id: "kds-5",
-          quantity: 1,
-          unit_price: 45000,
-          total_price: 45000,
-          type: "single",
-          main_dishes: ["Half Chicken Lusaniya"],
-        }),
-        makeItem({
-          id: "6",
-          order_id: "kds-5",
-          quantity: 2,
-          unit_price: 5000,
-          total_price: 10000,
-          type: "single",
-          main_dishes: ["Mango Juice"],
-        }),
-      ],
-    }),
-  ];
-};
-
-type KDSView = "all" | "new" | "preparing" | "ready";
+type KDSView = "all" | "new" | "preparing" | "out_for_delivery";
 
 export default function KitchenDisplay() {
-  const [orders, setOrders] = useState<Order[]>([]);
+  // Use shared order hooks
+  const { data: allOrders = [], isLoading, refetch } = useAllOrders();
+  const updateOrderStatusMutation = useUpdateOrderStatus();
+  useOrdersRealtime(); // Subscribe to realtime updates
+  
   const [soundEnabled, setSoundEnabled] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [activeView, setActiveView] = useState<KDSView>("all");
   const [draggedOrder, setDraggedOrder] = useState<Order | null>(null);
   const prevOrderCountRef = useRef<number>(0);
   const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  // Filter orders to only KDS-relevant statuses
+  const orders = useMemo(() => {
+    return allOrders.filter((order) =>
+      ["new", "preparing", "out_for_delivery"].includes(order.status)
+    );
+  }, [allOrders]);
 
   // Play notification sound for new orders
   const playNotificationSound = useCallback(() => {
@@ -240,49 +86,10 @@ export default function KitchenDisplay() {
     }
   }, [soundEnabled]);
 
-  // Load orders
-  useEffect(() => {
-    if (USE_MOCK_DATA) {
-      setOrders(generateMockKDSOrders());
-      return;
-    }
-
-    const fetchOrders = async () => {
-      const { data } = await supabase
-        .from("orders")
-        .select(`
-          *,
-          items:order_items(*)
-        `)
-        .in("status", ["new", "preparing", "ready"])
-        .order("created_at", { ascending: true });
-
-      if (data) {
-        setOrders(data);
-      }
-    };
-
-    fetchOrders();
-
-    // Subscribe to real-time updates
-    const channel = supabase
-      .channel("kds-orders")
-      .on(
-        "postgres_changes",
-        { event: "*", schema: "public", table: "orders" },
-        () => fetchOrders()
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
-
   // Group orders by status
   const pendingOrders = orders.filter((o) => o.status === "new");
   const preparingOrders = orders.filter((o) => o.status === "preparing");
-  const readyOrders = orders.filter((o) => o.status === "ready");
+  const outForDeliveryOrders = orders.filter((o) => o.status === "out_for_delivery");
 
   // Play sound when new orders arrive
   useEffect(() => {
@@ -309,17 +116,7 @@ export default function KitchenDisplay() {
 
   // Update order status
   const updateOrderStatus = async (orderId: string, newStatus: OrderStatus) => {
-    if (USE_MOCK_DATA) {
-      setOrders((prev) =>
-        prev.map((o) => (o.id === orderId ? { ...o, status: newStatus } : o))
-      );
-      return;
-    }
-
-    await supabase
-      .from("orders")
-        .update({ status: newStatus, updated_at: new Date().toISOString() })
-      .eq("id", orderId);
+    updateOrderStatusMutation.mutate({ orderId, status: newStatus });
   };
 
   // Toggle fullscreen
@@ -335,9 +132,7 @@ export default function KitchenDisplay() {
 
   // Refresh orders
   const refreshOrders = () => {
-    if (USE_MOCK_DATA) {
-      setOrders(generateMockKDSOrders());
-    }
+    refetch();
   };
 
   // Drag and drop handlers
@@ -409,16 +204,16 @@ export default function KitchenDisplay() {
                 <div className="text-xs text-muted-foreground font-medium">Cooking</div>
               </button>
               <button
-                onClick={() => setActiveView(activeView === "ready" ? "all" : "ready")}
+                onClick={() => setActiveView(activeView === "out_for_delivery" ? "all" : "out_for_delivery")}
                 className={cn(
                   "text-center px-3 py-2 rounded-xl transition-all",
-                  activeView === "ready" 
-                    ? "bg-green-100 dark:bg-green-900/30 ring-2 ring-green-500" 
+                  activeView === "out_for_delivery" 
+                    ? "bg-purple-100 dark:bg-purple-900/30 ring-2 ring-purple-500" 
                     : "bg-slate-200 dark:bg-slate-700 hover:bg-slate-300 dark:hover:bg-slate-600"
                 )}
               >
-                <div className="text-xl md:text-2xl font-bold text-green-600 dark:text-green-400">{readyOrders.length}</div>
-                <div className="text-xs text-muted-foreground font-medium">Ready</div>
+                <div className="text-xl md:text-2xl font-bold text-purple-600 dark:text-purple-400">{outForDeliveryOrders.length}</div>
+                <div className="text-xs text-muted-foreground font-medium">Out</div>
               </button>
             </div>
 
@@ -482,13 +277,13 @@ export default function KitchenDisplay() {
           Cooking ({preparingOrders.length})
         </button>
         <button
-          onClick={() => setActiveView("ready")}
+          onClick={() => setActiveView("out_for_delivery")}
           className={cn(
             "flex-1 min-w-[80px] px-4 py-3 text-sm font-medium transition-colors",
-            activeView === "ready" ? "text-green-600 border-b-2 border-green-500 bg-green-50 dark:bg-green-900/20" : "text-muted-foreground"
+            activeView === "out_for_delivery" ? "text-purple-600 border-b-2 border-purple-500 bg-purple-50 dark:bg-purple-900/20" : "text-muted-foreground"
           )}
         >
-          Ready ({readyOrders.length})
+          Out ({outForDeliveryOrders.length})
         </button>
       </div>
 
@@ -554,7 +349,7 @@ export default function KitchenDisplay() {
                     status="preparing"
                     timeElapsed={getTimeElapsed(order.created_at)}
                     isUrgent={isUrgent(order.created_at)}
-                    onMarkReady={() => updateOrderStatus(order.id, "ready")}
+                    onMarkReady={() => updateOrderStatus(order.id, "out_for_delivery")}
                     onDragStart={() => handleDragStart(order)}
                     onDragEnd={handleDragEnd}
                     isDragging={draggedOrder?.id === order.id}
@@ -570,38 +365,38 @@ export default function KitchenDisplay() {
           </div>
         )}
 
-        {/* Column: Ready */}
-        {(activeView === "all" || activeView === "ready") && (
+        {/* Column: Out for Delivery */}
+        {(activeView === "all" || activeView === "out_for_delivery") && (
           <div 
             className="space-y-4"
             onDragOver={handleDragOver}
-            onDrop={() => handleDrop("ready")}
+            onDrop={() => handleDrop("out_for_delivery")}
           >
-            <h2 className="hidden md:flex text-lg font-semibold text-green-600 dark:text-green-400 items-center gap-2">
-              <div className="p-1.5 rounded-lg bg-green-100 dark:bg-green-900/30">
+            <h2 className="hidden md:flex text-lg font-semibold text-purple-600 dark:text-purple-400 items-center gap-2">
+              <div className="p-1.5 rounded-lg bg-purple-100 dark:bg-purple-900/30">
                 <Check className="w-4 h-4" />
               </div>
-              Ready ({readyOrders.length})
+              Out for Delivery ({outForDeliveryOrders.length})
             </h2>
             <div className="space-y-4">
               <AnimatePresence>
-                {readyOrders.map((order) => (
+                {outForDeliveryOrders.map((order) => (
                   <KDSOrderCard
                     key={order.id}
                     order={order}
-                    status="ready"
+                    status="out_for_delivery"
                     timeElapsed={getTimeElapsed(order.created_at)}
                     isUrgent={false}
-                    onComplete={() => updateOrderStatus(order.id, "delivered")}
+                    onComplete={() => updateOrderStatus(order.id, "arrived")}
                     onDragStart={() => handleDragStart(order)}
                     onDragEnd={handleDragEnd}
                     isDragging={draggedOrder?.id === order.id}
                   />
                 ))}
               </AnimatePresence>
-              {readyOrders.length === 0 && (
+              {outForDeliveryOrders.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground bg-white dark:bg-slate-800 rounded-xl border border-dashed">
-                  No ready orders
+                  No orders out for delivery
                 </div>
               )}
             </div>
@@ -614,7 +409,7 @@ export default function KitchenDisplay() {
 
 interface KDSOrderCardProps {
   order: Order;
-  status: "new" | "preparing" | "ready";
+  status: "new" | "preparing" | "out_for_delivery";
   timeElapsed: string;
   isUrgent: boolean;
   onStartCooking?: () => void;
@@ -722,16 +517,16 @@ function KDSOrderCard({
             className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
           >
             <Check className="w-5 h-5" />
-            Mark Ready
+            Mark Out for Delivery
           </button>
         )}
-        {status === "ready" && onComplete && (
+        {status === "out_for_delivery" && onComplete && (
           <button
             onClick={onComplete}
-            className="w-full py-3 bg-gray-500 hover:bg-gray-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
+            className="w-full py-3 bg-green-500 hover:bg-green-600 text-white rounded-xl font-semibold flex items-center justify-center gap-2 transition-colors"
           >
             <Check className="w-5 h-5" />
-            Complete & Clear
+            Mark Arrived
           </button>
         )}
       </div>

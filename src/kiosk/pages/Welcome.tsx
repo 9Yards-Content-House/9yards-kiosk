@@ -1,7 +1,7 @@
 import { useNavigate } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import { useCallback, useState, useEffect } from 'react';
-import { Globe, Accessibility } from 'lucide-react';
+import { Globe, Accessibility, ListOrdered } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { Button } from '@shared/components/ui/button';
 import { cn } from '@shared/lib/utils';
@@ -27,6 +27,10 @@ export default function Welcome() {
 
   const handleTrackOrder = useCallback(() => {
     navigate('/lookup');
+  }, [navigate]);
+
+  const handleViewQueue = useCallback(() => {
+    navigate('/queue');
   }, [navigate]);
 
   const toggleLanguage = useCallback(() => {
@@ -171,6 +175,22 @@ export default function Welcome() {
             )}
           >
             {t('welcome.trackOrder')}
+          </Button>
+
+          {/* Queue Display Button */}
+          <Button
+            variant="ghost"
+            size="touch"
+            onClick={handleViewQueue}
+            className={cn(
+              'w-full text-white/50 hover:text-white/70 hover:bg-white/5',
+              'text-[clamp(0.75rem,2vmin,1rem)] font-medium',
+              'py-[clamp(0.5rem,1.5vh,0.75rem)] rounded-xl',
+              'transition-all duration-150'
+            )}
+          >
+            <ListOrdered className="w-4 h-4 mr-2" />
+            {t('welcome.viewQueue')}
           </Button>
         </motion.div>
       </div>

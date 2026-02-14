@@ -1,5 +1,6 @@
 import { Routes, Route, Navigate } from "react-router-dom";
 import { useAuth } from "./context/AuthContext";
+import { useOrdersRealtime } from "@shared/hooks/useOrders";
 import ErrorBoundary from "@shared/components/ErrorBoundary";
 import Login from "./pages/Login";
 import Orders from "./pages/Orders";
@@ -11,10 +12,14 @@ import Analytics from "./pages/Analytics";
 import Settings from "./pages/Settings";
 import MyDeliveries from "./pages/rider/MyDeliveries";
 import KitchenDisplay from "./pages/KitchenDisplay";
+import Reception from "./pages/Reception";
 import Sidebar from "./components/Sidebar";
 import MobileNav from "./components/MobileNav";
 
 function ProtectedLayout({ children }: { children: React.ReactNode }) {
+  // Subscribe to order updates globally for the dashboard
+  useOrdersRealtime();
+  
   return (
     <div className="dashboard-layout">
       <Sidebar />
@@ -121,6 +126,15 @@ export default function App() {
       <Route
         path="/kitchen"
         element={<KitchenDisplay />}
+      />
+      {/* Reception Dashboard */}
+      <Route
+        path="/reception"
+        element={
+          <ProtectedRoute>
+            <Reception />
+          </ProtectedRoute>
+        }
       />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>

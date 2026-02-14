@@ -8,8 +8,8 @@ interface OrderTimelineProps {
 const steps = [
   { status: "new", label: "Order Placed", icon: Clock, field: "created_at" },
   { status: "preparing", label: "Preparing", icon: ChefHat, field: "prepared_at" },
-  { status: "ready", label: "Ready", icon: Package, field: "ready_at" },
-  { status: "delivered", label: "Delivered", icon: Truck, field: "delivered_at" },
+  { status: "out_for_delivery", label: "Out for Delivery", icon: Package, field: "ready_at" },
+  { status: "arrived", label: "Arrived", icon: Truck, field: "delivered_at" },
 ] as const;
 
 export default function OrderTimeline({ order }: OrderTimelineProps) {

@@ -13,16 +13,16 @@ interface PaymentMethodSelectorProps {
 
 const methods: { value: PaymentMethod; label: string; desc: string; icon: typeof Banknote }[] = [
   {
-    value: "cash",
-    label: "Cash",
-    desc: "Pay when ready",
-    icon: Banknote,
-  },
-  {
     value: "mobile_money",
     label: "Mobile Money",
-    desc: "MTN or Airtel Money",
+    desc: "Pay now via MTN/Airtel",
     icon: Smartphone,
+  },
+  {
+    value: "cash",
+    label: "Cash",
+    desc: "Pay on delivery",
+    icon: Banknote,
   },
 ];
 
