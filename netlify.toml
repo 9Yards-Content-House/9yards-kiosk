@@ -1,9 +1,6 @@
-# Default Netlify config - for kiosk deployment
-# Dashboard uses separate Netlify site with build:dashboard command
-
-[build]
-  command = "npm run build:kiosk"
-  publish = "dist-kiosk"
+# Netlify config - build settings configured via Netlify UI for each site
+# Kiosk site: build:kiosk → dist-kiosk
+# Dashboard site: build:dashboard → dist-dashboard
 
 # SPA fallback handled by _redirects file copied during build
 
