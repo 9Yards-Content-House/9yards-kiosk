@@ -15,7 +15,7 @@ import {
 } from "lucide-react";
 import type { Order, OrderStatus } from "@shared/types";
 import { useAllOrders, useUpdateOrderStatus, useOrdersRealtime } from "@shared/hooks/useOrders";
-import { formatPrice, cn } from "@shared/lib/utils";
+import { cn } from "@shared/lib/utils";
 
 // Status configurations matching Kanban colors (solid, no gradients)
 const STATUS_CONFIG = {
@@ -457,7 +457,12 @@ function KDSOrderCard({
       <div className={cn("px-4 py-3 flex items-center justify-between text-white", config.headerBg)}>
         <div className="flex items-center gap-3">
           <GripVertical className="w-4 h-4 opacity-50" />
-          <span className="text-2xl font-bold tracking-tight">#{order.order_number}</span>
+          <div className="flex flex-col">
+            <span className="text-2xl font-bold tracking-tight">#{order.order_number}</span>
+            {order.customer_name && (
+              <span className="text-xs font-medium opacity-80">{order.customer_name}</span>
+            )}
+          </div>
           {isUrgent && (
             <span className="px-2 py-0.5 rounded-full bg-red-600 text-white text-xs font-semibold">
               URGENT
@@ -472,6 +477,16 @@ function KDSOrderCard({
 
       {/* Items */}
       <div className="p-4 space-y-3">
+        {/* Special Instructions - Show prominently */}
+        {order.special_instructions && (
+          <div className="flex items-start gap-2 p-2 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg">
+            <AlertTriangle className="w-4 h-4 text-amber-600 dark:text-amber-400 mt-0.5 flex-shrink-0" />
+            <span className="text-sm text-amber-800 dark:text-amber-200 font-medium">
+              {order.special_instructions}
+            </span>
+          </div>
+        )}
+
         {order.items?.map((item) => (
           <div key={item.id} className="flex items-start gap-3">
             <span className="w-9 h-9 rounded-xl bg-slate-100 dark:bg-slate-700 border flex items-center justify-center font-bold text-lg">

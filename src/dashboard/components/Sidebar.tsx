@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   LayoutDashboard,
@@ -15,12 +15,31 @@ import {
 } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "../context/AuthContext";
-import { hasPermission } from "@shared/types/auth";
 import NotificationBell from "./NotificationBell";
 import { Button } from "@shared/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger, TooltipProvider } from "@shared/components/ui/tooltip";
 
 const SIDEBAR_COLLAPSED_KEY = "9yards_sidebar_collapsed";
+
+// All possible navigation links
+const ALL_NAV_LINKS = [
+  { to: "/orders", label: "Orders", icon: LayoutDashboard, roles: ["admin"] },
+  { to: "/kitchen", label: "Kitchen Display", icon: ChefHat, roles: ["admin", "kitchen"] },
+  { to: "/reception", label: "Reception", icon: Building2, roles: ["admin", "reception"] },
+  { to: "/menu", label: "Menu", icon: UtensilsCrossed, roles: ["admin", "kitchen"] },
+  { to: "/staff", label: "Staff", icon: Users, roles: ["admin"] },
+  { to: "/analytics", label: "Analytics", icon: BarChart3, roles: ["admin"] },
+  { to: "/deliveries", label: "Deliveries", icon: Truck, roles: ["admin", "rider"] },
+  { to: "/settings", label: "Settings", icon: Settings, roles: ["admin", "kitchen", "rider", "reception"] },
+];
+
+// Role-specific dashboard titles
+const DASHBOARD_TITLES: Record<string, string> = {
+  admin: "Admin Dashboard",
+  kitchen: "Kitchen Dashboard",
+  rider: "Rider Dashboard",
+  reception: "Reception Desk",
+};
 
 export default function Sidebar() {
   const navigate = useNavigate();
@@ -39,20 +58,13 @@ export default function Sidebar() {
     navigate("/login");
   };
 
-  const allLinks = [
-    { to: "/orders", label: "Orders", icon: LayoutDashboard, permission: "orders:read" },
-    { to: "/kitchen", label: "Kitchen Display", icon: ChefHat, permission: "orders:read" },
-    { to: "/reception", label: "Reception", icon: Building2, permission: "reception:read" },
-    { to: "/menu", label: "Menu", icon: UtensilsCrossed, permission: "menu:read" },
-    { to: "/staff", label: "Staff", icon: Users, permission: "staff:read" },
-    { to: "/analytics", label: "Analytics", icon: BarChart3, permission: "analytics:read" },
-    { to: "/deliveries", label: "Deliveries", icon: Truck, permission: "deliveries:read" },
-    { to: "/settings", label: "Settings", icon: Settings, permission: "settings:read" },
-  ];
+  // Filter links based on role
+  const links = useMemo(() => {
+    if (!role) return ALL_NAV_LINKS;
+    return ALL_NAV_LINKS.filter(link => link.roles.includes(role));
+  }, [role]);
 
-  const links = !role 
-    ? allLinks 
-    : allLinks.filter((link) => hasPermission(role, link.permission));
+  const dashboardTitle = role ? DASHBOARD_TITLES[role] || "Dashboard" : "Dashboard";
 
   return (
     <TooltipProvider delayDuration={0}>
@@ -66,9 +78,9 @@ export default function Sidebar() {
           />
           {!collapsed && (
             <>
-              <span className="font-bold text-sm text-primary">Kitchen Dashboard</span>
+              <span className="font-bold text-sm text-primary">{dashboardTitle}</span>
               <div className="ml-auto">
-                <NotificationBell />
+                <NotificationBell sidebarCollapsed={collapsed} />
               </div>
             </>
           )}
@@ -76,7 +88,7 @@ export default function Sidebar() {
             <Tooltip>
               <TooltipTrigger asChild>
                 <div className="flex items-center justify-center">
-                  <NotificationBell />
+                  <NotificationBell sidebarCollapsed={collapsed} />
                 </div>
               </TooltipTrigger>
               <TooltipContent side="right" sideOffset={8}>Notifications</TooltipContent>

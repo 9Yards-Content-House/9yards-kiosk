@@ -40,6 +40,9 @@ export interface Order {
   is_scheduled: boolean;
   // Multi-location
   location_id: string | null;
+  // Issue tracking
+  has_issue?: boolean;
+  issue_id?: string | null;
   // Joined (Supabase returns as order_items, we alias as items)
   items?: OrderItem[];
   order_items?: OrderItem[];

@@ -1,4 +1,4 @@
-import { Clock, ChefHat, Package, Truck, CheckCircle2 } from "lucide-react";
+import { Clock, ChefHat, Package, Truck } from "lucide-react";
 import type { Order } from "@shared/types/orders";
 
 interface OrderTimelineProps {

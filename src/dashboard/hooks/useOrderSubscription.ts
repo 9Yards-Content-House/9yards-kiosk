@@ -1,4 +1,3 @@
-import { useEffect } from "react";
 import { toast } from "sonner";
 import { useOrderRealtime } from "@shared/hooks/useRealtime";
 import { useNotificationSound } from "./useNotificationSound";

@@ -30,6 +30,7 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "./src/shared"),
       "@dashboard": path.resolve(__dirname, "./src/dashboard"),
     },
+    dedupe: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
   },
   build: {
     outDir: "dist-dashboard",

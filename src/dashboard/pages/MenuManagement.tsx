@@ -72,11 +72,12 @@ export default function MenuManagement() {
       case "price":
         comparison = a.price - b.price;
         break;
-      case "category":
+      case "category": {
         const catA = categories?.find(c => c.id === a.category_id)?.name || "";
         const catB = categories?.find(c => c.id === b.category_id)?.name || "";
         comparison = catA.localeCompare(catB);
         break;
+      }
       case "sort_order":
       default:
         comparison = a.sort_order - b.sort_order;

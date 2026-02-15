@@ -10,9 +10,11 @@ import {
   MessageCircle,
   Loader2,
   Printer,
+  XCircle,
 } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
+import { useCancelOrder } from '@shared/hooks/useOrders';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
 import { QRCode } from '@shared/components/QRCode';
@@ -20,12 +22,16 @@ import { supabase } from '@shared/lib/supabase';
 import KioskHeader from '../components/KioskHeader';
 import { Confetti, SuccessCheckmark } from '../components/SuccessCelebration';
 import { useSound } from '../hooks/useSound';
+import { toast } from 'sonner';
+import type { OrderStatus } from '@shared/types/orders';
 
 interface OrderDetails {
+  orderId: string;
   orderNumber: string;
   total: number;
   customerName: string;
   customerPhone: string;
+  status: OrderStatus;
 }
 
 export default function ConfirmationNew() {
@@ -35,25 +41,55 @@ export default function ConfirmationNew() {
   const { setLanguage } = useLanguage();
   const { data: waitTime } = useWaitTime();
   const { play } = useSound();
+  const cancelOrder = useCancelOrder();
 
   const [copied, setCopied] = useState(false);
   const [countdown, setCountdown] = useState(60);
   const [showConfetti, setShowConfetti] = useState(true);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
+  const [showCancelConfirm, setShowCancelConfirm] = useState(false);
+  const [cancelling, setCancelling] = useState(false);
 
   // Try to get order details from navigation state first, then sessionStorage, then Supabase
   useEffect(() => {
     const loadOrderDetails = async () => {
+      // Helper to fetch full order details from Supabase
+      const fetchOrderFromSupabase = async (orderNumber: string) => {
+        const { data: order } = await supabase
+          .from('orders')
+          .select('id, order_number, total, customer_name, customer_phone, status')
+          .eq('order_number', orderNumber)
+          .single();
+        return order;
+      };
+
       // 1. Check navigation state (preferred - from Payment.tsx)
       if (location.state?.orderNumber) {
+        // Always fetch from Supabase to get ID and status
+        const order = await fetchOrderFromSupabase(location.state.orderNumber);
+        if (order) {
+          setOrderDetails({
+            orderId: order.id,
+            orderNumber: order.order_number,
+            total: order.total,
+            customerName: order.customer_name || '',
+            customerPhone: order.customer_phone || '',
+            status: order.status,
+          });
+          sessionStorage.setItem('kiosk_last_order_number', location.state.orderNumber);
+          setLoading(false);
+          return;
+        }
+        // Fallback if order not found yet (might be a race condition)
         setOrderDetails({
+          orderId: '',
           orderNumber: location.state.orderNumber,
           total: location.state.total || 0,
           customerName: location.state.customerName || '',
           customerPhone: location.state.customerPhone || '',
+          status: 'new',
         });
-        // Store in sessionStorage as backup
         sessionStorage.setItem('kiosk_last_order_number', location.state.orderNumber);
         setLoading(false);
         return;
@@ -63,18 +99,15 @@ export default function ConfirmationNew() {
       const storedOrderNumber = sessionStorage.getItem('kiosk_last_order_number');
       if (storedOrderNumber) {
         try {
-          const { data: order } = await supabase
-            .from('orders')
-            .select('order_number, total, customer_name, customer_phone')
-            .eq('order_number', storedOrderNumber)
-            .single();
-
+          const order = await fetchOrderFromSupabase(storedOrderNumber);
           if (order) {
             setOrderDetails({
+              orderId: order.id,
               orderNumber: order.order_number,
               total: order.total,
               customerName: order.customer_name || '',
               customerPhone: order.customer_phone || '',
+              status: order.status,
             });
             setLoading(false);
             return;
@@ -91,6 +124,38 @@ export default function ConfirmationNew() {
 
     loadOrderDetails();
   }, [location.state, navigate]);
+
+  // Subscribe to realtime status updates
+  useEffect(() => {
+    if (!orderDetails?.orderId) return;
+
+    const channel = supabase
+      .channel(`order-status-${orderDetails.orderId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'orders',
+          filter: `id=eq.${orderDetails.orderId}`,
+        },
+        (payload) => {
+          const newStatus = payload.new.status as OrderStatus;
+          setOrderDetails((prev) =>
+            prev ? { ...prev, status: newStatus } : prev
+          );
+          // If order was cancelled, show toast
+          if (newStatus === 'cancelled') {
+            toast.info('Your order has been cancelled');
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [orderDetails?.orderId]);
 
   // Auto-reset countdown
   useEffect(() => {
@@ -220,6 +285,30 @@ export default function ConfirmationNew() {
     if (!orderDetails) return;
     navigate(`/lookup/${orderDetails.orderNumber}`);
   }, [navigate, orderDetails]);
+
+  // Handle order cancellation
+  const handleCancelOrder = useCallback(async () => {
+    if (!orderDetails?.orderId) return;
+    
+    setCancelling(true);
+    try {
+      await cancelOrder.mutateAsync(orderDetails.orderId);
+      play('select');
+      toast.success('Order cancelled successfully');
+      setShowCancelConfirm(false);
+      // Update local state
+      setOrderDetails((prev) => prev ? { ...prev, status: 'cancelled' } : prev);
+    } catch (error) {
+      console.error('Failed to cancel order:', error);
+      play('error');
+      toast.error('Failed to cancel order. It may have already been prepared.');
+    } finally {
+      setCancelling(false);
+    }
+  }, [orderDetails?.orderId, cancelOrder, play]);
+
+  // Check if order can be cancelled (only when status is 'new')
+  const canCancel = orderDetails?.status === 'new';
 
   // Loading state
   if (loading) {
@@ -390,8 +479,91 @@ export default function ConfirmationNew() {
               </p>
             </motion.div>
           )}
+
+          {/* Cancel Order Option - only shown when order is still 'new' */}
+          {canCancel && orderDetails?.status !== 'cancelled' && (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ delay: 1.0 }}
+              className="mt-4"
+            >
+              <Button
+                variant="outline"
+                size="touch"
+                onClick={() => setShowCancelConfirm(true)}
+                className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50"
+              >
+                <XCircle className="w-5 h-5" />
+                Cancel Order
+              </Button>
+              <p className="text-xs text-gray-400 text-center mt-2">
+                You can cancel before preparation begins
+              </p>
+            </motion.div>
+          )}
+
+          {/* Cancelled Order Notice */}
+          {orderDetails?.status === 'cancelled' && (
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              className="mt-4 bg-red-50 rounded-xl p-4 border border-red-200 text-center"
+            >
+              <XCircle className="w-8 h-8 text-red-500 mx-auto mb-2" />
+              <p className="font-semibold text-red-700">Order Cancelled</p>
+              <p className="text-sm text-red-600">This order has been cancelled</p>
+            </motion.div>
+          )}
         </div>
       </div>
+
+      {/* Cancel Confirmation Modal */}
+      {showCancelConfirm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <motion.div
+            initial={{ scale: 0.9, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className="bg-white rounded-2xl p-6 mx-4 max-w-sm w-full shadow-xl"
+          >
+            <div className="text-center mb-6">
+              <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                <XCircle className="w-8 h-8 text-red-500" />
+              </div>
+              <h3 className="text-xl font-bold text-gray-900 mb-2">Cancel Order?</h3>
+              <p className="text-gray-500">
+                Are you sure you want to cancel order <span className="font-bold">{orderDetails?.orderNumber}</span>? This action cannot be undone.
+              </p>
+            </div>
+            <div className="flex gap-3">
+              <Button
+                variant="outline"
+                size="touch"
+                onClick={() => setShowCancelConfirm(false)}
+                disabled={cancelling}
+                className="flex-1"
+              >
+                Keep Order
+              </Button>
+              <Button
+                size="touch"
+                onClick={handleCancelOrder}
+                disabled={cancelling}
+                className="flex-1 bg-red-500 hover:bg-red-600 text-white"
+              >
+                {cancelling ? (
+                  <>
+                    <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                    Cancelling...
+                  </>
+                ) : (
+                  'Yes, Cancel'
+                )}
+              </Button>
+            </div>
+          </motion.div>
+        </div>
+      )}
 
       {/* Footer with actions */}
       <div className="p-4 border-t bg-white space-y-3">

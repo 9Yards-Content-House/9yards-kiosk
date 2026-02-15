@@ -80,9 +80,6 @@ export default function FeedbackModal({
   });
   const [submitted, setSubmitted] = useState(false);
 
-  // Don't render if not open
-  if (!isOpen) return null;
-
   const submitFeedback = useMutation({
     mutationFn: async (data: FeedbackData) => {
       if (USE_MOCK_DATA) {
@@ -110,6 +107,9 @@ export default function FeedbackModal({
       }, 2000);
     },
   });
+
+  // Don't render if not open
+  if (!isOpen) return null;
 
   const canSubmit = feedback.rating > 0;
 

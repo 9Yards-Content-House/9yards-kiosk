@@ -1,7 +1,6 @@
 import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
-import fs from "fs";
 
 // Plugin to serve index-kiosk.html for root URL
 function serveKioskHtml(): Plugin {
@@ -31,6 +30,17 @@ export default defineConfig({
       "@shared": path.resolve(__dirname, "./src/shared"),
       "@kiosk": path.resolve(__dirname, "./src/kiosk"),
     },
+    dedupe: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
+  },
+  optimizeDeps: {
+    include: [
+      "react",
+      "react-dom",
+      "react-router-dom",
+      "framer-motion",
+      "@tanstack/react-query",
+    ],
+    exclude: [],
   },
   build: {
     outDir: "dist-kiosk",

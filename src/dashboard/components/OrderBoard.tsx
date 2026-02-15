@@ -5,12 +5,15 @@ import {
   ORDER_STATUS_LABELS,
 } from "@shared/types/orders";
 import type { Order, OrderStatus } from "@shared/types/orders";
-import { useUpdateOrderStatus } from "@shared/hooks/useOrders";
+import { useUpdateOrderStatus, getMockOrdersStore } from "@shared/hooks/useOrders";
+import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { toast } from "sonner";
 import OrderCard from "./OrderCard";
+import { AssignRiderModal } from "./AssignRiderModal";
 
 interface OrderBoardProps {
   grouped: Record<OrderStatus, Order[]>;
+  onStatusChange?: () => void;
 }
 
 // Active workflow statuses
@@ -19,9 +22,12 @@ const WORKFLOW_STATUSES: OrderStatus[] = ["new", "preparing", "out_for_delivery"
 // Time limit for completed/cancelled orders to remain visible (2 hours)
 const COMPLETED_ORDER_VISIBILITY_MS = 2 * 60 * 60 * 1000;
 
-export default function OrderBoard({ grouped }: OrderBoardProps) {
+export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps) {
   const [draggedOrderId, setDraggedOrderId] = useState<string | null>(null);
   const [dragOverStatus, setDragOverStatus] = useState<OrderStatus | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [orderToAssign, setOrderToAssign] = useState<Order | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
   const updateStatus = useUpdateOrderStatus();
 
   // Filter completed orders to only show recent ones
@@ -74,6 +80,53 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
     setDragOverStatus(null);
   }, []);
 
+  // Handler for rider assignment
+  const handleAssignRider = useCallback(
+    async (orderId: string, riderId: string) => {
+      setIsAssigning(true);
+      try {
+        if (USE_MOCK_DATA) {
+          const mockOrders = getMockOrdersStore();
+          const mockOrder = mockOrders.find(o => o.id === orderId);
+          if (mockOrder) {
+            mockOrder.status = 'out_for_delivery';
+            mockOrder.rider_id = riderId;
+            mockOrder.assigned_at = new Date().toISOString();
+            mockOrder.ready_at = new Date().toISOString();
+            mockOrder.updated_at = new Date().toISOString();
+          }
+          toast.success("Rider assigned! Order is out for delivery.");
+          onStatusChange?.();
+          setAssignModalOpen(false);
+          setOrderToAssign(null);
+          return;
+        }
+
+        const { error } = await supabase
+          .from('orders')
+          .update({
+            status: 'out_for_delivery',
+            rider_id: riderId,
+            assigned_at: new Date().toISOString(),
+            ready_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
+
+        if (error) throw error;
+        toast.success("Rider assigned! Order is out for delivery.");
+        onStatusChange?.();
+        setAssignModalOpen(false);
+        setOrderToAssign(null);
+      } catch (err) {
+        console.error('Error assigning rider:', err);
+        toast.error("Failed to assign rider");
+      } finally {
+        setIsAssigning(false);
+      }
+    },
+    [onStatusChange]
+  );
+
   const handleDrop = useCallback(async (e: React.DragEvent<HTMLDivElement>, targetStatus: OrderStatus) => {
     e.preventDefault();
     const orderId = e.dataTransfer.getData("text/plain");
@@ -100,12 +153,20 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
     
     // Allow moving forward in the flow
     if (targetIdx > currentIdx) {
+      // If moving to out_for_delivery, show rider assignment modal
+      if (targetStatus === "out_for_delivery") {
+        setOrderToAssign(order);
+        setAssignModalOpen(true);
+        return;
+      }
+
       try {
         await updateStatus.mutateAsync({
           orderId: order.id,
           status: targetStatus,
         });
         toast.success(`Order moved to ${ORDER_STATUS_LABELS[targetStatus]}`);
+        onStatusChange?.();
       } catch (err) {
         const message = err instanceof Error ? err.message : "Failed to update order status";
         toast.error(message);
@@ -113,9 +174,10 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
     } else {
       toast.error("Orders can only move forward in the workflow");
     }
-  }, [grouped, updateStatus]);
+  }, [grouped, updateStatus, onStatusChange]);
 
   return (
+    <>
     <div className="kanban-board">
       {/* Active workflow columns */}
       {WORKFLOW_STATUSES.map((status) => (
@@ -208,5 +270,15 @@ export default function OrderBoard({ grouped }: OrderBoardProps) {
         </div>
       </div>
     </div>
+
+    {/* Rider Assignment Modal */}
+    <AssignRiderModal
+      open={assignModalOpen}
+      onOpenChange={setAssignModalOpen}
+      order={orderToAssign}
+      onAssign={handleAssignRider}
+      isAssigning={isAssigning}
+    />
+    </>
   );
 }

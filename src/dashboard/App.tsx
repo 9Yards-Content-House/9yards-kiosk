@@ -51,31 +51,13 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   );
 }
 
-function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
-
-  if (loading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="animate-spin w-10 h-10 border-4 border-secondary border-t-transparent rounded-full" />
-      </div>
-    );
-  }
-
-  if (!user) return <Navigate to="/login" replace />;
-
-  return <ProtectedLayout>{children}</ProtectedLayout>;
-}
-
 // Role-protected route that checks specific permissions
 function RoleRoute({ 
   children, 
   permission,
-  fallbackPath = "/"
 }: { 
   children: React.ReactNode; 
   permission: string;
-  fallbackPath?: string;
 }) {
   const { user, role, loading } = useAuth();
 

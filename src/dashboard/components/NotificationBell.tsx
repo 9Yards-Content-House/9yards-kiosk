@@ -1,30 +1,61 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Bell, Check, CheckCheck, Package2 } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { NotificationType } from "@shared/types/auth";
-import { timeAgo } from "@shared/lib/utils";
+import { timeAgo, cn } from "@shared/lib/utils";
 import { useNavigate } from "react-router-dom";
 
-// Mock notifications for development
-const MOCK_NOTIFICATIONS: NotificationType[] = [
+interface NotificationBellProps {
+  sidebarCollapsed?: boolean;
+}
+
+// Mock notifications storage key
+const MOCK_NOTIFICATIONS_KEY = "9yards_mock_notifications";
+
+// Initial mock notifications
+const INITIAL_MOCK_NOTIFICATIONS: NotificationType[] = [
   { id: "1", order_id: "order-mock-1", type: "new_order", message: "New order #294851 received", target_role: "admin", read: false, created_at: new Date(Date.now() - 5 * 60000).toISOString() },
   { id: "2", order_id: "order-mock-2", type: "status_change", message: "Order #103847 marked as ready", target_role: "admin", read: true, created_at: new Date(Date.now() - 30 * 60000).toISOString() },
 ];
 
-export default function NotificationBell() {
+// Get mock notifications from localStorage or use initial
+function getMockNotifications(): NotificationType[] {
+  if (typeof window === "undefined") return INITIAL_MOCK_NOTIFICATIONS;
+  try {
+    const stored = localStorage.getItem(MOCK_NOTIFICATIONS_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return INITIAL_MOCK_NOTIFICATIONS;
+}
+
+// Save mock notifications to localStorage
+function saveMockNotifications(notifications: NotificationType[]) {
+  try {
+    localStorage.setItem(MOCK_NOTIFICATIONS_KEY, JSON.stringify(notifications));
+  } catch {}
+}
+
+export default function NotificationBell({ sidebarCollapsed = false }: NotificationBellProps) {
   const { role } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [open, setOpen] = useState(false);
+  const [mockNotifications, setMockNotifications] = useState<NotificationType[]>(getMockNotifications);
+
+  // Sync mock notifications with localStorage
+  useEffect(() => {
+    if (USE_MOCK_DATA) {
+      saveMockNotifications(mockNotifications);
+    }
+  }, [mockNotifications]);
 
   const { data: notifications } = useQuery<NotificationType[]>({
     queryKey: ["notifications", role],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        console.log("📦 Mock mode: returning mock notifications");
-        return MOCK_NOTIFICATIONS;
+        return mockNotifications;
       }
 
       const { data, error } = await supabase
@@ -37,28 +68,42 @@ export default function NotificationBell() {
       return data;
     },
     enabled: !!role,
-    refetchInterval: USE_MOCK_DATA ? 10_000 : 30_000,
+    refetchInterval: USE_MOCK_DATA ? false : 30_000,
   });
 
   // Mark single notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      if (USE_MOCK_DATA) return;
+      if (USE_MOCK_DATA) {
+        const updated = mockNotifications.map(n => 
+          n.id === notificationId ? { ...n, read: true } : n
+        );
+        setMockNotifications(updated);
+        return updated;
+      }
       const { error } = await supabase
         .from("notifications")
         .update({ read: true })
         .eq("id", notificationId);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    onSuccess: (data) => {
+      if (USE_MOCK_DATA && data) {
+        queryClient.setQueryData(["notifications", role], data);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["notifications", role] });
+      }
     },
   });
 
   // Mark all notifications as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      if (USE_MOCK_DATA) return;
+      if (USE_MOCK_DATA) {
+        const updated = mockNotifications.map(n => ({ ...n, read: true }));
+        setMockNotifications(updated);
+        return updated;
+      }
       const { error } = await supabase
         .from("notifications")
         .update({ read: true })
@@ -66,8 +111,12 @@ export default function NotificationBell() {
         .eq("read", false);
       if (error) throw error;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    onSuccess: (data) => {
+      if (USE_MOCK_DATA && data) {
+        queryClient.setQueryData(["notifications", role], data);
+      } else {
+        queryClient.invalidateQueries({ queryKey: ["notifications", role] });
+      }
     },
   });
 
@@ -109,10 +158,13 @@ export default function NotificationBell() {
       {open && (
         <>
           <div
-            className="fixed inset-0 z-40"
+            className="fixed inset-0 z-[100]"
             onClick={() => setOpen(false)}
           />
-          <div className="fixed left-16 top-14 w-80 bg-card rounded-xl border shadow-xl z-50 overflow-hidden sm:absolute sm:left-0 sm:top-full sm:mt-2">
+          <div className={cn(
+            "fixed top-2 w-80 bg-card rounded-xl border shadow-2xl z-[101] overflow-hidden max-h-[80vh]",
+            sidebarCollapsed ? "left-20" : "left-64"
+          )}>
             {/* Header */}
             <div className="px-4 py-3 border-b flex items-center justify-between bg-gradient-to-r from-[#212282]/5 to-transparent">
               <span className="font-semibold text-sm">Notifications</span>

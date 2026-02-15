@@ -291,7 +291,6 @@ export function usePrintTicket() {
     // ESC/POS commands
     const ESC = 0x1b;
     const GS = 0x1d;
-    const LF = 0x0a;
 
     // Initialize printer
     commands.push(ESC, 0x40); // ESC @

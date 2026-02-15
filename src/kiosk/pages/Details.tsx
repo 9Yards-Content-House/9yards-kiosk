@@ -4,7 +4,7 @@ import { ArrowRight, User, Phone, CheckCircle2, Truck, Clock, CalendarClock } fr
 import { useKioskCart } from "../context/KioskCartContext";
 import { useTranslation } from "@shared/context/LanguageContext";
 import { formatPrice, vibrate, cn } from "@shared/lib/utils";
-import { normalizePhone, requiredPhoneSchema, nameSchema, specialInstructionsSchema } from "@shared/lib/validation";
+import { normalizePhone } from "@shared/lib/validation";
 import KioskHeader from "../components/KioskHeader";
 import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import { Button } from "@shared/components/ui/button";
@@ -105,7 +105,13 @@ export default function Details() {
 
   // Load saved details from sessionStorage on mount
   const savedDetails = sessionStorage.getItem("kiosk_order_details");
-  const initialDetails = savedDetails ? JSON.parse(savedDetails) : null;
+  let initialDetails = null;
+  try {
+    initialDetails = savedDetails ? JSON.parse(savedDetails) : null;
+  } catch {
+    // Corrupted sessionStorage, ignore
+    sessionStorage.removeItem("kiosk_order_details");
+  }
 
   const [name, setName] = useState(initialDetails?.customer_name || "");
   const [phone, setPhone] = useState(initialDetails?.customer_phone || "");

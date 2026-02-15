@@ -10,7 +10,7 @@ const ugandaPhoneRegex = /^(0[7][0-9]{8}|256[7][0-9]{8})$/;
 
 export const phoneSchema = z
   .string()
-  .transform((val) => val.replace(/[\s\-\(\)]/g, '')) // Remove spaces, dashes, parens
+  .transform((val) => val.replace(/[\s\-()]/g, '')) // Remove spaces, dashes, parens
   .refine(
     (val) => val === '' || ugandaPhoneRegex.test(val),
     { message: 'Please enter a valid Ugandan phone number (e.g., 0771234567)' }
@@ -19,7 +19,7 @@ export const phoneSchema = z
 export const requiredPhoneSchema = z
   .string()
   .min(1, 'Phone number is required')
-  .transform((val) => val.replace(/[\s\-\(\)]/g, ''))
+  .transform((val) => val.replace(/[\s\-()]/g, ''))
   .refine(
     (val) => ugandaPhoneRegex.test(val),
     { message: 'Please enter a valid Ugandan phone number (e.g., 0771234567)' }

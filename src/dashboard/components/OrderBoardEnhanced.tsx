@@ -1,15 +1,13 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence, Reorder } from 'framer-motion';
+import { motion, AnimatePresence } from 'framer-motion';
 import {
-  Clock,
   User,
   Package,
-  ChevronRight,
   Printer,
   Phone,
-  Check,
   ArrowRight,
+  Bike,
 } from 'lucide-react';
 import { cn, formatPrice, timeAgo, vibrate } from '@shared/lib/utils';
 import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
@@ -23,6 +21,7 @@ import { Button } from '@shared/components/ui/button';
 import { usePrintTicket } from '../hooks/usePrintTicket';
 import StatusBadge from './StatusBadge';
 import { getMockOrdersStore } from '@shared/hooks/useOrders';
+import { AssignRiderModal } from './AssignRiderModal';
 
 interface OrderBoardEnhancedProps {
   grouped: Record<OrderStatus, Order[]>;
@@ -54,6 +53,50 @@ export default function OrderBoardEnhanced({
   const navigate = useNavigate();
   const { printTicket } = usePrintTicket();
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [orderToAssign, setOrderToAssign] = useState<Order | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
+
+  // Assign rider and move order to out_for_delivery
+  const handleAssignRider = useCallback(
+    async (orderId: string, riderId: string) => {
+      setIsAssigning(true);
+      try {
+        if (USE_MOCK_DATA) {
+          const mockOrders = getMockOrdersStore();
+          const mockOrder = mockOrders.find(o => o.id === orderId);
+          if (mockOrder) {
+            mockOrder.status = 'out_for_delivery';
+            mockOrder.rider_id = riderId;
+            mockOrder.assigned_at = new Date().toISOString();
+            mockOrder.ready_at = new Date().toISOString();
+            mockOrder.updated_at = new Date().toISOString();
+            console.log(`🚴 Mock order ${mockOrder.order_number} assigned to rider ${riderId}`);
+          }
+          onStatusChange?.(orderId, 'out_for_delivery');
+          return;
+        }
+
+        const { error } = await supabase
+          .from('orders')
+          .update({
+            status: 'out_for_delivery',
+            rider_id: riderId,
+            assigned_at: new Date().toISOString(),
+            ready_at: new Date().toISOString(),
+          })
+          .eq('id', orderId);
+
+        if (error) throw error;
+        onStatusChange?.(orderId, 'out_for_delivery');
+      } catch (err) {
+        console.error('Error assigning rider:', err);
+      } finally {
+        setIsAssigning(false);
+      }
+    },
+    [onStatusChange]
+  );
 
   const handleStatusAdvance = useCallback(
     async (order: Order, currentStatus: OrderStatus) => {
@@ -61,6 +104,15 @@ export default function OrderBoardEnhanced({
       if (statusIndex === -1 || statusIndex >= DISPLAY_STATUSES.length - 1) return;
 
       const newStatus = DISPLAY_STATUSES[statusIndex + 1];
+      
+      // If transitioning to out_for_delivery, show rider assignment modal
+      if (newStatus === 'out_for_delivery') {
+        setOrderToAssign(order);
+        setAssignModalOpen(true);
+        vibrate();
+        return;
+      }
+
       setUpdatingId(order.id);
       vibrate();
 
@@ -72,9 +124,6 @@ export default function OrderBoardEnhanced({
           if (mockOrder) {
             mockOrder.status = newStatus;
             mockOrder.updated_at = new Date().toISOString();
-            if (newStatus === 'out_for_delivery') {
-              mockOrder.ready_at = new Date().toISOString();
-            }
             console.log(`📦 Mock order ${mockOrder.order_number} → ${newStatus}`);
           }
           onStatusChange?.(order.id, newStatus);
@@ -85,9 +134,6 @@ export default function OrderBoardEnhanced({
           .from('orders')
           .update({
             status: newStatus,
-            ...(newStatus === 'out_for_delivery' && {
-              estimated_ready_at: new Date().toISOString(),
-            }),
           })
           .eq('id', order.id);
 
@@ -128,6 +174,7 @@ export default function OrderBoardEnhanced({
   };
 
   return (
+    <>
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full">
       {DISPLAY_STATUSES.map((status) => (
         <div
@@ -194,6 +241,16 @@ export default function OrderBoardEnhanced({
                             <Phone className="w-4 h-4" />
                           </a>
                         )}
+                      </div>
+                    )}
+
+                    {/* Rider Info (if assigned) */}
+                    {order.rider_id && (
+                      <div className="flex items-center gap-2 text-sm text-muted-foreground mb-2 bg-green-50 rounded-lg p-2">
+                        <Bike className="w-4 h-4 text-green-600" />
+                        <span className="text-green-700">
+                          {order.rider?.full_name || 'Rider assigned'}
+                        </span>
                       </div>
                     )}
 
@@ -285,5 +342,15 @@ export default function OrderBoardEnhanced({
         </div>
       ))}
     </div>
+
+    {/* Rider Assignment Modal */}
+    <AssignRiderModal
+      open={assignModalOpen}
+      onOpenChange={setAssignModalOpen}
+      order={orderToAssign}
+      onAssign={handleAssignRider}
+      isAssigning={isAssigning}
+    />
+    </>
   );
 }

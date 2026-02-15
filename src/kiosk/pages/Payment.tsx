@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed, CreditCard, Banknote, Smartphone, Truck } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed, Truck } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useCreateOrder } from "@shared/hooks/useOrders";
 import { useAllMenuItems } from "@shared/hooks/useMenu";

@@ -26,7 +26,7 @@ const MOCK_DELIVERIES: Order[] = [
   {
     id: "delivery-1",
     order_number: "381047",
-    status: "out_for_delivery",
+    status: "preparing", // Available for riders to claim
     customer_name: "Grace Auma",
     customer_phone: "+256700123456",
     customer_location: "3rd Floor, Office 302",
@@ -150,21 +150,22 @@ export default function MyDeliveries() {
   const [confirmOrder, setConfirmOrder] = useState<Order | null>(null);
   const [activeTab, setActiveTab] = useState<"available" | "mine" | "delivered">("available");
 
-  // Fetch available (unassigned ready) orders
+  // Fetch available orders (preparing status - ready to be claimed by riders)
   const { data: availableOrders, isLoading: loadingAvailable } = useQuery<Order[]>({
     queryKey: ["deliveries", "available"],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        return mockDeliveriesStore.filter(o => o.status === "out_for_delivery" && !o.rider_id);
+        // Show preparing orders that don't have a rider assigned yet
+        return mockDeliveriesStore.filter(o => o.status === "preparing" && !o.rider_id);
       }
       
       try {
         const { data, error } = await supabase
           .from("orders")
           .select("*, items:order_items(*)")
-          .eq("status", "out_for_delivery")
+          .eq("status", "preparing")
           .is("rider_id", null)
-          .order("ready_at", { ascending: true })
+          .order("created_at", { ascending: true })
           .limit(50);
         
         if (error) {
@@ -172,7 +173,7 @@ export default function MyDeliveries() {
           throw error;
         }
         
-        console.log(`📦 Deliveries: ${data?.length || 0} orders available for pickup`);
+        console.log(`📦 Deliveries: ${data?.length || 0} orders being prepared (available to claim)`);
         return data || [];
       } catch (err) {
         console.warn("Failed to fetch available orders:", err);
@@ -256,25 +257,45 @@ export default function MyDeliveries() {
     refetchInterval: 30_000,
   });
 
-  // Claim order mutation
+  // Claim order mutation - moves order to out_for_delivery and assigns rider
   const claimOrder = useMutation({
     mutationFn: async (orderId: string) => {
       if (USE_MOCK_DATA) {
         const order = mockDeliveriesStore.find(o => o.id === orderId);
         if (order) {
+          order.status = "out_for_delivery";
           order.rider_id = user?.id || null;
           order.assigned_at = new Date().toISOString();
+          order.ready_at = new Date().toISOString();
         }
         return order;
       }
 
-      const { data, error } = await supabase.rpc("claim_order", { p_order_id: orderId });
-      if (error) throw error;
-      return data;
+      // First try the RPC function, fall back to direct update
+      try {
+        const { data, error } = await supabase.rpc("claim_order", { p_order_id: orderId });
+        if (error) throw error;
+        return data;
+      } catch {
+        // Fallback: direct update if RPC doesn't exist
+        const { error } = await supabase
+          .from("orders")
+          .update({
+            status: "out_for_delivery",
+            rider_id: user?.id,
+            assigned_at: new Date().toISOString(),
+            ready_at: new Date().toISOString(),
+          })
+          .eq("id", orderId)
+          .eq("status", "preparing"); // Only claim if still preparing
+        if (error) throw error;
+        return { success: true };
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["deliveries"] });
-      toast.success("Order claimed! It's now your delivery.");
+      queryClient.invalidateQueries({ queryKey: ["orders"] }); // Refresh kanban board too
+      toast.success("Order claimed! It's now out for delivery.");
     },
     onError: () => {
       toast.error("Couldn't claim order. It may have been taken.");
@@ -364,7 +385,7 @@ export default function MyDeliveries() {
                     <div>
                       <p className="font-bold text-lg">{order.order_number}</p>
                       <p className="text-sm text-muted-foreground">
-                        {order.customer_name} • Ready {timeAgo(order.ready_at || order.created_at)}
+                        {order.customer_name} • Ordered {timeAgo(order.created_at)}
                       </p>
                     </div>
                     <StatusBadge status={order.status} />
@@ -401,8 +422,8 @@ export default function MyDeliveries() {
           ) : (
             <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl">
               <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No orders available for pickup</p>
-              <p className="text-sm">New ready orders will appear here</p>
+              <p>No orders being prepared</p>
+              <p className="text-sm">Orders ready for delivery will appear here</p>
             </div>
           )}
         </TabsContent>
@@ -472,11 +493,9 @@ export default function MyDeliveries() {
                         <Button
                           variant="outline"
                           size="sm"
-                          className="flex-1"
                           onClick={() => handleCallCustomer(order.customer_phone)}
                         >
-                          <Phone className="w-4 h-4 mr-2" />
-                          Call
+                          <Phone className="w-4 h-4" />
                         </Button>
                       )}
                       <Button

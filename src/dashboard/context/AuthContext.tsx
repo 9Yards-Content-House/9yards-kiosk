@@ -8,7 +8,7 @@ import {
 } from "react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import type { Profile, UserRole } from "@shared/types/auth";
-import type { User, Session } from "@supabase/supabase-js";
+import type { User } from "@supabase/supabase-js";
 
 // Dev mode credentials from environment variables ONLY
 // Never hardcode credentials - they must be in .env.local

@@ -16,12 +16,14 @@
   top: 0;
   height: 100dvh;
   overflow-y: auto;
+  overflow-x: visible;
   transition: width 0.2s ease-in-out;
+  z-index: 30;
 }
 
 .dashboard-sidebar-collapsed {
   width: 64px;
-  overflow: hidden;
+  overflow: visible;
 }
 
 /* Collapsed sidebar items need to be centered */
@@ -30,6 +32,39 @@
   display: flex;
   flex-direction: column;
   align-items: center;
+}
+
+/* Ensure collapsed sidebar icons are visible and styled */
+.dashboard-sidebar-collapsed nav a,
+.dashboard-sidebar-collapsed nav button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 0.5rem;
+  color: hsl(var(--muted-foreground));
+  transition: all 0.15s ease;
+}
+
+.dashboard-sidebar-collapsed nav a:hover,
+.dashboard-sidebar-collapsed nav button:hover {
+  background-color: hsl(var(--muted));
+  color: hsl(var(--foreground));
+  transform: scale(1.05);
+}
+
+.dashboard-sidebar-collapsed nav a.active,
+.dashboard-sidebar-collapsed nav a[aria-current="page"] {
+  background-color: hsl(var(--primary));
+  color: white;
+}
+
+/* Make sure SVG icons are always visible */
+.dashboard-sidebar-collapsed svg {
+  width: 20px;
+  height: 20px;
+  flex-shrink: 0;
 }
 
 .dashboard-main {

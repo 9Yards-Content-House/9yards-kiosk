@@ -1,11 +1,12 @@
-import { useState, useMemo } from "react";
-import { Search, Filter, X, Printer, Download } from "lucide-react";
+import { useState, useMemo, useCallback } from "react";
+import { Search, Filter, X, Download } from "lucide-react";
 import { useTodaysOrders, useAllOrders } from "@shared/hooks/useOrders";
 import { useOrderSubscription } from "../hooks/useOrderSubscription";
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS } from "@shared/types/orders";
 import type { Order, OrderStatus } from "@shared/types/orders";
 import OrderBoard from "../components/OrderBoard";
 import NewOrderAlert from "../components/NewOrderAlert";
+import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@shared/components/ui/input";
 import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
@@ -24,10 +25,16 @@ type TimeFilter = "today" | "week" | "all";
 
 export default function Orders() {
   useOrderSubscription();
+  const queryClient = useQueryClient();
   const [searchQuery, setSearchQuery] = useState("");
   const [statusFilter, setStatusFilter] = useState<OrderStatus | "all">("all");
   const [timeFilter, setTimeFilter] = useState<TimeFilter>("today");
   const [viewMode, setViewMode] = useState<ViewMode>("board");
+
+  // Handle status changes from the board (refetch orders)
+  const handleStatusChange = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ["orders"] });
+  }, [queryClient]);
 
   // Fetch orders based on time filter
   const { data: todaysOrders, isLoading: loadingToday } = useTodaysOrders();
@@ -240,7 +247,7 @@ export default function Orders() {
           )}
         </div>
       ) : (
-        <OrderBoard grouped={grouped} />
+        <OrderBoard grouped={grouped} onStatusChange={handleStatusChange} />
       )}
     </div>
   );
