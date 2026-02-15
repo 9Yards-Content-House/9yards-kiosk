@@ -2,21 +2,65 @@
 
 Touch-screen kiosk ordering system and kitchen management dashboard for [9Yards Food](https://food.9yards.co.ug).
 
+## Overview
+
+A complete food ordering and delivery management system built for:
+- **Kiosk**: Customer-facing touch screen for placing orders
+- **Dashboard**: Staff app for kitchen, riders, reception, and admin
+
 ## Architecture
 
-Single codebase with two entry points:
+Single monorepo with two entry points:
 
 | App | URL | Purpose |
 |---|---|---|
-| **Kiosk** | `kiosk.9yards.co.ug` | Customer-facing touch screen for placing orders |
-| **Dashboard** | `kitchen.9yards.co.ug` | Staff dashboard for managing orders, menu, and analytics |
+| **Kiosk** | `kiosk.9yards.co.ug` | Customer ordering + queue display |
+| **Dashboard** | `kitchen.9yards.co.ug` | Staff management dashboard |
 
 ## Tech Stack
 
 - **Frontend**: React 18 + TypeScript + Vite 5 + Tailwind CSS + shadcn/ui
 - **Backend**: Supabase (PostgreSQL + Auth + Realtime + Edge Functions)
 - **State**: React Context + @tanstack/react-query
-- **Hosting**: Netlify (2 sites)
+
+## Features
+
+### Kiosk App
+- Browse menu by category
+- Build combos with customization
+- Cart management
+- Customer details (name, phone required)
+- 5,000 UGX flat delivery fee
+- Mobile Money payment (MTN/Airtel)
+- Pay on delivery option
+- Order confirmation with tracking number
+- Queue display mode for waiting area
+- Pre-ordering with time picker
+
+### Dashboard App
+- Real-time order board with sound notifications
+- Role-based access (Admin, Kitchen, Rider, Reception)
+- Drag-and-drop order status updates
+- Menu management (CRUD, availability toggle)
+- Staff management with PIN login
+- Analytics and reporting
+- AI-powered insights
+- Push notifications
+
+## Order Flow
+
+Orders follow a 4-step status progression:
+
+```
+New → Preparing → Out for Delivery → Arrived
+```
+
+| Status | Description |
+|--------|-------------|
+| **New** | Order received, pending kitchen action |
+| **Preparing** | Kitchen is preparing the order |
+| **Out for Delivery** | Rider has picked up and is en route |
+| **Arrived** | Delivered to reception, customer notified via WhatsApp |
 
 ## Getting Started
 
@@ -27,7 +71,7 @@ Single codebase with two entry points:
 
 ### Setup
 
-1. Clone the repo and install dependencies:
+1. Clone and install:
 
 ```bash
 git clone <repo-url>
@@ -35,7 +79,7 @@ cd 9yards-kiosk
 npm install
 ```
 
-2. Copy the environment template and fill in your Supabase credentials:
+2. Configure environment:
 
 ```bash
 cp .env.example .env
@@ -47,108 +91,147 @@ VITE_SUPABASE_URL=https://your-project.supabase.co
 VITE_SUPABASE_ANON_KEY=your-anon-key
 ```
 
-3. Run the Supabase migrations (via Supabase Dashboard SQL editor or CLI):
+3. Run database migrations:
 
 ```bash
-# Apply migrations in order
+# Via Supabase CLI
 supabase db push
-# Or run each file manually via the SQL editor
+
+# Or run each migration file manually in SQL editor
 ```
 
-4. Seed the menu data:
+4. Seed menu data:
 
 ```bash
-# Via Supabase SQL editor, run:
-# supabase/seed.sql
+# Run supabase/seed.sql in SQL editor
 ```
 
 ### Development
 
 ```bash
-# Run kiosk app (port 3000)
+# Kiosk (port 3000)
 npm run dev:kiosk
 
-# Run dashboard app (port 3001)
+# Dashboard (port 3001)
 npm run dev:dashboard
 ```
 
 ### Build
 
 ```bash
-# Build kiosk
-npm run build:kiosk
-
-# Build dashboard
-npm run build:dashboard
+npm run build:kiosk     # → dist-kiosk/
+npm run build:dashboard # → dist-dashboard/
 ```
 
 ### Deployment
 
-Both apps deploy to Netlify using separate config files:
+Both apps deploy to Netlify with separate configs:
 
-- **Kiosk**: Uses `netlify-kiosk.toml` → builds to `dist-kiosk/`
-- **Dashboard**: Uses `netlify-dashboard.toml` → builds to `dist-dashboard/`
+| App | Config File | Output |
+|-----|-------------|--------|
+| Kiosk | `netlify-kiosk.toml` | `dist-kiosk/` |
+| Dashboard | `netlify-dashboard.toml` | `dist-dashboard/` |
 
-Create two Netlify sites pointing to the same repo, each using its respective config.
+Create two Netlify sites pointing to the same repo.
 
 ## Project Structure
 
 ```
 src/
-├── shared/          # Shared types, lib, hooks, UI components
-│   ├── types/       # Menu, order, auth types
-│   ├── lib/         # Supabase client, utils, constants
-│   ├── hooks/       # useMenu, useOrders, useRealtime
-│   ├── theme/       # CSS variables & base styles
-│   └── components/  # shadcn/ui components
+├── shared/              # Shared code between apps
+│   ├── types/           # TypeScript types (menu, orders, auth)
+│   ├── lib/             # Supabase client, utils, constants
+│   ├── hooks/           # useMenu, useOrders, useRealtime
+│   ├── theme/           # CSS variables & base styles
+│   └── components/      # shadcn/ui components
 │
-├── kiosk/           # Kiosk app (touch-optimized)
-│   ├── pages/       # Welcome, Menu, Cart, Details, Payment, Confirmation
-│   ├── components/  # KioskHeader, ComboBuilder, CartBar, etc.
-│   ├── context/     # KioskCartContext (useReducer-based cart)
-│   └── hooks/       # useInactivityTimer
+├── kiosk/               # Kiosk app
+│   ├── pages/           # Welcome, Menu, Cart, Details, Payment, Confirmation
+│   ├── components/      # KioskHeader, ComboBuilder, CartBar
+│   ├── context/         # KioskCartContext
+│   └── hooks/           # useInactivityTimer
 │
-└── dashboard/       # Staff dashboard
-    ├── pages/       # Login, Orders, MenuManagement, Staff, Analytics, etc.
-    ├── components/  # Sidebar, OrderBoard, OrderCard, charts, etc.
-    ├── context/     # AuthContext
-    └── hooks/       # useOrderSubscription, useNotificationSound, usePushNotifications
+└── dashboard/           # Staff dashboard
+    ├── pages/           # Orders, Menu, Staff, Analytics, Settings
+    │   ├── admin/       # Admin-only pages
+    │   ├── kitchen/     # Kitchen view
+    │   ├── rider/       # Rider deliveries
+    │   └── reception/   # Reception desk
+    ├── components/      # Sidebar, OrderBoard, OrderCard, charts
+    ├── context/         # AuthContext
+    └── hooks/           # useOrderSubscription, usePushNotifications
 
 supabase/
-├── migrations/      # 10 SQL migration files
-├── functions/       # Edge Functions (momo-payment, momo-callback, send-whatsapp, send-push)
-└── seed.sql         # Menu data from existing site
+├── migrations/          # SQL migration files (001-013+)
+├── functions/           # Edge Functions
+│   ├── momo-payment/    # MTN/Airtel payment initiation
+│   ├── momo-callback/   # Payment callback handler
+│   ├── send-whatsapp/   # WhatsApp notifications
+│   ├── send-push/       # Web push notifications
+│   ├── pin-login/       # Staff PIN authentication
+│   └── daily-summary/   # Analytics summary
+└── seed.sql             # Menu data
 ```
 
 ## Dashboard Roles
 
 | Role | Access |
-|---|---|
+|------|--------|
 | **Admin** | Full access: orders, menu CRUD, staff management, analytics, settings |
-| **Kitchen** | Orders board, toggle menu availability, notifications |
-| **Rider** | View ready orders, mark as delivered |
+| **Kitchen** | Order board, toggle menu availability, mark orders as preparing |
+| **Rider** | View assigned deliveries, mark as out for delivery/arrived |
+| **Reception** | View arrived orders, mark as picked up, contact customers |
 
-## Supabase Setup
+## Database Setup
 
-After creating your Supabase project:
+### Initial Setup
 
-1. Run migrations in order (001 through 010)
+1. Run migrations in order (001 through latest)
 2. Run `seed.sql` to populate menu data
-3. Create your first admin user via Supabase Auth
-4. Update that user's profile role to `admin`:
+3. Create admin user via Supabase Auth
+4. Set admin role:
    ```sql
-   UPDATE profiles SET role = 'admin', full_name = 'Your Name' WHERE id = '<user-id>';
+   UPDATE profiles SET role = 'admin', full_name = 'Admin Name' WHERE id = '<user-id>';
    ```
 
-### Environment Variables for Edge Functions
+### Key Tables
 
-Set these in Supabase Dashboard → Settings → Edge Functions:
+| Table | Purpose |
+|-------|---------|
+| `categories` | Menu categories |
+| `menu_items` | Food items with prices |
+| `orders` | Customer orders |
+| `order_items` | Items in each order |
+| `profiles` | Staff profiles with roles |
+| `notifications` | System notifications |
+| `push_subscriptions` | Web push subscriptions |
 
-- `MTN_MOMO_API_USER` / `MTN_MOMO_API_KEY` / `MTN_MOMO_SUBSCRIPTION_KEY` — MTN MoMo API
-- `AIRTEL_CLIENT_ID` / `AIRTEL_CLIENT_SECRET` — Airtel Money API
-- `WHATSAPP_BUSINESS_TOKEN` / `WHATSAPP_PHONE_NUMBER_ID` — WhatsApp Business API
-- `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` — Web Push notifications
+### Edge Function Environment Variables
 
-## License
+Set in Supabase Dashboard → Settings → Edge Functions:
 
-Private — 9Yards Digital Ltd.
+**Mobile Money:**
+- `MTN_MOMO_API_USER`
+- `MTN_MOMO_API_KEY`
+- `MTN_MOMO_SUBSCRIPTION_KEY`
+- `AIRTEL_CLIENT_ID`
+- `AIRTEL_CLIENT_SECRET`
+
+**WhatsApp Business API:**
+- `WHATSAPP_BUSINESS_TOKEN`
+- `WHATSAPP_PHONE_NUMBER_ID`
+
+**Web Push:**
+- `VAPID_PUBLIC_KEY`
+- `VAPID_PRIVATE_KEY`
+
+## Scripts
+
+```bash
+npm run dev:kiosk       # Start kiosk dev server
+npm run dev:dashboard   # Start dashboard dev server
+npm run build:kiosk     # Production build kiosk
+npm run build:dashboard # Production build dashboard
+npm run lint            # Run ESLint
+npm run type-check      # Run TypeScript check
+```
