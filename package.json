@@ -6,8 +6,8 @@
   "scripts": {
     "dev:kiosk": "vite --config vite.config.kiosk.ts",
     "dev:dashboard": "vite --config vite.config.dashboard.ts",
-    "build:kiosk": "vite build --config vite.config.kiosk.ts",
-    "build:dashboard": "vite build --config vite.config.dashboard.ts",
+    "build:kiosk": "vite build --config vite.config.kiosk.ts && cp public/_redirects_kiosk dist-kiosk/_redirects",
+    "build:dashboard": "vite build --config vite.config.dashboard.ts && cp public/_redirects_dashboard dist-dashboard/_redirects",
     "preview:kiosk": "vite preview --config vite.config.kiosk.ts",
     "preview:dashboard": "vite preview --config vite.config.dashboard.ts",
     "lint": "eslint .",

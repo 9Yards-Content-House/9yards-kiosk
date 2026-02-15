@@ -1,16 +1,11 @@
 # Default Netlify config - for kiosk deployment
-# For dashboard, use a separate Netlify site with base directory setting
-# or override via Netlify UI settings
+# Dashboard uses separate Netlify site with build:dashboard command
 
 [build]
   command = "npm run build:kiosk"
   publish = "dist-kiosk"
 
-# SPA fallback - redirect all routes to index.html
-[[redirects]]
-  from = "/*"
-  to = "/index-kiosk.html"
-  status = 200
+# SPA fallback handled by _redirects file copied during build
 
 # Cache static assets
 [[headers]]
