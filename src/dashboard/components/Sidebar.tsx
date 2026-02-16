@@ -70,7 +70,7 @@ export default function Sidebar() {
 
   return (
     <TooltipProvider delayDuration={0}>
-      <aside className={cn("dashboard-sidebar", collapsed && "dashboard-sidebar-collapsed")}>
+      <aside className={cn("dashboard-sidebar", collapsed && "dashboard-sidebar-collapsed")} aria-label="Main navigation">
         {/* Logo */}
         <div className={cn("p-4 border-b flex items-center gap-3", collapsed && "flex-col items-center justify-center p-3 gap-2")}>
           <img
@@ -99,7 +99,7 @@ export default function Sidebar() {
         </div>
 
         {/* Nav */}
-        <nav className={cn("flex-1 p-3 space-y-1", collapsed && "p-2 space-y-2 flex flex-col items-center")}>
+        <nav className={cn("flex-1 p-3 space-y-1", collapsed && "p-2 space-y-2 flex flex-col items-center")} aria-label="Dashboard navigation">
           {links.map((link) => {
             const Icon = link.icon;
 
@@ -157,6 +157,8 @@ export default function Sidebar() {
                   variant="ghost"
                   size="sm"
                   onClick={() => setCollapsed(false)}
+                  aria-expanded={false}
+                  aria-label="Expand sidebar"
                   className="w-10 h-10 flex items-center justify-center p-0 hover:scale-105 transition-transform"
                 >
                   <PanelLeft className="w-5 h-5" />
@@ -171,6 +173,8 @@ export default function Sidebar() {
               variant="ghost"
               size="sm"
               onClick={() => setCollapsed(true)}
+              aria-expanded={true}
+              aria-label="Collapse sidebar"
               className="w-full justify-start gap-2"
             >
               <PanelLeftClose className="w-4 h-4" />

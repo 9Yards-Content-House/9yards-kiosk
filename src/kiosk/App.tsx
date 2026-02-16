@@ -43,22 +43,30 @@ function KioskRoutes() {
 
   return (
     <>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-[#212282] focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-semibold"
+      >
+        Skip to main content
+      </a>
       <NetworkStatus />
       {isInactive && <InactivityOverlay onResume={resetTimer} />}
-      <Suspense fallback={<PageLoader />}>
-        <Routes>
-          <Route path="/" element={<Welcome />} />
-          <Route path="/menu" element={<MenuNew />} />
-          <Route path="/cart" element={<CartNew />} />
-          <Route path="/details" element={<Details />} />
-          <Route path="/payment" element={<Payment />} />
-          <Route path="/confirmation" element={<ConfirmationNew />} />
-          <Route path="/lookup" element={<OrderLookup />} />
-          <Route path="/lookup/:orderNumber" element={<OrderLookup />} />
-          <Route path="/queue" element={<QueueDisplay />} />
-          <Route path="*" element={<Navigate to="/" replace />} />
-        </Routes>
-      </Suspense>
+      <main id="main-content">
+        <Suspense fallback={<PageLoader />}>
+          <Routes>
+            <Route path="/" element={<Welcome />} />
+            <Route path="/menu" element={<MenuNew />} />
+            <Route path="/cart" element={<CartNew />} />
+            <Route path="/details" element={<Details />} />
+            <Route path="/payment" element={<Payment />} />
+            <Route path="/confirmation" element={<ConfirmationNew />} />
+            <Route path="/lookup" element={<OrderLookup />} />
+            <Route path="/lookup/:orderNumber" element={<OrderLookup />} />
+            <Route path="/queue" element={<QueueDisplay />} />
+            <Route path="*" element={<Navigate to="/" replace />} />
+          </Routes>
+        </Suspense>
+      </main>
     </>
   );
 }

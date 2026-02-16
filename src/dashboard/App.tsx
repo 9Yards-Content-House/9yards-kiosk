@@ -40,9 +40,15 @@ function ProtectedLayout({ children }: { children: React.ReactNode }) {
   
   return (
     <div className="dashboard-layout">
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:fixed focus:top-2 focus:left-2 focus:z-[100] focus:bg-white focus:text-primary focus:px-4 focus:py-2 focus:rounded-lg focus:shadow-lg focus:text-sm focus:font-semibold"
+      >
+        Skip to main content
+      </a>
       <NetworkStatus />
       <Sidebar />
-      <main className="dashboard-main">
+      <main id="main-content" className="dashboard-main">
         <Suspense fallback={<PageLoader />}>
           {children}
         </Suspense>

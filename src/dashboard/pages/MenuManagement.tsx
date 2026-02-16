@@ -222,8 +222,10 @@ export default function MenuManagement() {
                     : "bg-muted hover:bg-muted/80 text-muted-foreground"
                 }`}
                 title="List view"
+                aria-label="Switch to list view"
+                aria-pressed={viewMode === "list"}
               >
-                <List className="w-4 h-4" />
+                <List className="w-4 h-4" aria-hidden="true" />
               </button>
               <button
                 onClick={() => setViewMode("grid")}
@@ -233,8 +235,10 @@ export default function MenuManagement() {
                     : "bg-muted hover:bg-muted/80 text-muted-foreground"
                 }`}
                 title="Grid view"
+                aria-label="Switch to grid view"
+                aria-pressed={viewMode === "grid"}
               >
-                <LayoutGrid className="w-4 h-4" />
+                <LayoutGrid className="w-4 h-4" aria-hidden="true" />
               </button>
             </div>
           </div>
@@ -247,23 +251,26 @@ export default function MenuManagement() {
               <button 
                 onClick={() => toggleSort("name")}
                 className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                aria-sort={sortBy === "name" ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
               >
                 Item
-                {sortBy === "name" && <ArrowUpDown className="w-3 h-3" />}
+                {sortBy === "name" && <ArrowUpDown className="w-3 h-3" aria-hidden="true" />}
               </button>
               <button 
                 onClick={() => toggleSort("category")}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
+                aria-sort={sortBy === "category" ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
               >
                 Category
-                {sortBy === "category" && <ArrowUpDown className="w-3 h-3" />}
+                {sortBy === "category" && <ArrowUpDown className="w-3 h-3" aria-hidden="true" />}
               </button>
               <button 
                 onClick={() => toggleSort("price")}
                 className="flex items-center gap-1 hover:text-foreground transition-colors"
+                aria-sort={sortBy === "price" ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
               >
                 Price
-                {sortBy === "price" && <ArrowUpDown className="w-3 h-3" />}
+                {sortBy === "price" && <ArrowUpDown className="w-3 h-3" aria-hidden="true" />}
               </button>
               <span>Badges</span>
               <span>Actions</span>

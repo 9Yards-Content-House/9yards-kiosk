@@ -479,6 +479,8 @@ export default function ComboBuilder({
                     }
                   }}
                   disabled={s.num > step}
+                  aria-current={s.num === step ? 'step' : undefined}
+                  aria-label={`Step ${s.num} of ${STEPS.length}: ${s.label}${s.num < step ? ' (completed)' : s.num === step ? ' (current)' : ''}`}
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all',
                     s.num === step

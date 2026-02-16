@@ -226,9 +226,10 @@ export default function CartNew() {
         rightElement={
           <button 
             onClick={() => setShowClearDialog(true)}
+            aria-label="Clear all items from cart"
             className="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1.5 px-4 py-2 rounded-full hover:bg-red-50 border border-gray-200 hover:border-red-200 min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           >
-            <Trash2 className="w-4 h-4" />
+            <Trash2 className="w-4 h-4" aria-hidden="true" />
             <span>Clear All</span>
           </button>
         }
@@ -364,18 +365,20 @@ export default function CartNew() {
                           <div className="flex items-center gap-3 bg-gray-100 rounded-full p-0.5 border border-gray-200">
                             <button
                               onClick={() => handleQuantityChange(item.id, -1)}
+                              aria-label={`Decrease quantity of ${item.label || item.sauceName}`}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-white text-gray-700 hover:bg-gray-50 shadow-sm transition-all active:scale-95"
                             >
-                              <Minus className="w-4 h-4" />
+                              <Minus className="w-4 h-4" aria-hidden="true" />
                             </button>
-                            <span className="w-6 text-center text-sm font-bold text-gray-900">
+                            <span className="w-6 text-center text-sm font-bold text-gray-900" aria-label={`Quantity: ${item.quantity}`}>
                               {item.quantity}
                             </span>
                             <button
                               onClick={() => handleQuantityChange(item.id, 1)}
+                              aria-label={`Increase quantity of ${item.label || item.sauceName}`}
                               className="w-8 h-8 flex items-center justify-center rounded-full bg-[#E6411C] text-white hover:bg-[#d13a18] shadow-sm transition-all active:scale-95"
                             >
-                              <Plus className="w-4 h-4" />
+                              <Plus className="w-4 h-4" aria-hidden="true" />
                             </button>
                           </div>
 
@@ -385,8 +388,9 @@ export default function CartNew() {
                               onClick={() => handleEditCombo(item.id)}
                               className="w-9 h-9 flex items-center justify-center rounded-full bg-blue-50 text-blue-600 hover:bg-blue-100 transition-colors border border-blue-100 active:scale-95"
                               title="Edit Combo"
+                              aria-label={`Edit ${item.label || item.sauceName} combo`}
                             >
-                              <Pencil className="w-4 h-4" />
+                              <Pencil className="w-4 h-4" aria-hidden="true" />
                             </button>
                           )}
                         </div>
