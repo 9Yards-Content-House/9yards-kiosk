@@ -1,6 +1,6 @@
-import { useState } from "react";
-import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen } from "lucide-react";
-import { useCategories } from "@shared/hooks/useMenu";
+import { useState, useMemo } from "react";
+import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
+import { useCategories, useAllMenuItems } from "@shared/hooks/useMenu";
 import {
   useCreateCategory,
   useUpdateCategory,
@@ -34,6 +34,9 @@ import {
 import { toast } from "sonner";
 import type { Category } from "@shared/types/menu";
 
+// Protected slugs - changing these will break kiosk functionality
+const PROTECTED_SLUGS = ['main-dishes', 'sauces', 'side-dishes', 'juices', 'desserts', 'lusaniya'];
+
 // Generate slug from name
 function generateSlug(name: string): string {
   return name
@@ -46,6 +49,7 @@ function generateSlug(name: string): string {
 export default function CategoryManagement() {
   const { role } = useAuth();
   const { data: categories = [], isLoading } = useCategories();
+  const { data: menuItems = [] } = useAllMenuItems();
   const createCategory = useCreateCategory();
   const updateCategory = useUpdateCategory();
   const deleteCategory = useDeleteCategory();
@@ -64,6 +68,18 @@ export default function CategoryManagement() {
 
   // Sort categories by sort_order
   const sortedCategories = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+
+  // Count items per category
+  const itemCountByCategory = useMemo(() => {
+    const counts: Record<string, number> = {};
+    menuItems.forEach((item) => {
+      counts[item.category_id] = (counts[item.category_id] || 0) + 1;
+    });
+    return counts;
+  }, [menuItems]);
+
+  // Check if a slug is protected
+  const isProtectedSlug = (slug: string) => PROTECTED_SLUGS.includes(slug);
 
   const handleAddCategory = async () => {
     if (!newCategoryName.trim()) {
@@ -175,6 +191,10 @@ export default function CategoryManagement() {
           <p className="text-muted-foreground text-sm mt-1">
             Manage menu categories. Categories determine how items are grouped in the kiosk.
           </p>
+          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-md px-2 py-1 w-fit">
+            <AlertTriangle className="w-3.5 h-3.5" />
+            <span>Changing protected slugs (main-dishes, sauces, side-dishes, juices, desserts) may break kiosk</span>
+          </div>
         </div>
         {canCreate && (
           <Button onClick={() => setIsAddDialogOpen(true)}>
@@ -238,37 +258,39 @@ export default function CategoryManagement() {
                 </Badge>
               </div>
 
-              {/* Item Count - TODO: Add actual count */}
+              {/* Item Count */}
               <div className="hidden md:block">
-                <span className="text-sm text-muted-foreground">—</span>
+                <span className="text-sm font-medium">
+                  {itemCountByCategory[category.id] || 0}
+                </span>
               </div>
 
               {/* Actions */}
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-0.5">
                 {canEdit && (
                   <>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       onClick={() => handleMoveUp(index)}
                       disabled={index === 0 || reorderCategories.isPending}
                     >
-                      ↑
+                      <ChevronUp className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
                       onClick={() => handleMoveDown(index)}
                       disabled={index === sortedCategories.length - 1 || reorderCategories.isPending}
                     >
-                      ↓
+                      <ChevronDown className="w-4 h-4" />
                     </Button>
                     <Button
                       variant="ghost"
                       size="icon"
-                      className="h-8 w-8"
+                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
                       onClick={() => openEditDialog(category)}
                     >
                       <Edit2 className="w-4 h-4" />
@@ -281,7 +303,9 @@ export default function CategoryManagement() {
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-destructive hover:text-destructive"
+                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                        disabled={isProtectedSlug(category.slug)}
+                        title={isProtectedSlug(category.slug) ? "Protected category cannot be deleted" : "Delete category"}
                       >
                         <Trash2 className="w-4 h-4" />
                       </Button>
@@ -394,10 +418,18 @@ export default function CategoryManagement() {
                 onChange={(e) => setEditSlug(e.target.value)}
                 placeholder="category-slug"
                 className="font-mono"
+                disabled={editingCategory ? isProtectedSlug(editingCategory.slug) : false}
               />
-              <p className="text-xs text-amber-600 mt-1">
-                ⚠️ Changing slug may affect combo builder if items reference this category.
-              </p>
+              {editingCategory && isProtectedSlug(editingCategory.slug) ? (
+                <p className="text-xs text-destructive mt-1 flex items-center gap-1">
+                  <AlertTriangle className="w-3 h-3" />
+                  This is a protected slug used by the kiosk. It cannot be changed.
+                </p>
+              ) : (
+                <p className="text-xs text-amber-600 mt-1">
+                  ⚠️ Changing slug may affect combo builder if items reference this category.
+                </p>
+              )}
             </div>
           </div>
           <DialogFooter>
