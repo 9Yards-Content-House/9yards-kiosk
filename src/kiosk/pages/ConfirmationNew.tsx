@@ -3,13 +3,9 @@ import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
   Check,
-  Copy,
-  Clock,
   Search,
   UtensilsCrossed,
-  MessageCircle,
   Loader2,
-  Printer,
   XCircle,
 } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
@@ -41,8 +37,7 @@ export default function ConfirmationNew() {
   const { play } = useSound();
   const cancelOrder = useCancelOrder();
 
-  const [copied, setCopied] = useState(false);
-  const [countdown, setCountdown] = useState(60);
+  const [countdown, setCountdown] = useState(30);
   const [showConfetti, setShowConfetti] = useState(true);
   const [orderDetails, setOrderDetails] = useState<OrderDetails | null>(null);
   const [loading, setLoading] = useState(true);
@@ -174,105 +169,6 @@ export default function ConfirmationNew() {
     return () => clearInterval(timer);
   }, [orderDetails, navigate, setLanguage]);
 
-  const handleCopy = useCallback(async () => {
-    if (!orderDetails) return;
-    try {
-      await navigator.clipboard.writeText(orderDetails.orderNumber);
-      setCopied(true);
-      play('select');
-      setTimeout(() => setCopied(false), 2000);
-    } catch (err) {
-      // Clipboard API may fail in some contexts - fail silently for UX
-      if (import.meta.env.DEV) console.warn('Clipboard write failed:', err);
-    }
-  }, [orderDetails, play]);
-
-  const handlePrintReceipt = useCallback(() => {
-    if (!orderDetails) return;
-    play('select');
-    
-    const receiptWindow = window.open('', '_blank', 'width=400,height=600');
-    if (!receiptWindow) return;
-    
-    const receiptHtml = `
-      <!DOCTYPE html>
-      <html>
-      <head>
-        <title>Order Receipt - ${orderDetails.orderNumber}</title>
-        <style>
-          * { margin: 0; padding: 0; box-sizing: border-box; }
-          body { 
-            font-family: 'Courier New', monospace; 
-            padding: 20px; 
-            max-width: 300px; 
-            margin: 0 auto;
-          }
-          .header { text-align: center; margin-bottom: 20px; }
-          .logo { font-size: 24px; font-weight: bold; color: #E6411C; }
-          .tagline { font-size: 12px; color: #666; }
-          .divider { border-top: 1px dashed #333; margin: 10px 0; }
-          .order-number { 
-            text-align: center; 
-            font-size: 32px; 
-            font-weight: bold; 
-            margin: 20px 0; 
-            letter-spacing: 4px;
-          }
-          .info { margin: 10px 0; }
-          .info-row { display: flex; justify-content: space-between; margin: 5px 0; }
-          .label { color: #666; }
-          .footer { text-align: center; margin-top: 30px; font-size: 12px; color: #666; }
-          @media print {
-            body { padding: 10px; }
-          }
-        </style>
-      </head>
-      <body>
-        <div class="header">
-          <div class="logo">9Yards Food</div>
-          <div class="tagline">Authentic Ugandan Cuisine</div>
-        </div>
-        <div class="divider"></div>
-        <div class="order-number">${orderDetails.orderNumber}</div>
-        <div class="divider"></div>
-        <div class="info">
-          <div class="info-row">
-            <span class="label">Customer:</span>
-            <span>${orderDetails.customerName || 'Guest'}</span>
-          </div>
-          ${orderDetails.customerPhone ? `
-          <div class="info-row">
-            <span class="label">Phone:</span>
-            <span>${orderDetails.customerPhone}</span>
-          </div>
-          ` : ''}
-          <div class="info-row">
-            <span class="label">Total:</span>
-            <span>UGX ${orderDetails.total.toLocaleString()}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Date:</span>
-            <span>${new Date().toLocaleDateString()}</span>
-          </div>
-          <div class="info-row">
-            <span class="label">Time:</span>
-            <span>${new Date().toLocaleTimeString()}</span>
-          </div>
-        </div>
-        <div class="divider"></div>
-        <div class="footer">
-          <p>Thank you for your order!</p>
-          <p>Please show this receipt when collecting.</p>
-        </div>
-      </body>
-      </html>
-    `;
-    
-    receiptWindow.document.write(receiptHtml);
-    receiptWindow.document.close();
-    receiptWindow.print();
-  }, [orderDetails, play]);
-
   const handleNewOrder = useCallback(() => {
     sessionStorage.removeItem('kiosk_last_order_number');
     setLanguage('en');
@@ -363,7 +259,7 @@ export default function ConfirmationNew() {
 
       {/* Main content */}
       <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <div className="max-w-md mx-auto space-y-6">
+        <div className="max-w-2xl mx-auto space-y-6">
           {/* Order number card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -384,72 +280,30 @@ export default function ConfirmationNew() {
               >
                 {orderNumber}
               </motion.div>
-            
-            <div className="flex gap-2 justify-center">
-              <Button
-                variant="outline"
-                onClick={handleCopy}
-                className="gap-2 rounded-full border-gray-200"
-              >
-                {copied ? (
-                  <>
-                    <Check className="w-4 h-4 text-green-600" />
-                    Copied!
-                  </>
-                ) : (
-                  <>
-                    <Copy className="w-4 h-4" />
-                    Copy Number
-                  </>
-                )}
-              </Button>
 
-              <Button
-                variant="outline"
-                onClick={handlePrintReceipt}
-                className="gap-2 rounded-full border-gray-200"
-                aria-label="Print receipt"
-              >
-                <Printer className="w-4 h-4" />
-                Print
-              </Button>
-            </div>
-
-            <p className="text-sm text-gray-500 mt-4">
-              {t('confirmation.saveNumber')}
-            </p>
+              <p className="text-sm text-gray-500">
+                Scan the QR code below to track on your phone
+              </p>
             </div>
           </motion.div>
 
-          {/* QR Code */}
+          {/* QR Code - Primary action for mobile tracking */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
             className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center"
           >
-            <p className="text-sm text-gray-500 mb-3">
-              Scan to track your order
+            <p className="text-base font-medium text-[#212282] mb-4">
+              Scan with your phone to track your order
             </p>
             <div className="flex justify-center">
-              <QRCode value={orderNumber} size={160} asTrackingLink />
+              <QRCode value={orderNumber} size={180} asTrackingLink />
             </div>
+            <p className="text-xs text-gray-400 mt-4">
+              You'll receive updates when your order is ready
+            </p>
           </motion.div>
-
-          {/* WhatsApp notification note */}
-          {customerPhone && (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              transition={{ delay: 0.9 }}
-              className="flex items-center gap-3 bg-green-50 rounded-xl p-4 border border-green-200"
-            >
-              <MessageCircle className="w-5 h-5 text-green-600 shrink-0" />
-              <p className="text-sm text-green-700">
-                {t('confirmation.whatsappNotify')}
-              </p>
-            </motion.div>
-          )}
 
           {/* Cancel Order Option - only shown when order is still 'new' */}
           {canCancel && orderDetails?.status !== 'cancelled' && (
@@ -537,31 +391,33 @@ export default function ConfirmationNew() {
       )}
 
       {/* Footer with actions */}
-      <div className="p-4 border-t bg-white space-y-3">
-        {/* Auto-reset countdown */}
-        <div className="text-center text-sm text-gray-500">
-          {t('confirmation.autoReset')} <span className="font-bold text-[#212282]">{countdown}s</span>
-        </div>
+      <div className="p-4 border-t bg-white">
+        <div className="max-w-2xl mx-auto space-y-3">
+          {/* Auto-reset countdown */}
+          <div className="text-center text-sm text-gray-500">
+            {t('confirmation.autoReset')} <span className="font-bold text-[#212282]">{countdown}s</span>
+          </div>
 
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="touch"
-            onClick={handleTrackOrder}
-            className="flex-1 gap-2 border-gray-200 text-[#212282]"
-          >
-            <Search className="w-5 h-5" />
-            {t('confirmation.trackOrder')}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              size="touch"
+              onClick={handleTrackOrder}
+              className="flex-1 gap-2 border-gray-200 text-[#212282]"
+            >
+              <Search className="w-5 h-5" />
+              {t('confirmation.trackOrder')}
+            </Button>
 
-          <Button
-            size="touch"
-            onClick={handleNewOrder}
-            className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold gap-2"
-          >
-            <UtensilsCrossed className="w-5 h-5" />
-            {t('confirmation.newOrder')}
-          </Button>
+            <Button
+              size="touch"
+              onClick={handleNewOrder}
+              className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold gap-2"
+            >
+              <UtensilsCrossed className="w-5 h-5" />
+              {t('confirmation.newOrder')}
+            </Button>
+          </div>
         </div>
       </div>
     </div>

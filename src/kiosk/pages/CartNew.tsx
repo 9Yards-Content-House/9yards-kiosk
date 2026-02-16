@@ -10,7 +10,6 @@ import {
   AlertCircle,
   UtensilsCrossed,
   X,
-  Clock,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useKioskCart } from '../context/KioskCartContext';
@@ -31,7 +30,6 @@ import { saveOrderToHistory } from '../components/QuickReorder';
 import { useAllMenuItems, useCategories } from '@shared/hooks/useMenu';
 import { getUpsellSuggestions } from '@shared/lib/recommendations';
 import { useSound } from '../hooks/useSound';
-import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import type { MenuItem } from '@shared/types/menu';
 
 // Type for order history items
@@ -47,7 +45,6 @@ export default function CartNew() {
   const { data: allMenuItems = [] } = useAllMenuItems();
   const { data: categories = [] } = useCategories();
   const { play } = useSound();
-  const { data: waitTimeData } = useWaitTime();
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -237,31 +234,21 @@ export default function CartNew() {
         }
       />
 
-      {/* Visual Cart Summary - Tray Illustration */}
+      {/* Visual Cart Summary - Compact */}
       <div className="px-4 py-4 bg-gradient-to-b from-[#212282]/5 to-transparent">
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-4 max-w-2xl mx-auto">
           {/* Visual Bag */}
-          <motion.div 
-            className="relative w-16 h-16 bg-gradient-to-br from-[#E6411C] to-[#d13a18] rounded-2xl flex items-center justify-center shadow-lg"
-            animate={{ 
-              scale: [1, 1.02, 1],
-            }}
-            transition={{ 
-              duration: 2,
-              repeat: Infinity,
-              ease: "easeInOut"
-            }}
-          >
-            <ShoppingBag className="w-8 h-8 text-white" />
+          <div className="relative w-14 h-14 bg-gradient-to-br from-[#E6411C] to-[#d13a18] rounded-2xl flex items-center justify-center shadow-lg">
+            <ShoppingBag className="w-7 h-7 text-white" />
             <motion.span 
-              className="absolute -top-2 -right-2 bg-[#212282] text-white text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md"
+              className="absolute -top-2 -right-2 bg-[#212282] text-white text-sm font-bold w-6 h-6 rounded-full flex items-center justify-center shadow-md"
               key={itemCount}
               initial={{ scale: 0.5 }}
               animate={{ scale: 1 }}
             >
               {itemCount}
             </motion.span>
-          </motion.div>
+          </div>
           
           {/* Summary Text */}
           <div className="flex-1">
@@ -270,34 +257,30 @@ export default function CartNew() {
             </h3>
             <p className="text-sm text-gray-500">Swipe left on items to remove</p>
           </div>
-          
-          {/* Total Preview */}
-          <div className="text-right">
-            <p className="text-sm text-gray-500">Total</p>
-            <p className="font-bold text-xl text-[#E6411C]">{formatPrice(subtotal)}</p>
-          </div>
         </div>
       </div>
 
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto">
-        <AnimatePresence mode="popLayout">
-          {items.map((item, index) => (
-            <motion.div
-              key={item.id}
-              layout
-              initial={{ opacity: 0, x: -20, scale: 0.95 }}
-              animate={{ opacity: 1, x: 0, scale: 1 }}
-              exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
-              transition={{ 
-                type: 'spring', 
-                stiffness: 500, 
-                damping: 30,
-                delay: index * 0.05,
-              }}
-            >
-              <SwipeableItem onDelete={() => handleRemove(item.id)}>
-                <div className="p-4 border-b bg-white">
+        <div className="max-w-2xl mx-auto">
+          <AnimatePresence mode="popLayout">
+            {items.map((item, index) => (
+              <motion.div
+                key={item.id}
+                layout
+                initial={{ opacity: 0, x: -20, scale: 0.95 }}
+                animate={{ opacity: 1, x: 0, scale: 1 }}
+                exit={{ opacity: 0, x: 100, height: 0, marginBottom: 0 }}
+                transition={{ 
+                  type: 'spring', 
+                  stiffness: 500, 
+                  damping: 30,
+                  delay: index * 0.05,
+                }}
+                className="mx-4 mb-3"
+              >
+                <SwipeableItem onDelete={() => handleRemove(item.id)}>
+                  <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex gap-4 items-start">
                     {/* Item Image */}
                     <div className="shrink-0 w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden border border-gray-200 relative">
@@ -415,49 +398,37 @@ export default function CartNew() {
             </motion.div>
           ))}
         </AnimatePresence>
+        </div>
       </div>
 
       {/* Footer */}
       <div className="border-t bg-white p-4 space-y-4">
-        {/* Wait Time Indicator */}
-        {waitTimeData && (
-          <div className="flex items-center justify-center gap-2 py-2 px-4 bg-[#212282]/5 rounded-xl">
-            <Clock className="w-4 h-4 text-[#212282]" />
-            <span className="text-sm font-medium text-[#212282]">
-              Estimated wait: <span className="font-bold">{formatWaitTime(waitTimeData.estimatedMinutes)}</span>
+        <div className="max-w-2xl mx-auto space-y-4">
+          <div className="flex items-center justify-between">
+            <span className="text-gray-600 font-medium text-lg">{t('cart.subtotal')}</span>
+            <span className="font-bold text-2xl text-[#E6411C]">
+              {formatPrice(subtotal)}
             </span>
-            {waitTimeData.ordersAhead > 0 && (
-              <span className="text-xs text-gray-500">
-                ({waitTimeData.ordersAhead} orders ahead)
-              </span>
-            )}
           </div>
-        )}
-        
-        <div className="flex items-center justify-between">
-          <span className="text-gray-600 font-medium">{t('cart.subtotal')}</span>
-          <span className="font-bold text-2xl text-[#E6411C]">
-            {formatPrice(subtotal)}
-          </span>
-        </div>
 
-        <div className="flex gap-3">
-          <Button
-            variant="outline"
-            size="touch"
-            onClick={() => navigate('/menu')}
-            className="flex-1 gap-2 border-gray-200 text-[#212282] hover:bg-gray-50"
-          >
-            <Plus className="w-5 h-5" />
-            {t('cart.addMore')}
-          </Button>
-          <Button
-            size="touch"
-            onClick={handleCheckout}
-            className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
-          >
-            {t('cart.checkout')}
-          </Button>
+          <div className="flex gap-3">
+            <Button
+              variant="outline"
+              size="touch"
+              onClick={() => navigate('/menu')}
+              className="flex-1 gap-2 border-gray-200 text-[#212282] hover:bg-gray-50"
+            >
+              <Plus className="w-5 h-5" />
+              {t('cart.addMore')}
+            </Button>
+            <Button
+              size="touch"
+              onClick={handleCheckout}
+              className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
+            >
+              {t('cart.checkout')}
+            </Button>
+          </div>
         </div>
       </div>
 

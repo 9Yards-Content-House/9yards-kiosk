@@ -28,7 +28,7 @@ export default function Payment() {
   const { data: allMenuItems = [] } = useAllMenuItems();
   const createOrder = useCreateOrder();
   const { play } = useSound();
-  const [step, setStep] = useState<"review" | "submitting" | "error">("review");
+  const [step, setStep] = useState<"review" | "submitting" | "success" | "error">("review");
 
   // Helper to find item image from menu data
   const getItemImage = useCallback((item: typeof items[0]) => {
@@ -49,10 +49,12 @@ export default function Payment() {
   }>(sessionStorage.getItem("kiosk_order_details"));
 
   useEffect(() => {
+    // Don't redirect if we're in submitting or success state
+    if (step === "submitting" || step === "success") return;
     if (!details || items.length === 0) {
       navigate("/menu", { replace: true });
     }
-  }, [details, items.length, navigate]);
+  }, [details, items.length, navigate, step]);
 
   if (!details) return null;
 
@@ -90,6 +92,7 @@ export default function Payment() {
 
     try {
       const order = await createOrder.mutateAsync(payload);
+      setStep("success"); // Prevent redirect to menu
       sessionStorage.removeItem("kiosk_order_details");
       clearCart();
       navigate("/confirmation", { 
@@ -158,7 +161,7 @@ export default function Payment() {
     <div className="kiosk-screen flex flex-col bg-[#FAFAFA]">
       <KioskHeader title="Confirm Order" showBack onBack={() => navigate("/details")} />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-lg mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
         {/* Order Summary */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
           <h3 className="font-bold text-lg text-[#212282] mb-4">Order Summary</h3>
@@ -235,7 +238,7 @@ export default function Payment() {
           <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-gray-500">{items.reduce((sum, item) => sum + item.quantity, 0)} items</span>
-              <span className="text-sm text-gray-500">Pick up at counter</span>
+              <span className="text-sm text-gray-500">Pay on delivery</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-100">
               <span className="font-bold text-lg text-[#212282]">Total</span>
@@ -266,14 +269,14 @@ export default function Payment() {
             )}
             <div className="flex justify-between">
               <span className="text-gray-500">Payment</span>
-              <span className="font-medium text-[#212282]">Pay at Counter</span>
+              <span className="font-medium text-[#212282]">Pay on Delivery</span>
             </div>
           </div>
         </div>
       </div>
 
       <div className="border-t bg-white p-4 space-y-3">
-        <div className="flex gap-3">
+        <div className="max-w-2xl mx-auto flex gap-3">
           <Button
             variant="outline"
             size="touch"

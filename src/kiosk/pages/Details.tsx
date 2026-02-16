@@ -185,7 +185,7 @@ export default function Details() {
       <KioskHeader title="Almost Done!" showBack onBack={() => navigate("/cart")} />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 py-8 max-w-lg mx-auto w-full">
+        <div className="px-6 py-8 max-w-2xl mx-auto w-full">
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 mb-8">
             <div className="flex items-center gap-2">
@@ -288,15 +288,15 @@ export default function Details() {
             )}
           </div>
 
-          {/* Payment Info - Fixed to Pay at Counter */}
+          {/* Payment Info - Pay on Delivery */}
           <div className="mb-6 p-4 bg-[#212282]/5 rounded-2xl border border-[#212282]/10">
             <div className="flex items-center gap-3">
               <div className="w-12 h-12 rounded-full bg-[#212282] text-white flex items-center justify-center">
                 <CheckCircle2 className="w-6 h-6" />
               </div>
               <div>
-                <p className="font-bold text-[#212282]">Pay at Counter</p>
-                <p className="text-sm text-gray-500">Pay when you pick up your order</p>
+                <p className="font-bold text-[#212282]">Pay on Delivery</p>
+                <p className="text-sm text-gray-500">Pay when your order is delivered</p>
               </div>
             </div>
           </div>
@@ -336,26 +336,28 @@ export default function Details() {
 
       {/* Footer */}
       <div className="border-t bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        {/* Order Summary */}
-        <div className="space-y-2 mb-4">
-          <div className="flex justify-between items-center">
-            <span className="text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
-            <span className="text-lg font-bold text-[#212282]">Total</span>
+        <div className="max-w-2xl mx-auto">
+          {/* Order Summary */}
+          <div className="space-y-2 mb-4">
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+              <span className="text-lg font-bold text-[#212282]">Total</span>
+            </div>
+            <div className="flex justify-between items-center">
+              <span className="text-sm text-gray-400">Pay on delivery</span>
+              <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
+            </div>
           </div>
-          <div className="flex justify-between items-center">
-            <span className="text-sm text-gray-400">Pick up at counter</span>
-            <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
-          </div>
+          <Button
+            size="touch"
+            className="w-full bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold h-16 text-lg rounded-2xl"
+            disabled={!isValid}
+            onClick={handleContinue}
+          >
+            Review & Place Order
+            <ArrowRight className="w-6 h-6 ml-2" />
+          </Button>
         </div>
-        <Button
-          size="touch"
-          className="w-full bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold h-16 text-lg rounded-2xl"
-          disabled={!isValid}
-          onClick={handleContinue}
-        >
-          Review & Place Order
-          <ArrowRight className="w-6 h-6 ml-2" />
-        </Button>
       </div>
     </div>
   );
