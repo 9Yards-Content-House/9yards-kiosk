@@ -236,7 +236,7 @@ export default function CartNew() {
 
       {/* Visual Cart Summary - Compact */}
       <div className="px-4 py-4 bg-gradient-to-b from-[#212282]/5 to-transparent">
-        <div className="flex items-center gap-4 max-w-2xl mx-auto">
+        <div className="flex items-center gap-4 max-w-2xl 2xl:max-w-4xl mx-auto">
           {/* Visual Bag */}
           <div className="relative w-14 h-14 bg-gradient-to-br from-[#E6411C] to-[#d13a18] rounded-2xl flex items-center justify-center shadow-lg">
             <ShoppingBag className="w-7 h-7 text-white" />
@@ -262,7 +262,7 @@ export default function CartNew() {
 
       {/* Cart items */}
       <div className="flex-1 overflow-y-auto">
-        <div className="max-w-2xl mx-auto">
+        <div className="max-w-2xl 2xl:max-w-4xl mx-auto">
           <AnimatePresence mode="popLayout">
             {items.map((item, index) => (
               <motion.div
@@ -283,7 +283,7 @@ export default function CartNew() {
                   <div className="p-4 bg-white rounded-2xl shadow-sm border border-gray-100">
                   <div className="flex gap-4 items-start">
                     {/* Item Image */}
-                    <div className="shrink-0 w-24 h-24 rounded-2xl bg-gray-100 overflow-hidden border border-gray-200 relative">
+                    <div className="shrink-0 w-24 h-24 2xl:w-32 2xl:h-32 rounded-2xl bg-gray-100 overflow-hidden border border-gray-200 relative">
                       {getItemImage(item) ? (
                         <img
                           src={getItemImage(item)!}
@@ -310,7 +310,7 @@ export default function CartNew() {
                     <div className="flex flex-1 flex-col justify-between min-h-[96px]">
                       <div>
                         <div className="flex justify-between items-start mb-1">
-                          <h3 className="text-[#212282] text-base font-bold leading-tight line-clamp-2">
+                          <h3 className="text-[#212282] text-base 2xl:text-2xl font-bold leading-tight line-clamp-2">
                             {item.label || item.sauceName}
                             {item.saucePreparation && item.saucePreparation !== 'Default' && (
                               <span className="text-muted-foreground font-normal text-sm">
@@ -349,7 +349,7 @@ export default function CartNew() {
                       {/* Price and Controls */}
                       <div className="flex items-center justify-between mt-3">
                         <div>
-                          <p className="text-[#E6411C] font-bold text-lg">
+                          <p className="text-[#E6411C] font-bold text-lg 2xl:text-2xl">
                             {formatPrice(item.unitPrice * item.quantity)}
                           </p>
                           {item.quantity > 1 && (
@@ -403,7 +403,7 @@ export default function CartNew() {
 
       {/* Footer */}
       <div className="border-t bg-white p-4 space-y-4">
-        <div className="max-w-2xl mx-auto space-y-4">
+        <div className="max-w-2xl 2xl:max-w-4xl mx-auto space-y-4">
           <div className="flex items-center justify-between">
             <span className="text-gray-600 font-medium text-lg">{t('cart.subtotal')}</span>
             <span className="font-bold text-2xl text-[#E6411C]">

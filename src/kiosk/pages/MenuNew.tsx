@@ -260,20 +260,20 @@ export default function MenuNew() {
     if (item.price) {
       if (item.categoryType === 'sauce') {
         return (
-          <span className="text-[#E6411C] font-bold text-base">
+          <span className="text-[#E6411C] font-bold text-[clamp(1rem,1.5vw,1.5rem)]">
             {formatPrice(item.price)}
           </span>
         );
       }
       if (item.categoryType === 'juice' || item.categoryType === 'dessert') {
         return (
-          <span className="text-[#E6411C] font-bold text-base">
+          <span className="text-[#E6411C] font-bold text-[clamp(1rem,1.5vw,1.5rem)]">
             {formatPrice(item.price)}
           </span>
         );
       }
       return (
-        <span className="text-[#E6411C] font-extrabold text-lg">
+        <span className="text-[#E6411C] font-extrabold text-[clamp(1.125rem,1.8vw,1.75rem)]">
           {formatPrice(item.price)}
         </span>
       );
@@ -434,7 +434,7 @@ export default function MenuNew() {
             id="menu-grid"
             role="tabpanel"
             aria-label={`${categoryConfig[activeCategory]?.label || 'All Items'} menu items`}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4"
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-4"
           >
             <AnimatePresence mode="popLayout">
               {filteredItems.map((item, index) => (
@@ -594,12 +594,12 @@ function MenuItemCard({
         </span>
 
         {/* Name */}
-        <h3 className="font-bold text-foreground text-sm md:text-base leading-tight mb-0.5 line-clamp-1">
+        <h3 className="font-bold text-foreground text-[clamp(0.875rem,1.2vw,1.25rem)] leading-tight mb-0.5 line-clamp-1">
           {item.name}
         </h3>
 
         {/* Description */}
-        <p className="text-gray-600 text-xs md:text-sm line-clamp-1 mb-2">
+        <p className="text-gray-600 text-[clamp(0.75rem,1vw,1rem)] line-clamp-1 mb-2">
           {item.description || item.category}
         </p>
 

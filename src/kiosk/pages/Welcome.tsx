@@ -107,13 +107,13 @@ export default function Welcome() {
         <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
       </div>
 
-      {/* Top bar */}
-      <div className="relative z-10 flex items-center justify-between px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)]">
+      {/* Top bar - Increased max padding for large screens */}
+      <div className="relative z-10 flex items-center justify-between px-[clamp(1rem,4vw,3rem)] py-[clamp(0.75rem,2.5vh,2rem)]">
         <div className="text-white/70 leading-tight drop-shadow-md">
-          <div className="text-[clamp(0.75rem,1.6vmin,1rem)] font-medium">{day}</div>
-          <div className="text-[clamp(1.125rem,2.4vmin,1.5rem)] font-semibold text-white/90">{time}</div>
+          <div className="text-[clamp(0.75rem,1.6vmin,1.25rem)] font-medium">{day}</div>
+          <div className="text-[clamp(1.125rem,2.4vmin,2rem)] font-semibold text-white/90">{time}</div>
         </div>
-        <div className="flex items-center gap-[clamp(0.125rem,0.5vw,0.375rem)]">
+        <div className="flex items-center gap-[clamp(0.125rem,0.5vw,0.75rem)]">
           <button
             onClick={() => setShowAccessibility(true)}
             aria-label="Accessibility settings"
@@ -152,9 +152,9 @@ export default function Welcome() {
           initial={{ scale: 0.8, opacity: 0 }}
           animate={{ scale: 1, opacity: 1 }}
           transition={{ delay: 0.2, type: 'spring', stiffness: 200 }}
-          className="mb-[clamp(0.75rem,2.5vh,1.5rem)]"
+          className="mb-[clamp(0.75rem,2.5vh,2rem)]"
         >
-          <div className="w-[clamp(6rem,18vmin,11rem)] h-[clamp(6rem,18vmin,11rem)] rounded-full bg-white flex items-center justify-center shadow-elevated p-[clamp(0.5rem,1.5vmin,1rem)]">
+          <div className="w-[clamp(6rem,18vmin,16rem)] h-[clamp(6rem,18vmin,16rem)] rounded-full bg-white flex items-center justify-center shadow-elevated p-[clamp(0.5rem,1.5vmin,1.5rem)]">
             <img
               src="/images/logo/9Yards-Food-White-Logo-colored.png"
               alt="9Yards Food"
@@ -168,27 +168,27 @@ export default function Welcome() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-[clamp(2rem,6vmin,3.75rem)] font-extrabold text-white text-center mb-[clamp(0.25rem,1vh,0.75rem)] tracking-tight drop-shadow-lg"
+          className="text-[clamp(2.5rem,7vmin,5.5rem)] font-extrabold text-white text-center mb-[clamp(0.25rem,1vh,1rem)] tracking-tight drop-shadow-lg"
         >
           {getGreeting()}
         </motion.h1>
 
-        {/* Tagline */}
+        {/* Tagline - Scaled */}
         <motion.p
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/90 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[clamp(16rem,55vmin,28rem)] drop-shadow-md"
+          className="text-[clamp(1rem,3vmin,2rem)] text-white/90 text-center mb-[clamp(1.5rem,5vh,4rem)] max-w-[clamp(16rem,60vmin,40rem)] drop-shadow-md"
         >
           {t('welcome.subtitle')}
         </motion.p>
 
-        {/* Buttons */}
+        {/* Buttons - Scaled */}
         <motion.div
           initial={{ y: 30, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.7 }}
-          className="flex flex-col items-center gap-[clamp(0.75rem,2vh,1.25rem)] w-full max-w-[clamp(18rem,50vmin,28rem)]"
+          className="flex flex-col items-center gap-[clamp(0.75rem,2vh,1.5rem)] w-full max-w-[clamp(18rem,60vmin,32rem)]"
         >
           {/* Primary CTA */}
           <Button
@@ -196,8 +196,8 @@ export default function Welcome() {
             onClick={handleStartOrder}
             className={cn(
               'w-full bg-secondary hover:bg-secondary/90 active:bg-secondary/80 text-white',
-              'text-[clamp(1.25rem,3.5vmin,1.875rem)] font-bold',
-              'py-[clamp(1rem,3.5vh,1.75rem)] rounded-2xl',
+              'text-[clamp(1.25rem,4vmin,2.25rem)] font-bold',
+              'py-[clamp(1rem,3.5vh,2.25rem)] rounded-2xl',
               'shadow-cta transition-all duration-150 active:scale-[0.98]',
               'animate-pulse-slow' // Custom pulse animation
             )}
@@ -213,8 +213,8 @@ export default function Welcome() {
             className={cn(
               'w-full backdrop-blur-md bg-white/10 hover:bg-white/20 active:bg-white/25',
               'text-white/90 hover:text-white border border-white/25 hover:border-white/50',
-              'text-[clamp(0.875rem,2.5vmin,1.175rem)] font-medium',
-              'py-[clamp(0.75rem,2.5vh,1.25rem)] rounded-xl',
+              'text-[clamp(0.875rem,2.5vmin,1.5rem)] font-medium',
+              'py-[clamp(0.75rem,2.5vh,1.5rem)] rounded-xl',
               'transition-all duration-150 active:scale-[0.98]'
             )}
           >
@@ -232,7 +232,7 @@ export default function Welcome() {
             onClick={handleViewQueue}
             className={cn(
               'text-white/40 hover:text-white/80 hover:bg-white/5',
-              'text-sm font-medium rounded-full px-4 py-2',
+              'text-[clamp(0.875rem,2vmin,1.125rem)] font-medium rounded-full px-4 py-2',
               'transition-all duration-200'
             )}
           >
