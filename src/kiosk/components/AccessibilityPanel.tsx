@@ -1,17 +1,18 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { useEffect } from "react";
-import { 
-  Accessibility, 
-  Sun, 
-  Type, 
-  Zap, 
-  Hand, 
-  RotateCcw, 
+import {
+  Accessibility,
+  Sun,
+  Type,
+  Zap,
+  Hand,
+  RotateCcw,
   X,
   Check,
   Volume2,
 } from "lucide-react";
 import { useAccessibility } from "../context/AccessibilityContext";
+import { useSound } from "../hooks/useSound";
 
 interface AccessibilityPanelProps {
   isOpen: boolean;
@@ -19,15 +20,17 @@ interface AccessibilityPanelProps {
 }
 
 export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPanelProps) {
-  const { 
-    settings, 
-    toggleHighContrast, 
-    toggleLargeText, 
+  const {
+    settings,
+    toggleHighContrast,
+    toggleLargeText,
     toggleReducedMotion,
     toggleSound,
     updateSetting,
-    resetToDefaults 
+    resetToDefaults
   } = useAccessibility();
+
+  const { play } = useSound();
 
   const hasChanges = settings.highContrast || settings.largeText || settings.reducedMotion || settings.touchTargetSize !== "normal" || !settings.soundEnabled;
 
@@ -41,6 +44,16 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [isOpen, onClose]);
 
+  const handleClose = () => {
+    play('tap');
+    onClose();
+  };
+
+  const handleToggle = (action: () => void) => {
+    play('select');
+    action();
+  };
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -49,7 +62,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-sm p-[clamp(1rem,4vmin,2rem)]"
-          onClick={onClose}
+          onClick={handleClose}
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
@@ -59,11 +72,11 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
             role="dialog"
             aria-modal="true"
             aria-label="Accessibility settings"
-            className="bg-white rounded-[clamp(1.25rem,3vmin,2rem)] shadow-2xl w-full max-w-[clamp(20rem,60vmin,30rem)] overflow-hidden"
+            className="bg-white rounded-[clamp(1.25rem,3vmin,2rem)] shadow-2xl w-full max-w-[clamp(20rem,60vmin,30rem)] max-h-[85vh] overflow-y-auto flex flex-col"
             onClick={(e) => e.stopPropagation()}
           >
             {/* Header */}
-            <div className="bg-primary p-[clamp(1.25rem,3.5vmin,1.75rem)] text-white">
+            <div className="bg-primary p-[clamp(1.25rem,3.5vmin,1.75rem)] text-white shrink-0 sticky top-0 z-10">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-[clamp(0.5rem,1.5vmin,0.75rem)]">
                   <div className="w-[clamp(2.5rem,5.5vmin,3.25rem)] h-[clamp(2.5rem,5.5vmin,3.25rem)] bg-white/15 rounded-full flex items-center justify-center">
@@ -75,7 +88,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                   </div>
                 </div>
                 <button
-                  onClick={onClose}
+                  onClick={handleClose}
                   aria-label="Close accessibility settings"
                   className="w-[clamp(2.75rem,6vmin,3.5rem)] h-[clamp(2.75rem,6vmin,3.5rem)] rounded-full bg-white/15 flex items-center justify-center hover:bg-white/25 active:bg-white/30 active:scale-95 transition-all"
                 >
@@ -85,41 +98,45 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
             </div>
 
             {/* Options */}
-            <div className="p-[clamp(0.75rem,2.5vmin,1.5rem)] space-y-[clamp(0.5rem,1.5vmin,0.75rem)]">
+            <div className="p-[clamp(0.75rem,2.5vmin,1.5rem)] space-y-[clamp(0.5rem,1.5vmin,0.75rem)] flex-1 overflow-y-auto">
               {/* High Contrast */}
               <ToggleOption
+                id="high-contrast-toggle"
                 icon={<Sun />}
                 title="High Contrast"
                 description="Bolder colours, easier to see"
                 enabled={settings.highContrast}
-                onToggle={toggleHighContrast}
+                onToggle={() => handleToggle(toggleHighContrast)}
               />
 
               {/* Large Text */}
               <ToggleOption
+                id="large-text-toggle"
                 icon={<Type />}
                 title="Larger Text"
                 description="Bigger text across all screens"
                 enabled={settings.largeText}
-                onToggle={toggleLargeText}
+                onToggle={() => handleToggle(toggleLargeText)}
               />
 
               {/* Reduced Motion */}
               <ToggleOption
+                id="reduced-motion-toggle"
                 icon={<Zap />}
                 title="Reduce Motion"
                 description="Less movement on screen"
                 enabled={settings.reducedMotion}
-                onToggle={toggleReducedMotion}
+                onToggle={() => handleToggle(toggleReducedMotion)}
               />
 
               {/* Sound Effects */}
               <ToggleOption
+                id="sound-effects-toggle"
                 icon={<Volume2 />}
                 title="Sound Effects"
                 description="Play sounds on interactions"
                 enabled={settings.soundEnabled}
-                onToggle={toggleSound}
+                onToggle={() => handleToggle(toggleSound)}
               />
 
               {/* Touch Target Size */}
@@ -137,7 +154,10 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                   {(["normal", "large", "extra-large"] as const).map((size) => (
                     <button
                       key={size}
-                      onClick={() => updateSetting("touchTargetSize", size)}
+                      onClick={() => {
+                        play('select');
+                        updateSetting("touchTargetSize", size);
+                      }}
                       className={`flex-1 py-[clamp(0.625rem,2vmin,0.875rem)] px-[clamp(0.5rem,1.2vmin,0.75rem)] rounded-xl font-medium transition-all text-[clamp(0.75rem,1.6vmin,0.9375rem)] capitalize active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         settings.touchTargetSize === size
                           ? "bg-primary text-white"
@@ -152,9 +172,12 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
             </div>
 
             {/* Footer */}
-            <div className="px-[clamp(0.75rem,2.5vmin,1.5rem)] pb-[clamp(0.75rem,2.5vmin,1.5rem)] flex gap-[clamp(0.5rem,1.2vmin,0.75rem)]">
+            <div className="px-[clamp(0.75rem,2.5vmin,1.5rem)] pb-[clamp(0.75rem,2.5vmin,1.5rem)] pt-[clamp(0.5rem,1.2vmin,0.75rem)] flex gap-[clamp(0.5rem,1.2vmin,0.75rem)] shrink-0 bg-white border-t border-gray-100">
               <button
-                onClick={() => { resetToDefaults(); }}
+                onClick={() => {
+                  play('tap');
+                  resetToDefaults();
+                }}
                 disabled={!hasChanges}
                 className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-xl border-2 border-gray-200 text-gray-500 font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none text-[clamp(0.8rem,1.7vmin,1rem)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
@@ -162,7 +185,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                 Reset
               </button>
               <button
-                onClick={onClose}
+                onClick={handleClose}
                 className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-xl bg-primary text-white font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] transition-all text-[clamp(0.8rem,1.7vmin,1rem)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 <Check className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
@@ -177,6 +200,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
 }
 
 interface ToggleOptionProps {
+  id?: string;
   icon: React.ReactNode;
   title: string;
   description: string;
@@ -184,16 +208,17 @@ interface ToggleOptionProps {
   onToggle: () => void;
 }
 
-function ToggleOption({ icon, title, description, enabled, onToggle }: ToggleOptionProps) {
+function ToggleOption({ id, icon, title, description, enabled, onToggle }: ToggleOptionProps) {
   return (
     <button
+      id={id}
       onClick={onToggle}
       role="switch"
       aria-checked={enabled}
       aria-label={title}
       className={`w-full p-[clamp(0.75rem,2.5vmin,1.125rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] flex items-center gap-[clamp(0.5rem,1.5vmin,0.875rem)] transition-all active:scale-[0.98] ${
-        enabled 
-          ? "bg-primary/5 border-2 border-primary/20" 
+        enabled
+          ? "bg-primary/5 border-2 border-primary/20"
           : "bg-gray-50 border-2 border-transparent hover:border-gray-200 active:bg-gray-100"
       }`}
     >
