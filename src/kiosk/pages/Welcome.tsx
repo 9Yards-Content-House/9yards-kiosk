@@ -106,12 +106,12 @@ export default function Welcome() {
           />
         </AnimatePresence>
         {/* Dark overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-slate-900 via-slate-900/60 to-slate-900/30 backdrop-blur-[2px]" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
       </div>
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)]">
-        <div className="text-white/70 leading-tight">
+        <div className="text-white/70 leading-tight drop-shadow-md">
           <div className="text-[clamp(0.75rem,1.6vmin,1rem)] font-medium">{day}</div>
           <div className="text-[clamp(1.125rem,2.4vmin,1.5rem)] font-semibold text-white/90">{time}</div>
         </div>
@@ -176,7 +176,7 @@ export default function Welcome() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.4 }}
-          className="text-[clamp(2rem,6vmin,3.75rem)] font-extrabold text-white text-center mb-[clamp(0.25rem,1vh,0.75rem)] tracking-tight"
+          className="text-[clamp(2rem,6vmin,3.75rem)] font-extrabold text-white text-center mb-[clamp(0.25rem,1vh,0.75rem)] tracking-tight drop-shadow-lg"
         >
           {getGreeting()}
         </motion.h1>
@@ -186,7 +186,7 @@ export default function Welcome() {
           initial={{ y: 20, opacity: 0 }}
           animate={{ y: 0, opacity: 1 }}
           transition={{ delay: 0.5 }}
-          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/70 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[clamp(16rem,55vmin,28rem)]"
+          className="text-[clamp(0.875rem,2.5vmin,1.25rem)] text-white/90 text-center mb-[clamp(1.5rem,5vh,3rem)] max-w-[clamp(16rem,55vmin,28rem)] drop-shadow-md"
         >
           {t('welcome.subtitle')}
         </motion.p>
@@ -222,8 +222,8 @@ export default function Welcome() {
               handleTrackOrder();
             }}
             className={cn(
-              'w-full bg-white/5 hover:bg-white/10 active:bg-white/15',
-              'text-white/70 hover:text-white/90 border-white/15',
+              'w-full backdrop-blur-md bg-white/10 hover:bg-white/20 active:bg-white/25',
+              'text-white/90 hover:text-white border border-white/25 hover:border-white/50',
               'text-[clamp(0.875rem,2.5vmin,1.175rem)] font-medium',
               'py-[clamp(0.75rem,2.5vh,1.25rem)] rounded-xl',
               'transition-all duration-150 active:scale-[0.98]'
