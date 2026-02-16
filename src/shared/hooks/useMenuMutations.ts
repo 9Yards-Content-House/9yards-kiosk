@@ -222,3 +222,145 @@ export function useMenuItem(id: string | null) {
     },
   };
 }
+
+// ============================================
+// Category CRUD Operations
+// ============================================
+
+interface CreateCategoryPayload {
+  name: string;
+  slug: string;
+  sort_order: number;
+}
+
+interface UpdateCategoryPayload {
+  name?: string;
+  slug?: string;
+  sort_order?: number;
+}
+
+// Mock categories storage
+let mockCategories: Array<{ id: string; name: string; slug: string; sort_order: number; created_at: string }> = [];
+
+/** Create a new category */
+export function useCreateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (payload: CreateCategoryPayload) => {
+      if (USE_MOCK_DATA) {
+        const newCategory = {
+          id: `cat-${Date.now()}`,
+          ...payload,
+          created_at: new Date().toISOString(),
+        };
+        mockCategories.push(newCategory);
+        console.log("📦 Mock: Created category:", newCategory.name);
+        return newCategory;
+      }
+
+      const { data, error } = await supabase
+        .from("categories")
+        .insert(payload)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
+    },
+  });
+}
+
+/** Update an existing category */
+export function useUpdateCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, ...updates }: { id: string } & UpdateCategoryPayload) => {
+      if (USE_MOCK_DATA) {
+        const category = mockCategories.find(c => c.id === id);
+        if (category) {
+          Object.assign(category, updates);
+        }
+        console.log("📦 Mock: Updated category:", id);
+        return category;
+      }
+
+      const { data, error } = await supabase
+        .from("categories")
+        .update(updates)
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
+    },
+  });
+}
+
+/** Delete a category */
+export function useDeleteCategory() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (id: string) => {
+      if (USE_MOCK_DATA) {
+        mockCategories = mockCategories.filter(c => c.id !== id);
+        console.log(`📦 Mock: Deleted category ${id}`);
+        return;
+      }
+
+      const { error } = await supabase
+        .from("categories")
+        .delete()
+        .eq("id", id);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
+    },
+  });
+}
+
+/** Reorder categories */
+export function useReorderCategories() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (orderedIds: string[]) => {
+      if (USE_MOCK_DATA) {
+        orderedIds.forEach((id, index) => {
+          const category = mockCategories.find(c => c.id === id);
+          if (category) category.sort_order = index + 1;
+        });
+        console.log("📦 Mock: Reordered categories");
+        return;
+      }
+
+      // Update each category's sort_order
+      const updates = orderedIds.map((id, index) =>
+        supabase
+          .from("categories")
+          .update({ sort_order: index + 1 })
+          .eq("id", id)
+      );
+
+      await Promise.all(updates);
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+      queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
+    },
+  });
+}

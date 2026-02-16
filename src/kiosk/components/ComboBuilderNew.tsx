@@ -129,6 +129,21 @@ export default function ComboBuilder({
   const sideDishes = getComboComponentsByCategory('side-dishes');
   const extrasItems = useMemo(() => getItemsByType('standalone'), [allItems]);
 
+  // Split extras into juices and desserts for UI sections
+  const juices = useMemo(() => {
+    return extrasItems.filter(item => {
+      const group = groupedMenu.find(g => g.items.some(i => i.id === item.id));
+      return group?.category.slug === 'juices';
+    });
+  }, [extrasItems, groupedMenu]);
+
+  const desserts = useMemo(() => {
+    return extrasItems.filter(item => {
+      const group = groupedMenu.find(g => g.items.some(i => i.id === item.id));
+      return group?.category.slug === 'desserts';
+    });
+  }, [extrasItems, groupedMenu]);
+
   // Reset builder
   const resetBuilder = useCallback(() => {
     setStep(1);

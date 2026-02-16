@@ -12,6 +12,7 @@ import {
   PanelLeftClose,
   PanelLeft,
   Building2,
+  FolderOpen,
 } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "../context/AuthContext";
@@ -27,6 +28,7 @@ const ALL_NAV_LINKS = [
   { to: "/kitchen", label: "Kitchen Display", icon: ChefHat, roles: ["admin", "kitchen"] },
   { to: "/reception", label: "Reception", icon: Building2, roles: ["admin", "reception"] },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed, roles: ["admin", "kitchen"] },
+  { to: "/categories", label: "Categories", icon: FolderOpen, roles: ["admin"] },
   { to: "/staff", label: "Staff", icon: Users, roles: ["admin"] },
   { to: "/analytics", label: "Analytics", icon: BarChart3, roles: ["admin"] },
   { to: "/deliveries", label: "Deliveries", icon: Truck, roles: ["admin", "rider"] },

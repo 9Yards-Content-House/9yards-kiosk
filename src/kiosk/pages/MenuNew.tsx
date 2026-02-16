@@ -34,7 +34,14 @@ const categoryConfig: Record<Category, { label: string }> = {
   side: { label: 'Sides' },
 };
 
-// Map category slugs to Category type
+// Map item_type to display category for combo handling
+const itemTypeToCategory: Record<string, Category> = {
+  combo_component: 'main', // Will be further split by category slug
+  combo_driver: 'sauce',
+  standalone: 'lusaniya', // Will be further split by category slug
+};
+
+// Map category slugs to Category type (for standalone items that need sub-categorization)
 const slugToCategoryType: Record<string, Category> = {
   lusaniya: 'lusaniya',
   'main-dishes': 'main',
@@ -89,7 +96,13 @@ export default function MenuNew() {
   const processedItems = useMemo(() => {
     return allItems.map((item) => {
       const category = categories.find((c) => c.id === item.category_id);
+      // Use item_type for combo/standalone determination, category slug for display grouping
       const categoryType = category ? slugToCategoryType[category.slug] || 'main' : 'main';
+
+      // Determine combo vs standalone using item_type field
+      const isComboComponent = item.item_type === 'combo_component';
+      const isComboDriver = item.item_type === 'combo_driver';
+      const isStandalone = item.item_type === 'standalone' || !item.item_type;
 
       return {
         id: item.id,
@@ -99,9 +112,9 @@ export default function MenuNew() {
         category: category?.name || '',
         categoryType,
         available: item.available,
-        isComboComponent: categoryType === 'main' || categoryType === 'side',
+        isComboComponent: isComboComponent || isComboDriver, // Both can start combos
         description: item.description,
-        isIndividual: categoryType === 'lusaniya' || categoryType === 'juice' || categoryType === 'dessert',
+        isIndividual: isStandalone,
         isPopular: item.is_popular,
         isNew: item.is_new,
         originalItem: item,

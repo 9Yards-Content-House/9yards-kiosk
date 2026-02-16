@@ -14,6 +14,7 @@ const Orders = lazy(() => import("./pages/Orders"));
 const OrderDetail = lazy(() => import("./pages/OrderDetail"));
 const MenuManagement = lazy(() => import("./pages/MenuManagement"));
 const MenuItemEdit = lazy(() => import("./pages/MenuItemEdit"));
+const CategoryManagement = lazy(() => import("./pages/CategoryManagement"));
 const Staff = lazy(() => import("./pages/Staff"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
@@ -153,6 +154,16 @@ export default function App() {
             element={
               <RoleRoute permission="menu:update">
                 <MenuItemEdit />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Category Management - admin only */}
+          <Route
+            path="/categories"
+            element={
+              <RoleRoute permission="menu:update">
+                <CategoryManagement />
               </RoleRoute>
             }
           />

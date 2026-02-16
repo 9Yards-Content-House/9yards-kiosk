@@ -25,14 +25,9 @@ export default function MenuItemCardNew({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
 
-  const isComboItem =
-    categorySlug === 'sauces' ||
-    categorySlug === 'main-dishes' ||
-    categorySlug === 'side-dishes';
-  const isIndividualItem =
-    categorySlug === 'lusaniya' ||
-    categorySlug === 'juices' ||
-    categorySlug === 'desserts';
+  // Use item_type for combo/standalone determination (preferred over slugs)
+  const isComboItem = item.item_type === 'combo_driver' || item.item_type === 'combo_component';
+  const isIndividualItem = item.item_type === 'standalone' || !item.item_type;
   const isFree = item.price === 0;
   const displayPrice = item.sizes?.[0]?.price || item.price;
 
