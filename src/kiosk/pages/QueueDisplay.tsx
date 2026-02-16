@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, RefreshCw, Maximize2, Minimize2, Volume2, VolumeX, User, Package, Clock } from "lucide-react";
+import { ArrowLeft, RefreshCw, Maximize2, Minimize2, Volume2, VolumeX, User, Package, Clock, Check } from "lucide-react";
 import { useAllOrders, useOrdersRealtime } from "@shared/hooks/useOrders";
 import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@shared/types/orders";
 import { useTranslation } from "@shared/context/LanguageContext";
@@ -254,96 +254,99 @@ export default function QueueDisplay() {
         </div>
       </div>
 
-      {/* Queue Display */}
-      <div className="flex-1 p-3 md:p-6 overflow-y-auto lg:overflow-hidden min-h-0">
+      {/* Queue Display - Kanban Board Layout */}
+      <div className="flex-1 p-3 md:p-6 overflow-hidden min-h-0">
         <div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 h-full"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full"
         >
           {QUEUE_STATUSES.map((status) => {
             const orders = (status === 'arrived' ? arrivedOrders : ordersByStatus[status]);
 
             return (
-              <div key={status} className="flex flex-col min-h-[300px] lg:min-h-0">
-                {/* Status Header */}
+              <div key={status} className="flex flex-col h-full rounded-2xl bg-slate-50/80 overflow-hidden border border-slate-100">
+                {/* Lane Header */}
                 <div
-                  className={cn(
-                    "flex flex-col items-center justify-center py-5 rounded-t-2xl bg-white border-b border-gray-100 shadow-sm"
-                  )}
+                  className="flex items-center justify-between px-4 py-3 bg-transparent"
                 >
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className={cn("w-2 h-2 rounded-full", STATUS_COLORS[status])} />
-                    <h2 className="text-xl font-black text-gray-900 tracking-tighter">
-                      {QUEUE_STATUS_LABELS[status]}
-                    </h2>
-                  </div>
-                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
-                    {orders.length} {orders.length === 1 ? 'ORDER' : 'ORDERS'}
-                  </p>
+                  <h2 className="text-sm font-bold text-gray-700">
+                    {QUEUE_STATUS_LABELS[status]}
+                  </h2>
+                  <span className="text-xs font-medium text-gray-400">
+                    {orders.length}
+                  </span>
                 </div>
 
-                {/* Orders List */}
-                <div className={cn(
-                  "flex-1 rounded-b-2xl p-6 overflow-y-auto min-h-0 border border-gray-100 border-t-0 bg-white/50 backdrop-blur-sm shadow-sm"
-                )}>
+                {/* Orders Lane */}
+                <div className="flex-1 px-3 pb-3 overflow-y-auto min-h-0 space-y-3">
                   <AnimatePresence mode="popLayout">
                     {orders.length === 0 ? (
                       <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center h-full text-center py-10"
+                        className="flex flex-col items-center justify-center py-10 opacity-30 min-h-[100px]"
                       >
-                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4 transition-colors group-hover:bg-gray-100">
-                          <RefreshCw className="w-6 h-6 text-gray-200" />
-                        </div>
-                        <p className="text-xs font-bold text-gray-300 uppercase tracking-widest">{t('queue.noOrders')}</p>
+                         <p className="text-xs font-semibold text-gray-400 tracking-wide">Empty</p>
                       </motion.div>
                     ) : (
-                      <div className="flex flex-col gap-6">
-                        {orders.map((order) => (
-                          <motion.div
-                            key={order.id}
-                            layoutId={`order-${order.id}`}
-                            layout="position"
-                            initial={{ opacity: 0, scale: 0.95 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                             className={cn(
-                              "bg-white rounded-2xl border p-5 shadow-sm relative overflow-hidden flex flex-col gap-3",
-                              status === 'new' && "border-yards-orange/50 shadow-yards-orange/5 ring-1 ring-yards-orange/10",
-                              status === 'arrived' && "border-emerald-200 shadow-emerald-50 bg-emerald-50/5"
-                            )}
-                          >
-                            <div className="flex items-center justify-between">
-                              <span className={cn(
-                                "text-3xl font-black tracking-tighter tabular-nums",
-                                status === 'arrived' ? "text-emerald-600" : "text-gray-900"
-                              )}>
-                                {order.order_number}
-                              </span>
-                              
-                              <div className="flex items-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
-                                <Clock className="w-3.5 h-3.5" />
-                                {getTimeSince(order.created_at)}
-                              </div>
-                            </div>
-
-                            <div className="flex items-center justify-between">
-                              <div className="flex items-center gap-2.5 text-gray-600">
-                                <User className="w-4 h-4 text-gray-400" />
-                                <span className="text-lg font-black uppercase tracking-tight">
-                                  {getFirstName(order.customer_name)}
-                                </span>
-                              </div>
-
-                              {(order.is_priority || order.special_instructions?.toLowerCase().includes('priority')) && (
-                                <div className="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase shadow-sm flex items-center gap-1.5">
-                                  Priority
+                      <div className="flex flex-col gap-3">
+                        {orders.map((order) => {
+                          const isPriority = order.is_priority || order.special_instructions?.toLowerCase().includes('priority');
+                          
+                          return (
+                            <motion.div
+                              key={order.id}
+                              layoutId={`order-${order.id}`}
+                              layout="position"
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              exit={{ opacity: 0, scale: 0.95 }}
+                               className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 relative group"
+                            >
+                              {/* Top Row: Tags / Priority */}
+                              <div className="flex items-center justify-between mb-2">
+                                {isPriority ? (
+                                  <div className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded md:rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">
+                                    High priority
+                                  </div>
+                                ) : (
+                                   // Spacer if no priority to keep alignment or just empty
+                                   <div />
+                                )}
+                                
+                                {/* Meatball menu placeholder from template (visual only) */}
+                                <div className="text-gray-300">
+                                  <div className="w-1 h-1 bg-current rounded-full mb-0.5" />
+                                  <div className="w-1 h-1 bg-current rounded-full" />
                                 </div>
-                              )}
-                            </div>
+                              </div>
 
-                          </motion.div>
-                        ))}
+                              {/* Middle Row: Content */}
+                              <div className="mb-4">
+                                <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                                  Order #{order.order_order_number || order.order_number}
+                                </h3>
+                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                  {order.customer_name}
+                                </p>
+                              </div>
+
+                              {/* Bottom Row: Meta */}
+                              <div className="flex items-center gap-3 pt-3 border-t border-gray-50 text-xs text-gray-400 font-medium">
+                                <div className="flex items-center gap-1.5">
+                                  <Clock className="w-3.5 h-3.5" />
+                                  <span>{getTimeSince(order.created_at)}</span>
+                                </div>
+                                
+                                {status === 'arrived' && (
+                                   <div className="flex items-center gap-1.5 text-emerald-600 ml-auto">
+                                     <Check className="w-3.5 h-3.5" />
+                                     <span>Ready</span>
+                                   </div>
+                                )}
+                              </div>
+                            </motion.div>
+                          );
+                        })}
                       </div>
                     )}
                   </AnimatePresence>
