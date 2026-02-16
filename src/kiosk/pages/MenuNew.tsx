@@ -103,7 +103,7 @@ export default function MenuNew() {
         category: category?.name || '',
         categoryType,
         available: item.available,
-        isFree: categoryType === 'main' || categoryType === 'side',
+        isComboComponent: categoryType === 'main' || categoryType === 'side',
         description: item.description,
         isIndividual: categoryType === 'lusaniya' || categoryType === 'juice' || categoryType === 'dessert',
         isPopular: item.is_popular,
@@ -249,10 +249,11 @@ export default function MenuNew() {
 
   // Get price display for an item
   const getPriceDisplay = useCallback((item: typeof processedItems[0]) => {
-    if (item.isFree) {
+    // Main dishes and sides are part of combo - show "Included" text
+    if (item.isComboComponent) {
       return (
-        <span className="inline-flex items-center gap-1 text-green-600 font-semibold text-sm">
-          FREE
+        <span className="text-muted-foreground font-medium text-sm">
+          Included
         </span>
       );
     }
@@ -486,7 +487,7 @@ interface ProcessedItem {
   category: string;
   categoryType: Category;
   available: boolean;
-  isFree?: boolean;
+  isComboComponent?: boolean;
   description?: string;
   isIndividual?: boolean;
   isPopular?: boolean;
@@ -588,11 +589,6 @@ function MenuItemCard({
               New
             </span>
           )}
-          {item.isFree && item.available && !item.isPopular && !item.isNew && (
-            <span className="bg-green-500 text-white text-[10px] font-bold px-2 py-1 rounded-full">
-              FREE
-            </span>
-          )}
         </div>
 
         {/* Favorite Button - Top Right */}
@@ -613,44 +609,6 @@ function MenuItemCard({
             aria-hidden="true"
           />
         </button>
-
-        {/* Tap indicator on hover - non-Individual items */}
-        {item.available && !isIndividual && (
-          <div
-            className="absolute inset-0 bg-[#E6411C]/0 group-hover:bg-[#E6411C]/10 transition-colors flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <span className="opacity-0 group-hover:opacity-100 transition-opacity bg-[#E6411C] text-white text-xs font-semibold px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5">
-              <Plus className="w-3.5 h-3.5" />
-              Start Combo
-            </span>
-          </div>
-        )}
-
-        {/* Tap indicator on hover - Individual items */}
-        {item.available && isIndividual && (
-          <div
-            className="absolute inset-0 bg-[#E6411C]/0 group-hover:bg-[#E6411C]/10 transition-colors flex items-center justify-center"
-            aria-hidden="true"
-          >
-            <span className={cn(
-              "opacity-0 group-hover:opacity-100 transition-opacity text-xs font-semibold px-3 py-1.5 rounded-full hidden md:flex items-center gap-1.5",
-              cartQuantity > 0 ? "bg-green-500 text-white" : "bg-[#E6411C] text-white"
-            )}>
-              {cartQuantity > 0 ? (
-                <>
-                  <ShoppingCart className="w-3.5 h-3.5" />
-                  In Order
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  Add to Order
-                </>
-              )}
-            </span>
-          </div>
-        )}
       </div>
 
       {/* Content */}
@@ -715,11 +673,18 @@ function MenuItemCard({
             )
           )}
 
-          {/* Visual indicator for tappable - non-Individual items */}
+          {/* Start Combo button for non-Individual items */}
           {item.available && !isIndividual && (
-            <span className="text-[#E6411C] font-semibold text-[10px] md:text-xs flex items-center gap-1 md:hidden">
-              Build Combo
-            </span>
+            <button
+              onClick={(e) => {
+                e.stopPropagation();
+                onAddToOrder();
+              }}
+              className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#d13a18] text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2 flex items-center gap-1"
+            >
+              <Plus className="w-3 h-3" />
+              Start Combo
+            </button>
           )}
         </div>
       </div>

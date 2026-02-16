@@ -229,7 +229,7 @@ export default function CartNew() {
         rightElement={
           <button 
             onClick={() => setShowClearDialog(true)}
-            className="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1 px-3 py-1.5 rounded-lg hover:bg-red-50 border border-transparent hover:border-red-100"
+            className="text-sm text-gray-500 hover:text-red-500 transition-colors flex items-center gap-1.5 px-4 py-2 rounded-full hover:bg-red-50 border border-gray-200 hover:border-red-200 min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-red-500 focus-visible:ring-offset-2"
           >
             <Trash2 className="w-4 h-4" />
             <span>Clear All</span>

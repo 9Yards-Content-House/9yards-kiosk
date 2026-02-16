@@ -306,7 +306,7 @@ export default function Details() {
             <button
               type="button"
               onClick={() => setShowSpecialInstructions(!showSpecialInstructions)}
-              className="flex items-center justify-between w-full p-4 rounded-2xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+              className="flex items-center justify-between w-full p-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
             >
               <span className="flex items-center gap-2 text-base font-bold text-[#212282]">
                 <MessageSquare className="w-5 h-5" />

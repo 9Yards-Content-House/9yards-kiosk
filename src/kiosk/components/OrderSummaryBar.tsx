@@ -82,7 +82,7 @@ export default function OrderSummaryBar() {
         {/* Edit Order Button */}
         <button
           onClick={() => navigate('/cart')}
-          className="flex items-center gap-2 px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 transition-colors text-[#212282] font-medium text-sm"
+          className="flex items-center gap-2 px-4 py-2.5 rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-[#212282] font-medium text-sm min-h-[40px] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
         >
           <Pencil className="w-4 h-4" />
           Edit Order

@@ -138,7 +138,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                     <button
                       key={size}
                       onClick={() => updateSetting("touchTargetSize", size)}
-                      className={`flex-1 py-[clamp(0.625rem,2vmin,0.875rem)] px-[clamp(0.5rem,1.2vmin,0.75rem)] rounded-[clamp(0.5rem,1.2vmin,0.75rem)] font-medium transition-all text-[clamp(0.75rem,1.6vmin,0.9375rem)] capitalize active:scale-[0.97] ${
+                      className={`flex-1 py-[clamp(0.625rem,2vmin,0.875rem)] px-[clamp(0.5rem,1.2vmin,0.75rem)] rounded-xl font-medium transition-all text-[clamp(0.75rem,1.6vmin,0.9375rem)] capitalize active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ${
                         settings.touchTargetSize === size
                           ? "bg-primary text-white"
                           : "bg-white border border-gray-200 text-gray-600 hover:border-gray-300 active:bg-gray-100"
@@ -156,14 +156,14 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
               <button
                 onClick={() => { resetToDefaults(); }}
                 disabled={!hasChanges}
-                className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] border-2 border-gray-200 text-gray-500 font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none text-[clamp(0.8rem,1.7vmin,1rem)]"
+                className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-xl border-2 border-gray-200 text-gray-500 font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:border-gray-300 hover:bg-gray-50 active:bg-gray-100 active:scale-[0.98] transition-all disabled:opacity-40 disabled:pointer-events-none text-[clamp(0.8rem,1.7vmin,1rem)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 <RotateCcw className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
                 Reset
               </button>
               <button
                 onClick={onClose}
-                className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-[clamp(0.75rem,2vmin,1.25rem)] bg-primary text-white font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] transition-all text-[clamp(0.8rem,1.7vmin,1rem)]"
+                className="flex-1 py-[clamp(0.875rem,2.5vmin,1.125rem)] rounded-xl bg-primary text-white font-semibold flex items-center justify-center gap-[clamp(0.25rem,0.8vmin,0.5rem)] hover:bg-primary/90 active:bg-primary/80 active:scale-[0.98] transition-all text-[clamp(0.8rem,1.7vmin,1rem)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
               >
                 <Check className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
                 Done

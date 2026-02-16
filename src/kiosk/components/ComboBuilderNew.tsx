@@ -724,10 +724,6 @@ export default function ComboBuilder({
                             className="h-full w-full object-cover"
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/40 to-transparent" />
-                          {/* FREE Badge */}
-                          <span className="absolute top-3 left-3 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase">
-                            FREE
-                          </span>
                           {/* Checkmark Badge */}
                           <div
                             className={cn(
@@ -816,15 +812,15 @@ export default function ComboBuilder({
             </div>
           )}
 
-          {/* Step 3: Choose Your FREE Side Dish */}
+          {/* Step 3: Choose Your Side Dish */}
           {step === 3 && (
             <div className="animate-in fade-in duration-300">
               <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2 sm:pb-3">
                 <h1 className="text-xl sm:text-[28px] font-extrabold leading-[1.1] text-[#212282] mb-1 sm:mb-2">
-                  Choose Your <span className="text-[#E6411C]">FREE</span> Side Dish
+                  Choose Your Side Dish
                 </h1>
                 <p className="text-xs sm:text-base text-gray-600 leading-relaxed">
-                  Every order comes with a free side dish of your choice!
+                  Every combo includes a side dish of your choice!
                 </p>
               </div>
 
@@ -865,15 +861,12 @@ export default function ComboBuilder({
                             height={80}
                             className="w-20 h-20 rounded-xl object-cover shadow-inner"
                           />
-                          <span className="absolute -top-2 -left-2 bg-green-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full uppercase tracking-wide border border-white">
-                            Free
-                          </span>
                         </div>
                         <div className="flex flex-col flex-1 min-w-0 py-1">
                           <p className="text-[#212282] text-lg font-bold leading-tight truncate pr-2">
                             {side.name}
                           </p>
-                          <p className="text-[#E6411C] text-xs font-bold mt-1.5 uppercase tracking-wide">
+                          <p className="text-gray-500 text-xs font-medium mt-1.5 uppercase tracking-wide">
                             Included
                           </p>
                         </div>
@@ -1182,7 +1175,7 @@ export default function ComboBuilder({
                 </ReviewSection>
 
                 {/* Side Dish */}
-                <ReviewSection title="Free Side Dish" onEdit={() => setStep(3)}>
+                <ReviewSection title="Side Dish" onEdit={() => setStep(3)}>
                   <div className="flex items-center gap-3 sm:gap-4">
                     {combo.sideDish && (
                       <img
@@ -1195,8 +1188,8 @@ export default function ComboBuilder({
                       <p className="text-sm sm:text-base font-bold text-[#212282]">
                         {combo.sideDish || 'None selected'}
                       </p>
-                      <p className="text-[10px] sm:text-xs text-green-600 font-bold uppercase tracking-wider">
-                        Free & Included
+                      <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider">
+                        Included
                       </p>
                     </div>
                   </div>
