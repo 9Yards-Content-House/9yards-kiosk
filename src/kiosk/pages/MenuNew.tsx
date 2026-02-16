@@ -10,7 +10,6 @@ import {
   Minus,
   Flame,
   ShoppingCart,
-  Clock,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
@@ -83,7 +82,7 @@ export default function MenuNew() {
   useEffect(() => {
     const handleScroll = () => {
       if (stickyRef.current) {
-        setIsSticky(window.scrollY > 200);
+        setIsSticky(window.scrollY > 10);
       }
     };
     window.addEventListener('scroll', handleScroll);
@@ -307,111 +306,105 @@ export default function MenuNew() {
 
   return (
     <div className="kiosk-screen flex flex-col bg-gray-50 overflow-hidden">
-      {/* Hero Section - Enhanced Design */}
-      <div className="relative bg-gradient-to-br from-[#212282] via-[#2d2e9e] to-[#1a1a6e] text-white py-6 px-4 shrink-0 overflow-hidden">
-        {/* Decorative elements */}
-        <div className="absolute top-0 right-0 w-32 h-32 bg-[#E6411C]/20 rounded-full blur-3xl" />
-        <div className="absolute bottom-0 left-0 w-24 h-24 bg-white/10 rounded-full blur-2xl" />
-        
-        <div className="relative z-10">
-          <div className="flex items-center justify-between mb-4">
-            <button
-              onClick={() => navigate('/')}
-              aria-label={t('common.back')}
-              className="w-10 h-10 flex items-center justify-center rounded-full bg-white/15 backdrop-blur-sm active:bg-white/25 active:scale-95 transition-all"
-            >
-              <ArrowLeft className="w-5 h-5" />
-            </button>
-            <img
-              src="/images/logo/9yards-logo-white.png"
-              alt="9Yards Food"
-              className="h-10 w-auto drop-shadow-lg"
-              onError={(e) => {
-                e.currentTarget.style.display = 'none';
-              }}
-            />
-          </div>
-          <div className="flex items-center justify-between gap-4">
-            <div>
-              <h1 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-sm">
-                What are you craving?
-              </h1>
-              <p className="text-white/80 text-sm md:text-base">
-                Fresh, delicious meals made with love 🍲
-              </p>
-            </div>
-          </div>
-        </div>
+      {/* Compact Header - Back button and logo */}
+      <div className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
+        <button
+          onClick={() => navigate('/')}
+          aria-label={t('common.back')}
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-95 transition-all"
+        >
+          <ArrowLeft className="w-5 h-5 text-gray-700" />
+        </button>
+        <img
+          src="/images/logo/9Yards-Food-White-Logo-colored.png"
+          alt="9Yards Food"
+          className="h-8 w-auto"
+          onError={(e) => {
+            e.currentTarget.style.display = 'none';
+          }}
+        />
+        <div className="w-10" /> {/* Spacer for centering */}
       </div>
 
       {/* Sticky Search & Category Bar */}
       <div
         ref={stickyRef}
         className={cn(
-          'bg-white border-b z-20 transition-shadow',
+          'bg-card/95 backdrop-blur-md border-b border-border z-20 transition-shadow sticky top-0',
           isSticky && 'shadow-md'
         )}
       >
         {/* Search Bar */}
-        <div className="px-4 py-3">
+        <div className="px-4 py-3" role="search">
           <div className="relative">
-            <Search className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
             <input
               ref={searchInputRef}
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search menu items..."
-              className="w-full h-12 pl-12 pr-12 text-base rounded-full border border-gray-200 bg-gray-50 focus:outline-none focus:ring-2 focus:ring-[#212282]/30 focus:border-[#212282] transition-all"
+              placeholder="Find your favorite dish..."
+              aria-label="Search menu items"
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-background text-sm focus:border-[#E6411C] focus:ring-1 focus:ring-[#E6411C]/20 focus:outline-none transition-all"
+              inputMode="search"
+              enterKeyHint="search"
+              autoComplete="off"
             />
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 w-8 h-8 flex items-center justify-center rounded-full hover:bg-gray-200 active:scale-95 transition-all"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C]"
+                aria-label="Clear search"
               >
-                <X className="w-4 h-4" />
+                <X className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
               </button>
             )}
           </div>
         </div>
 
         {/* Category Tabs */}
-        <div className="px-2 pb-3 overflow-x-auto scrollbar-hide">
-          <div className="flex gap-2 min-w-max">
-            {(Object.keys(categoryConfig) as Category[]).map((category) => {
-              const config = categoryConfig[category];
-              const count = categoryCounts[category];
-              const isActive = activeCategory === category;
+        <div 
+          className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-3 px-4"
+          role="tablist"
+          aria-label="Menu categories"
+        >
+          {(Object.keys(categoryConfig) as Category[]).map((category) => {
+            const config = categoryConfig[category];
+            const count = categoryCounts[category];
+            const isActive = activeCategory === category;
 
-              // Skip categories with no items (except 'all')
-              if (category !== 'all' && count === 0) return null;
+            // Skip categories with no items (except 'all')
+            if (category !== 'all' && count === 0) return null;
 
-              return (
-                <button
-                  key={category}
-                  onClick={() => handleCategoryChange(category)}
-                  className={cn(
-                    'shrink-0 flex items-center gap-2 px-4 py-2.5 rounded-full font-medium text-sm transition-all',
-                    isActive
-                      ? 'bg-[#E6411C] text-white shadow-md'
-                      : 'bg-gray-100 text-gray-600 hover:bg-gray-200 active:bg-gray-200'
-                  )}
-                >
-                  {config.label}
-                  {count > 0 && (
-                    <span
-                      className={cn(
-                        'px-2 py-0.5 rounded-full text-xs font-semibold',
-                        isActive ? 'bg-white/25 text-white' : 'bg-gray-200 text-gray-500'
-                      )}
-                    >
-                      {count}
-                    </span>
-                  )}
-                </button>
-              );
-            })}
-          </div>
+            return (
+              <button
+                key={category}
+                onClick={() => handleCategoryChange(category)}
+                role="tab"
+                aria-selected={isActive}
+                aria-controls="menu-grid"
+                className={cn(
+                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border min-h-[40px] flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2',
+                  isActive
+                    ? 'bg-[#E6411C] text-white border-[#E6411C] shadow-md'
+                    : 'bg-card text-muted-foreground border-border hover:border-[#E6411C]/50 hover:bg-[#E6411C]/5'
+                )}
+              >
+                <span>{config.label}</span>
+                {count > 0 && (
+                  <span
+                    className={cn(
+                      'text-[11px] px-1.5 py-0.5 rounded-full',
+                      isActive ? 'bg-white/20' : 'bg-muted'
+                    )}
+                    aria-hidden="true"
+                  >
+                    {count}
+                  </span>
+                )}
+              </button>
+            );
+          })}
         </div>
       </div>
 
@@ -436,7 +429,12 @@ export default function MenuNew() {
             </Button>
           </div>
         ) : (
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 p-4">
+          <div 
+            id="menu-grid"
+            role="tabpanel"
+            aria-label={`${categoryConfig[activeCategory]?.label || 'All Items'} menu items`}
+            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-3 p-4"
+          >
             <AnimatePresence mode="popLayout">
               {filteredItems.map((item, index) => (
                 <motion.div
@@ -553,13 +551,13 @@ function MenuItemCard({
       aria-disabled={!item.available}
       className={cn(
         'group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-[#E6411C]/50 hover:bg-[#E6411C]/5 active:scale-[0.98]',
-        'transition-all duration-200 flex flex-col focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2',
+        'transition-all duration-200 flex flex-col h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2',
         item.available ? 'cursor-pointer' : 'cursor-not-allowed',
         isHighlighted && 'ring-4 ring-[#E6411C] ring-offset-2 animate-pulse',
         !item.available && 'opacity-60'
       )}
     >
-      {/* Image Container */}
+      {/* Image Container - 4:3 aspect ratio */}
       <div className="relative aspect-[4/3] overflow-hidden bg-muted">
         <OptimizedImage
           src={item.image}
@@ -679,19 +677,18 @@ function MenuItemCard({
           {/* Add to Cart button / Quantity Stepper for Individual items */}
           {item.available && isIndividual && onAddToCart && (
             cartQuantity > 0 ? (
-              // Show quantity stepper when item is in cart
-              <div className="flex items-center gap-1.5 bg-[#E6411C]/10 rounded-full px-1.5 py-1">
+              <div className="flex items-center gap-2 bg-[#E6411C]/10 rounded-full px-2 py-1" role="group" aria-label={`Quantity controls for ${item.name}`}>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onRemoveFromCart?.();
                   }}
-                  className="w-7 h-7 flex items-center justify-center bg-white text-[#E6411C] rounded-full shadow-sm hover:bg-gray-50 active:scale-95 transition-all"
-                  aria-label="Decrease quantity"
+                  className="w-7 h-7 flex items-center justify-center bg-white text-[#E6411C] rounded-full shadow-sm hover:bg-gray-50 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-1"
+                  aria-label={`Decrease quantity of ${item.name}`}
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-sm font-bold w-5 text-center text-[#212282]">
+                <span className="text-sm font-bold w-4 text-center text-[#212282]" aria-label={`Quantity: ${cartQuantity}`}>
                   {cartQuantity}
                 </span>
                 <button
@@ -699,20 +696,19 @@ function MenuItemCard({
                     e.stopPropagation();
                     onAddToCart();
                   }}
-                  className="w-7 h-7 flex items-center justify-center bg-[#E6411C] text-white rounded-full shadow-sm hover:bg-[#d13a18] active:scale-95 transition-all"
-                  aria-label="Increase quantity"
+                  className="w-7 h-7 flex items-center justify-center bg-[#E6411C] text-white rounded-full shadow-sm hover:bg-[#d13a18] active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-1"
+                  aria-label={`Increase quantity of ${item.name}`}
                 >
                   <Plus className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
-              // Show "Add to Order" when not in cart
               <button
                 onClick={(e) => {
                   e.stopPropagation();
                   onAddToCart();
                 }}
-                className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#E6411C]/90 text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
+                className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#d13a18] text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
               >
                 Add to Order
               </button>
