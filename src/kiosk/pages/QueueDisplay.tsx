@@ -384,13 +384,13 @@ export default function QueueDisplay() {
             className="h-6"
           />
           <span className="text-gray-500 text-sm">
-            {QUEUE_STATUSES.reduce((sum, status) => sum + ordersByStatus[status].length, 0)} orders in queue
+            {QUEUE_STATUSES.reduce((sum, status) => sum + ordersByStatus[status].length, 0)} {t('queue.ordersInQueue')}
           </span>
         </div>
         <div className="flex items-center gap-4">
           <span className="text-gray-400 text-xs flex items-center gap-1">
             <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
-            Auto-refreshing
+            {t('queue.autoRefreshing')}
           </span>
           <p className="text-gray-600 text-sm font-medium">
             {currentTime.toLocaleTimeString("en-UG", {

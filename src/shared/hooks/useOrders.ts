@@ -497,6 +497,8 @@ export function useCreateOrder() {
 
         if (itemsError) {
           console.error("❌ Failed to create order items:", itemsError);
+          // Clean up the orphaned order row
+          await supabase.from("orders").delete().eq("id", order.id);
           throw itemsError;
         }
 
@@ -617,6 +619,7 @@ export function useCancelOrder() {
         if (!order) throw new Error("Order not found");
         
         Object.assign(order, updates);
+        saveMockOrdersStore(); // Persist to localStorage
         console.log(`📦 Mock order ${order.order_number} cancelled`);
         return order;
       }
@@ -803,9 +806,13 @@ export function usePaginatedOrders(options?: {
 
       // Apply search filter (server-side partial match)
       if (searchQuery) {
-        query = query.or(
-          `order_number.ilike.%${searchQuery}%,customer_name.ilike.%${searchQuery}%,customer_phone.ilike.%${searchQuery}%`
-        );
+        // Sanitize to prevent PostgREST filter injection
+        const sanitized = searchQuery.replace(/[^a-zA-Z0-9\s+@.-]/g, '');
+        if (sanitized) {
+          query = query.or(
+            `order_number.ilike.%${sanitized}%,customer_name.ilike.%${sanitized}%,customer_phone.ilike.%${sanitized}%`
+          );
+        }
       }
 
       const { data, error, count } = await query;
@@ -920,10 +927,18 @@ export function useUpdateOrder() {
         
         const subtotal = updatedItems?.reduce((sum, item) => sum + (item.total_price || 0), 0) || 0;
         
+        // Fetch current order to get delivery_fee
+        const { data: currentOrder } = await supabase
+          .from("orders")
+          .select("delivery_fee")
+          .eq("id", orderId)
+          .single();
+        const deliveryFee = currentOrder?.delivery_fee || 0;
+        
         // Update order with new totals and special instructions
         const orderUpdates: Record<string, unknown> = {
           subtotal,
-          total: subtotal, // Assuming no delivery fee for kiosk orders
+          total: subtotal + deliveryFee,
           updated_at: now,
         };
         

@@ -2,18 +2,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
-  Check,
   Search,
   UtensilsCrossed,
   Loader2,
   XCircle,
 } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
-import { useCancelOrder } from '@shared/hooks/useOrders';
+import { useCancelOrder, getMockOrdersStore } from '@shared/hooks/useOrders';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
 import { QRCode } from '@shared/components/QRCode';
-import { supabase } from '@shared/lib/supabase';
+import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import KioskHeader from '../components/KioskHeader';
 import { Confetti, SuccessCheckmark } from '../components/SuccessCelebration';
 import { useSound } from '../hooks/useSound';
@@ -47,8 +46,20 @@ export default function ConfirmationNew() {
   // Try to get order details from navigation state first, then sessionStorage, then Supabase
   useEffect(() => {
     const loadOrderDetails = async () => {
-      // Helper to fetch full order details from Supabase
-      const fetchOrderFromSupabase = async (orderNumber: string) => {
+      // Helper to fetch order details — supports both mock and Supabase modes
+      const fetchOrder = async (orderNumber: string) => {
+        if (USE_MOCK_DATA) {
+          const mockOrders = getMockOrdersStore();
+          const found = mockOrders.find(o => o.order_number === orderNumber);
+          return found ? {
+            id: found.id,
+            order_number: found.order_number,
+            total: found.total,
+            customer_name: found.customer_name,
+            customer_phone: found.customer_phone,
+            status: found.status,
+          } : null;
+        }
         const { data: order } = await supabase
           .from('orders')
           .select('id, order_number, total, customer_name, customer_phone, status')
@@ -60,7 +71,7 @@ export default function ConfirmationNew() {
       // 1. Check navigation state (preferred - from Payment.tsx)
       if (location.state?.orderNumber) {
         // Always fetch from Supabase to get ID and status
-        const order = await fetchOrderFromSupabase(location.state.orderNumber);
+        const order = await fetchOrder(location.state.orderNumber);
         if (order) {
           setOrderDetails({
             orderId: order.id,
@@ -92,7 +103,7 @@ export default function ConfirmationNew() {
       const storedOrderNumber = sessionStorage.getItem('kiosk_last_order_number');
       if (storedOrderNumber) {
         try {
-          const order = await fetchOrderFromSupabase(storedOrderNumber);
+          const order = await fetchOrder(storedOrderNumber);
           if (order) {
             setOrderDetails({
               orderId: order.id,
@@ -282,7 +293,7 @@ export default function ConfirmationNew() {
               </motion.div>
 
               <p className="text-sm text-gray-500">
-                Scan the QR code below to track on your phone
+                {t('confirmation.scanQR')}
               </p>
             </div>
           </motion.div>
@@ -295,13 +306,13 @@ export default function ConfirmationNew() {
             className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center"
           >
             <p className="text-base font-medium text-[#212282] mb-4">
-              Scan with your phone to track your order
+              {t('confirmation.scanPhone')}
             </p>
             <div className="flex justify-center">
               <QRCode value={orderNumber} size={180} asTrackingLink />
             </div>
             <p className="text-xs text-gray-400 mt-4">
-              You'll receive updates when your order is ready
+              {t('confirmation.receiveUpdates')}
             </p>
           </motion.div>
 
@@ -320,10 +331,10 @@ export default function ConfirmationNew() {
                 className="w-full gap-2 border-red-200 text-red-600 hover:bg-red-50"
               >
                 <XCircle className="w-5 h-5" />
-                Cancel Order
+                {t('confirmation.cancelOrder')}
               </Button>
               <p className="text-xs text-gray-400 text-center mt-2">
-                You can cancel before preparation begins
+                {t('confirmation.cancelHint')}
               </p>
             </motion.div>
           )}

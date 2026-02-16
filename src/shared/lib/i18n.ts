@@ -150,6 +150,11 @@ export interface TranslationKeys {
   'confirmation.newOrder': string;
   'confirmation.autoReset': string;
   'confirmation.whatsappNotify': string;
+  'confirmation.scanQR': string;
+  'confirmation.scanPhone': string;
+  'confirmation.receiveUpdates': string;
+  'confirmation.cancelOrder': string;
+  'confirmation.cancelHint': string;
   
   // Order Tracking
   'tracking.title': string;
@@ -193,6 +198,8 @@ export interface TranslationKeys {
   'queue.justNow': string;
   'queue.min': string;
   'queue.mins': string;
+  'queue.ordersInQueue': string;
+  'queue.autoRefreshing': string;
   
   // Inactivity
   'inactivity.title': string;
@@ -369,6 +376,11 @@ const translations: Record<Language, TranslationKeys> = {
     'confirmation.newOrder': 'Start New Order',
     'confirmation.autoReset': 'Screen will reset in',
     'confirmation.whatsappNotify': "We'll notify you on WhatsApp when ready",
+    'confirmation.scanQR': 'Scan the QR code below to track on your phone',
+    'confirmation.scanPhone': 'Scan with your phone to track your order',
+    'confirmation.receiveUpdates': "You'll receive updates when your order is ready",
+    'confirmation.cancelOrder': 'Cancel Order',
+    'confirmation.cancelHint': 'You can cancel before preparation begins',
     
     // Order Tracking
     'tracking.title': 'Track Your Order',
@@ -412,6 +424,8 @@ const translations: Record<Language, TranslationKeys> = {
     'queue.justNow': 'Just now',
     'queue.min': '1 min',
     'queue.mins': 'mins',
+    'queue.ordersInQueue': 'orders in queue',
+    'queue.autoRefreshing': 'Auto-refreshing',
     
     // Inactivity
     'inactivity.stillThere': 'Still there?',
@@ -587,6 +601,11 @@ const translations: Record<Language, TranslationKeys> = {
     'confirmation.newOrder': 'Tandika Order Empya',
     'confirmation.autoReset': 'Ekifo kiddamu mu',
     'confirmation.whatsappNotify': 'Tujja kukumanyisa ku WhatsApp bw\'enoba yeetegese',
+    'confirmation.scanQR': 'Soma QR code wammanga ogoberere ku ssimu yo',
+    'confirmation.scanPhone': 'Soma ne ssimu yo ogoberere order yo',
+    'confirmation.receiveUpdates': 'Tujja kukumanyisa order yo bw\'enoba yeetegese',
+    'confirmation.cancelOrder': 'Sazaamu Order',
+    'confirmation.cancelHint': 'Osobola okusazaamu ng\'ennaba tengafumbibwa',
     
     // Order Tracking
     'tracking.title': 'Goberera Order Yo',
@@ -630,6 +649,8 @@ const translations: Record<Language, TranslationKeys> = {
     'queue.justNow': 'Kati kati',
     'queue.min': '1 ddakiika',
     'queue.mins': 'ddakiika',
+    'queue.ordersInQueue': 'orders mu luliri',
+    'queue.autoRefreshing': 'Kizuulidwa buggya',
     
     // Inactivity
     'inactivity.stillThere': 'Okyaliwo?',

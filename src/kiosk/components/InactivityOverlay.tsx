@@ -26,7 +26,7 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
           clearCart();
           setLanguage('en');
           sessionStorage.removeItem("kiosk_order_details");
-          sessionStorage.removeItem("kiosk_order_number");
+          sessionStorage.removeItem("kiosk_last_order_number");
           navigate("/", { replace: true });
           return 0;
         }
@@ -45,7 +45,7 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
     clearCart();
     setLanguage('en');
     sessionStorage.removeItem("kiosk_order_details");
-    sessionStorage.removeItem("kiosk_order_number");
+    sessionStorage.removeItem("kiosk_last_order_number");
     navigate("/", { replace: true });
   }, [clearCart, setLanguage, navigate]);
 
