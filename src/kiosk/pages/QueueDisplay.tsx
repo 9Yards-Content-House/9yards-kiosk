@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, RefreshCw, ChefHat, Truck, MapPin, Clock, Bell, CheckCircle2, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, RefreshCw, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
 import { useAllOrders, useOrdersRealtime } from "@shared/hooks/useOrders";
 import { ORDER_STATUS_LABELS } from "@shared/types/orders";
 import { useTranslation } from "@shared/context/LanguageContext";
@@ -19,25 +19,27 @@ const READY_STATUS: OrderStatus = "arrived";
 // How long to show "arrived" orders before auto-removing (in ms)
 const ARRIVED_DISPLAY_DURATION = 60000; // 60 seconds (industry standard)
 
+// How long to show the ready banner before auto-dismiss (in ms)
+const READY_BANNER_DURATION = 8000; // 8 seconds
+
 // Auto-refresh interval as backup to realtime (in ms)
 const AUTO_REFRESH_INTERVAL = 15000; // 15 seconds
 
-// Status icons
-const STATUS_ICONS: Record<OrderStatus, React.ElementType> = {
-  new: Bell,
-  preparing: ChefHat,
-  out_for_delivery: Truck,
-  arrived: CheckCircle2,
-  cancelled: Clock,
+// Simplified status colors - professional blue/purple theme
+const STATUS_HEADER_COLORS: Record<OrderStatus, string> = {
+  new: "bg-blue-600",
+  preparing: "bg-indigo-600",
+  out_for_delivery: "bg-violet-600",
+  arrived: "bg-emerald-600",
+  cancelled: "bg-gray-600",
 };
 
-// Status colors for large display
-const STATUS_BG_COLORS: Record<OrderStatus, string> = {
-  new: "bg-blue-500",
-  preparing: "bg-amber-500",
-  out_for_delivery: "bg-purple-500",
-  arrived: "bg-green-500",
-  cancelled: "bg-red-500",
+const STATUS_TEXT_COLORS: Record<OrderStatus, string> = {
+  new: "text-blue-600",
+  preparing: "text-indigo-600",
+  out_for_delivery: "text-violet-600",
+  arrived: "text-emerald-600",
+  cancelled: "text-gray-600",
 };
 
 export default function QueueDisplay() {
@@ -48,6 +50,7 @@ export default function QueueDisplay() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const [showReadyBanner, setShowReadyBanner] = useState(false);
   const { play } = useSound();
   
   // Track which arrived orders we've already notified about
@@ -167,6 +170,9 @@ export default function QueueDisplay() {
     // Play notification sound for new arrivals
     if (hasNewArrivals && soundEnabled) {
       play('success');
+      // Show ready banner briefly
+      setShowReadyBanner(true);
+      setTimeout(() => setShowReadyBanner(false), READY_BANNER_DURATION);
     }
   }, [allOrders, arrivedTimestamps, soundEnabled, play]);
 
@@ -280,95 +286,57 @@ export default function QueueDisplay() {
         </div>
       </div>
 
-      {/* Ready for Pickup Banner - Show if there are arrived orders */}
+      {/* Ready for Pickup Banner - Show briefly when orders become ready */}
       <AnimatePresence>
-        {arrivedOrders.length > 0 && (
+        {showReadyBanner && arrivedOrders.length > 0 && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
             exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.3 }}
             className="overflow-hidden"
           >
-            <motion.div 
-              className="bg-green-500 px-6 py-4 relative overflow-hidden"
-              animate={{ 
-                backgroundColor: ['rgb(34, 197, 94)', 'rgb(22, 163, 74)', 'rgb(34, 197, 94)'] 
-              }}
-              transition={{ repeat: Infinity, duration: 2, ease: 'easeInOut' }}
-            >
-              {/* Animated background shimmer */}
-              <motion.div
-                className="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent"
-                animate={{ x: ['-100%', '100%'] }}
-                transition={{ repeat: Infinity, duration: 2, ease: 'linear' }}
-              />
-              
-              <div className="relative flex items-center justify-center gap-6">
-                <motion.div
-                  animate={{ scale: [1, 1.3, 1], rotate: [0, 10, -10, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5 }}
-                >
-                  <CheckCircle2 className="w-10 h-10 text-white drop-shadow-lg" />
-                </motion.div>
-                
-                <div className="text-center">
-                  <h2 className="text-2xl font-bold text-white drop-shadow-md">
-                    🎉 {arrivedOrders.length === 1 ? 'Order Ready!' : `${arrivedOrders.length} Orders Ready!`}
-                  </h2>
-                  <div className="flex items-center justify-center gap-4 mt-2 flex-wrap">
-                    {arrivedOrders.map((order) => {
-                      const secondsLeft = getSecondsRemaining(order.id);
-                      return (
-                        <motion.div
-                          key={order.id}
-                          initial={{ scale: 0, y: 20 }}
-                          animate={{ scale: 1, y: 0 }}
-                          className="flex items-center gap-2 bg-white text-green-600 font-bold px-4 py-2 rounded-full shadow-lg"
-                        >
-                          <span className="text-lg">#{order.order_number}</span>
-                          <span className="text-sm font-medium text-green-500">
-                            {getFirstName(order.customer_name)}
-                          </span>
-                          <span className="text-xs bg-green-100 text-green-700 px-2 py-0.5 rounded-full ml-1">
-                            {secondsLeft}s
-                          </span>
-                        </motion.div>
-                      );
-                    })}
-                  </div>
+            <div className="bg-emerald-600 px-6 py-3">
+              <div className="flex items-center justify-center gap-4">
+                <span className="text-lg font-bold text-white">
+                  {arrivedOrders.length === 1 ? 'Order Ready' : `${arrivedOrders.length} Orders Ready`}
+                </span>
+                <div className="flex items-center gap-2 flex-wrap">
+                  {arrivedOrders.slice(0, 3).map((order) => (
+                    <span
+                      key={order.id}
+                      className="bg-white text-emerald-700 font-bold px-3 py-1 rounded-full text-sm"
+                    >
+                      #{order.order_number} - {getFirstName(order.customer_name)}
+                    </span>
+                  ))}
+                  {arrivedOrders.length > 3 && (
+                    <span className="text-white/80 text-sm">+{arrivedOrders.length - 3} more</span>
+                  )}
                 </div>
-                
-                <motion.div
-                  animate={{ scale: [1, 1.3, 1], rotate: [0, -10, 10, 0] }}
-                  transition={{ repeat: Infinity, duration: 1.5, delay: 0.5 }}
-                >
-                  <CheckCircle2 className="w-10 h-10 text-white drop-shadow-lg" />
-                </motion.div>
               </div>
-            </motion.div>
+            </div>
           </motion.div>
         )}
       </AnimatePresence>
 
       {/* Queue Display */}
-      <div className="flex-1 p-4 overflow-hidden">
+      <div className="flex-1 p-4 min-h-0">
         <div className="grid grid-cols-3 gap-4 h-full">
           {QUEUE_STATUSES.map((status) => {
             const orders = ordersByStatus[status];
-            const StatusIcon = STATUS_ICONS[status];
 
             return (
-              <div key={status} className="flex flex-col">
-                {/* Status Header */}
+              <div key={status} className="flex flex-col min-h-0">
+                {/* Status Header - Clean, no icons */}
                 <div
                   className={cn(
-                    "flex items-center justify-center gap-3 py-4 rounded-t-2xl",
-                    STATUS_BG_COLORS[status]
+                    "flex items-center justify-center py-3 rounded-t-xl",
+                    STATUS_HEADER_COLORS[status]
                   )}
                 >
-                  <StatusIcon className="w-8 h-8 text-white" />
                   <div className="text-center">
-                    <h2 className="text-xl font-bold text-white">
+                    <h2 className="text-lg font-bold text-white">
                       {ORDER_STATUS_LABELS[status]}
                     </h2>
                     <p className="text-white/80 text-sm">
@@ -377,50 +345,38 @@ export default function QueueDisplay() {
                   </div>
                 </div>
 
-                {/* Orders List */}
-                <div className="flex-1 bg-white/10 backdrop-blur-sm rounded-b-2xl p-4 overflow-y-auto">
+                {/* Orders List - Fixed scrolling */}
+                <div className="flex-1 bg-slate-800/50 rounded-b-xl p-3 overflow-y-auto min-h-0">
                   <AnimatePresence mode="popLayout">
                     {orders.length === 0 ? (
-                      <div className="flex items-center justify-center h-full text-white/50">
-                        <p>{t('queue.noOrders')}</p>
+                      <div className="flex items-center justify-center h-full text-white/40">
+                        <p className="text-sm">{t('queue.noOrders')}</p>
                       </div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="space-y-2">
                         {orders.map((order, index) => (
                           <motion.div
                             key={order.id}
-                            initial={{ opacity: 0, y: 20 }}
+                            initial={{ opacity: 0, y: 10 }}
                             animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.8 }}
-                            transition={{ delay: index * 0.05 }}
-                            className={cn(
-                              "bg-white rounded-xl p-4 shadow-lg",
-                              status === "arrived" && "border-2 border-green-400"
-                            )}
+                            exit={{ opacity: 0, scale: 0.95 }}
+                            transition={{ delay: index * 0.03 }}
+                            className="bg-white rounded-lg p-3 shadow-sm"
                           >
-                            {/* Order Number */}
-                            <div className="flex items-center justify-between mb-2">
+                            <div className="flex items-center justify-between">
                               <span
                                 className={cn(
-                                  "text-2xl font-extrabold",
-                                  status === "new"
-                                    ? "text-blue-600"
-                                    : status === "preparing"
-                                    ? "text-amber-600"
-                                    : status === "out_for_delivery"
-                                    ? "text-purple-600"
-                                    : "text-green-600"
+                                  "text-xl font-bold",
+                                  STATUS_TEXT_COLORS[status]
                                 )}
                               >
                                 #{order.order_number}
                               </span>
-                              <span className="text-sm text-gray-500">
+                              <span className="text-xs text-gray-400">
                                 {getTimeSince(order.created_at)}
                               </span>
                             </div>
-
-                            {/* Customer Name (First name only for privacy) */}
-                            <p className="text-gray-700 font-medium truncate">
+                            <p className="text-gray-600 text-sm truncate mt-1">
                               {getFirstName(order.customer_name)}
                             </p>
                           </motion.div>

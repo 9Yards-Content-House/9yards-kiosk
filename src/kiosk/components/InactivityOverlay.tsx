@@ -56,14 +56,14 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="inactivity-overlay flex flex-col items-center justify-center bg-black/80 backdrop-blur-sm"
+      className="inactivity-overlay flex flex-col items-center justify-center bg-slate-900/95 backdrop-blur-md"
       onClick={handleResume}
       onTouchStart={handleResume}
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
-        className="text-center text-white px-6"
+        className="text-center px-8 py-10 rounded-3xl bg-slate-800/80 border border-slate-700 shadow-2xl max-w-md mx-4"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Animated hand icon */}
@@ -75,21 +75,21 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
           <Hand className="w-16 h-16 mx-auto text-secondary" />
         </motion.div>
 
-        <h2 className="text-4xl font-bold mb-3">{t('inactivity.title')}</h2>
-        <p className="text-xl text-white/80 mb-8">
+        <h2 className="text-3xl font-bold mb-2 text-white">{t('inactivity.title')}</h2>
+        <p className="text-lg text-slate-300 mb-8">
           {t('inactivity.tapToContinue')}
         </p>
 
         {/* Circular countdown timer */}
-        <div className="relative w-32 h-32 mx-auto mb-6">
-          <svg className="w-32 h-32 -rotate-90" viewBox="0 0 100 100">
+        <div className="relative w-28 h-28 mx-auto mb-6">
+          <svg className="w-28 h-28 -rotate-90" viewBox="0 0 100 100">
             {/* Background circle */}
             <circle
               cx="50"
               cy="50"
               r="45"
               fill="none"
-              stroke="rgba(255,255,255,0.2)"
+              stroke="rgba(255,255,255,0.15)"
               strokeWidth="6"
             />
             {/* Progress circle */}
@@ -110,15 +110,15 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
           </span>
         </div>
 
-        <p className="text-white/60 mb-8">
+        <p className="text-slate-400 mb-8 text-sm">
           {t('inactivity.returning')} {countdown}s
         </p>
 
         {/* Action buttons */}
-        <div className="flex flex-col gap-3 max-w-xs mx-auto">
+        <div className="flex flex-col gap-3">
           <Button
             size="touch"
-            className="bg-secondary hover:bg-secondary/90 text-white w-full"
+            className="bg-secondary hover:bg-secondary/90 text-white w-full font-semibold"
             onClick={handleResume}
           >
             {t('inactivity.continue')}
@@ -128,7 +128,7 @@ export default function InactivityOverlay({ onResume }: InactivityOverlayProps) 
           <Button
             variant="ghost"
             size="lg"
-            className="text-white/70 hover:text-white hover:bg-white/10 w-full"
+            className="text-slate-400 hover:text-white hover:bg-slate-700/50 w-full"
             onClick={handleStartOver}
           >
             <RotateCcw className="w-4 h-4 mr-2" />
