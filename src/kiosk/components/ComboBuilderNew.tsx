@@ -106,19 +106,28 @@ export default function ComboBuilder({
   const [showDraftBanner, setShowDraftBanner] = useState(false);
   const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
-  // Helper to get items by category slug
-  const getItemsBySlug = (slug: string): MenuItem[] => {
-    const group = groupedMenu.find((g) => g.category.slug === slug);
-    return group?.items.filter((item) => item.available) || [];
+  // Get all available items flattened from grouped menu
+  const allItems = useMemo(() => 
+    groupedMenu.flatMap((g) => g.items).filter((item) => item.available),
+    [groupedMenu]
+  );
+
+  // Get items by item_type (cleaner than using category slugs)
+  const getItemsByType = (itemType: 'combo_component' | 'combo_driver' | 'standalone'): MenuItem[] => {
+    return allItems.filter((item) => item.item_type === itemType);
   };
 
-  // Get items by category
-  const mainDishes = getItemsBySlug('main-dishes');
-  const sauces = getItemsBySlug('sauces');
-  const sideDishes = getItemsBySlug('side-dishes');
-  const juices = getItemsBySlug('juices');
-  const desserts = getItemsBySlug('desserts');
-  const extrasItems = useMemo(() => [...juices, ...desserts], [juices, desserts]);
+  // Helper to get combo components split by category (for UI step separation)
+  const getComboComponentsByCategory = (categorySlug: string): MenuItem[] => {
+    const group = groupedMenu.find((g) => g.category.slug === categorySlug);
+    return group?.items.filter((item) => item.available && item.item_type === 'combo_component') || [];
+  };
+
+  // Get items by their role in the combo
+  const mainDishes = getComboComponentsByCategory('main-dishes');
+  const sauces = getItemsByType('combo_driver');
+  const sideDishes = getComboComponentsByCategory('side-dishes');
+  const extrasItems = useMemo(() => getItemsByType('standalone'), [allItems]);
 
   // Reset builder
   const resetBuilder = useCallback(() => {

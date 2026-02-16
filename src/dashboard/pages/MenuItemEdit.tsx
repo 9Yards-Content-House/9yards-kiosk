@@ -19,7 +19,7 @@ import {
   AlertDialogTrigger,
 } from "@shared/components/ui/alert-dialog";
 import { toast } from "sonner";
-import type { SaucePreparation, SauceSize } from "@shared/types/menu";
+import type { SaucePreparation, SauceSize, MenuItemType } from "@shared/types/menu";
 
 export default function MenuItemEdit() {
   const { id } = useParams<{ id: string }>();
@@ -42,6 +42,7 @@ export default function MenuItemEdit() {
     sort_order: 0,
     is_popular: false,
     is_new: false,
+    item_type: "standalone" as MenuItemType,
     preparations: [] as SaucePreparation[],
     sizes: [] as SauceSize[],
   });
@@ -69,6 +70,7 @@ export default function MenuItemEdit() {
             sort_order: data.sort_order,
             is_popular: data.is_popular || false,
             is_new: data.is_new || false,
+            item_type: data.item_type || "standalone",
             preparations: data.preparations || [],
             sizes: data.sizes || [],
           });
@@ -444,6 +446,25 @@ export default function MenuItemEdit() {
               ))}
             </select>
           </div>
+        </div>
+
+        {/* Item Type */}
+        <div>
+          <label className="block text-sm font-medium mb-1.5">Item Type</label>
+          <select
+            value={form.item_type}
+            onChange={(e) => update("item_type", e.target.value as MenuItemType)}
+            className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+          >
+            <option value="standalone">Standalone - Independent purchase (Lusaniya, Juices)</option>
+            <option value="combo_component">Combo Component - Free with combo (Main/Side dishes)</option>
+            <option value="combo_driver">Combo Driver - Determines combo price (Sauces)</option>
+          </select>
+          <p className="text-xs text-muted-foreground mt-1">
+            {form.item_type === 'combo_component' && 'This item appears as a free selection in the combo builder (e.g., Matooke, Cabbage)'}
+            {form.item_type === 'combo_driver' && 'This item drives the combo price - customers select size/preparation (e.g., Chicken Stew)'}
+            {form.item_type === 'standalone' && 'This item is purchased independently or as an optional extra (e.g., Ordinary Lusaniya, Juices)'}
+          </p>
         </div>
 
         {/* Preparations (for sauces) */}

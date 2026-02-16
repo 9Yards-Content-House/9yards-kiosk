@@ -1,5 +1,8 @@
 // Menu types — mirrors the Supabase DB schema
 
+// Item type enum for combo vs standalone control
+export type MenuItemType = 'combo_component' | 'combo_driver' | 'standalone';
+
 export interface Category {
   id: string;
   name: string;
@@ -26,6 +29,8 @@ export interface MenuItem {
   is_new?: boolean;
   available_from?: string | null;
   available_until?: string | null;
+  // Item type for combo vs standalone control
+  item_type?: MenuItemType;
   // Joined fields
   category?: Category;
 }

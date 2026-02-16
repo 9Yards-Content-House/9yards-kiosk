@@ -1,4 +1,4 @@
-import { Edit2, Clock, Star, Sparkles, Image as ImageIcon } from "lucide-react";
+import { Edit2, Clock, Star, Sparkles, Image as ImageIcon, Package, Layers } from "lucide-react";
 import { 
   useToggleMenuItemAvailability,
   useToggleMenuItemPopular,
@@ -13,7 +13,19 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from "@shared/components/ui/tooltip";
-import type { MenuItem, Category } from "@shared/types/menu";
+import type { MenuItem, Category, MenuItemType } from "@shared/types/menu";
+
+// Helper to get item type label and color
+const getItemTypeDisplay = (itemType?: MenuItemType) => {
+  switch (itemType) {
+    case 'combo_component':
+      return { label: 'Combo', color: 'bg-blue-100 text-blue-700', icon: Layers };
+    case 'combo_driver':
+      return { label: 'Driver', color: 'bg-purple-100 text-purple-700', icon: Package };
+    default:
+      return null; // Don't show badge for standalone (default)
+  }
+};
 
 interface MenuItemRowProps {
   item: MenuItem;
@@ -31,6 +43,7 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
   const isScheduled = item.available_from || item.available_until;
   const isPopular = item.is_popular;
   const isNew = item.is_new;
+  const itemTypeDisplay = getItemTypeDisplay(item.item_type);
 
   return (
     <div className="grid grid-cols-1 md:grid-cols-[1fr_120px_100px_120px_100px] gap-2 md:gap-4 items-center px-4 py-3 border-b hover:bg-muted/30 transition-colors">
@@ -50,6 +63,12 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
         <div className="min-w-0">
           <div className="flex items-center gap-2">
             <p className="font-medium truncate">{item.name}</p>
+            {itemTypeDisplay && (
+              <Badge variant="secondary" className={cn("text-xs", itemTypeDisplay.color)}>
+                <itemTypeDisplay.icon className="w-3 h-3 mr-0.5" />
+                {itemTypeDisplay.label}
+              </Badge>
+            )}
             {isPopular && (
               <Badge variant="secondary" className="bg-amber-100 text-amber-700 text-xs">
                 <Star className="w-3 h-3 mr-0.5" />

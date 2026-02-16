@@ -17,8 +17,10 @@ import {
 } from "@shared/components/ui/select";
 import { TooltipProvider } from "@shared/components/ui/tooltip";
 import { formatPrice } from "@shared/lib/utils";
+import type { MenuItemType } from "@shared/types/menu";
 
 type FilterType = "all" | "available" | "unavailable" | "popular" | "new" | "scheduled";
+type ItemTypeFilter = "all" | MenuItemType;
 type ViewMode = "list" | "grid";
 type SortBy = "name" | "price" | "category" | "sort_order";
 type SortOrder = "asc" | "desc";
@@ -31,6 +33,7 @@ export default function MenuManagement() {
   const [search, setSearch] = useState("");
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
+  const [filterItemType, setFilterItemType] = useState<ItemTypeFilter>("all");
   const [viewMode, setViewMode] = useState<ViewMode>("list");
   const [sortBy, setSortBy] = useState<SortBy>("sort_order");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
@@ -59,7 +62,11 @@ export default function MenuManagement() {
       matchesType = !!item.available_from || !!item.available_until;
     }
 
-    return matchesSearch && matchesCategory && matchesType;
+    // Item type filter
+    const matchesItemType =
+      filterItemType === "all" || item.item_type === filterItemType;
+
+    return matchesSearch && matchesCategory && matchesType && matchesItemType;
   });
 
   // Sort items
@@ -183,6 +190,17 @@ export default function MenuManagement() {
                 <SelectItem value="scheduled">Scheduled</SelectItem>
               </SelectContent>
             </Select>
+            <Select value={filterItemType} onValueChange={(v) => setFilterItemType(v as ItemTypeFilter)}>
+              <SelectTrigger className="w-full sm:w-[160px]">
+                <SelectValue placeholder="Item Type" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Types</SelectItem>
+                <SelectItem value="standalone">Standalone</SelectItem>
+                <SelectItem value="combo_component">Combo Component</SelectItem>
+                <SelectItem value="combo_driver">Combo Driver</SelectItem>
+              </SelectContent>
+            </Select>
             <Select value={sortBy} onValueChange={(v) => { setSortBy(v as SortBy); setSortOrder("asc"); }}>
               <SelectTrigger className="w-full sm:w-[130px]">
                 <ArrowUpDown className="w-4 h-4 mr-2" />
@@ -290,6 +308,12 @@ export default function MenuManagement() {
                   )}
                   {/* Badges */}
                   <div className="absolute top-2 left-2 flex flex-wrap gap-1">
+                    {item.item_type === 'combo_component' && (
+                      <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5">Combo</Badge>
+                    )}
+                    {item.item_type === 'combo_driver' && (
+                      <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0.5">Driver</Badge>
+                    )}
                     {item.is_popular && (
                       <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5">Popular</Badge>
                     )}
