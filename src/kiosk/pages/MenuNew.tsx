@@ -5,11 +5,9 @@ import {
   Search,
   X,
   ArrowLeft,
-  Heart,
   Plus,
   Minus,
   Flame,
-  ShoppingCart,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
@@ -20,7 +18,6 @@ import { Button } from '@shared/components/ui/button';
 import OptimizedImage from '@shared/components/OptimizedImage';
 import ComboBuilderNew from '../components/ComboBuilderNew';
 import CartBar from '../components/CartBar';
-import { useFavorites } from '../context/FavoritesContext';
 import { useSound } from '../hooks/useSound';
 
 // Category type for the menu
@@ -67,7 +64,6 @@ export default function MenuNew() {
     const item = cartItems.find(ci => ci.sauceName === itemName || ci.label === itemName);
     return item?.id || null;
   }, [cartItems]);
-  const { favorites, toggleFavorite } = useFavorites();
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
@@ -237,15 +233,6 @@ export default function MenuNew() {
     // Scroll to top of menu grid
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
   }, [play]);
-
-  const handleToggleFavorite = useCallback(
-    (id: string) => {
-      vibrate();
-      play('select');
-      toggleFavorite(id);
-    },
-    [toggleFavorite, play]
-  );
 
   // Get price display for an item
   const getPriceDisplay = useCallback((item: typeof processedItems[0]) => {
@@ -451,8 +438,6 @@ export default function MenuNew() {
                     onAddToOrder={handleStartCombo}
                     onAddToCart={() => handleAddToCart(item)}
                     onRemoveFromCart={() => handleRemoveFromCart(item)}
-                    onToggleFavorite={handleToggleFavorite}
-                    isFavorite={favorites.includes(item.id)}
                     isHighlighted={highlightedItemId === item.id}
                     getPriceDisplay={getPriceDisplay}
                     getCategoryLabel={getCategoryLabel}
@@ -500,8 +485,6 @@ interface MenuItemCardProps {
   onAddToOrder: () => void;
   onAddToCart?: () => void;
   onRemoveFromCart?: () => void;
-  onToggleFavorite: (id: string) => void;
-  isFavorite: boolean;
   isHighlighted?: boolean;
   getPriceDisplay: (item: ProcessedItem) => React.ReactNode;
   getCategoryLabel: (item: ProcessedItem) => string;
@@ -513,8 +496,6 @@ function MenuItemCard({
   onAddToOrder,
   onAddToCart,
   onRemoveFromCart,
-  onToggleFavorite,
-  isFavorite,
   isHighlighted,
   getPriceDisplay,
   getCategoryLabel,
@@ -590,25 +571,6 @@ function MenuItemCard({
             </span>
           )}
         </div>
-
-        {/* Favorite Button - Top Right */}
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onToggleFavorite(item.id);
-          }}
-          className="absolute top-2 right-2 w-10 h-10 bg-white/90 backdrop-blur-sm rounded-full flex items-center justify-center hover:bg-white transition-colors z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
-          aria-label={isFavorite ? 'Remove from favorites' : 'Add to favorites'}
-          title={isFavorite ? 'Remove from Favorites' : 'Add to Favorites'}
-        >
-          <Heart
-            className={cn(
-              'w-4 h-4 transition-colors',
-              isFavorite ? 'text-red-500 fill-red-500' : 'text-gray-500'
-            )}
-            aria-hidden="true"
-          />
-        </button>
       </div>
 
       {/* Content */}
