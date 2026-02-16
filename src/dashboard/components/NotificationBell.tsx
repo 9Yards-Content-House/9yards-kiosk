@@ -1,5 +1,5 @@
-import { useState, useEffect, useRef } from "react";
-import { Bell, Check, CheckCheck, Package2, RefreshCw } from "lucide-react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import { Bell, Check, CheckCheck, Package2, RefreshCw, CreditCard } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../context/AuthContext";
@@ -15,20 +15,14 @@ interface NotificationBellProps {
 // Mock notifications storage key
 const MOCK_NOTIFICATIONS_KEY = "9yards_mock_notifications";
 
-// Initial mock notifications
-const INITIAL_MOCK_NOTIFICATIONS: NotificationType[] = [
-  { id: "1", order_id: "order-mock-1", type: "new_order", message: "New order #294851 received", target_role: "admin", read: false, created_at: new Date(Date.now() - 5 * 60000).toISOString() },
-  { id: "2", order_id: "order-mock-2", type: "status_change", message: "Order #103847 marked as ready", target_role: "admin", read: true, created_at: new Date(Date.now() - 30 * 60000).toISOString() },
-];
-
-// Get mock notifications from localStorage or use initial
+// Get mock notifications from localStorage
 function getMockNotifications(): NotificationType[] {
-  if (typeof window === "undefined") return INITIAL_MOCK_NOTIFICATIONS;
+  if (typeof window === "undefined") return [];
   try {
     const stored = localStorage.getItem(MOCK_NOTIFICATIONS_KEY);
     if (stored) return JSON.parse(stored);
   } catch {}
-  return INITIAL_MOCK_NOTIFICATIONS;
+  return [];
 }
 
 // Save mock notifications to localStorage
@@ -39,29 +33,22 @@ function saveMockNotifications(notifications: NotificationType[]) {
 }
 
 export default function NotificationBell({ sidebarCollapsed = false }: NotificationBellProps) {
-  const role = useAuth().role;
+  const { role } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const { play: playNotificationSound } = useNotificationSound();
   const [open, setOpen] = useState(false);
-  const [mockNotifications, setMockNotifications] = useState<NotificationType[]>(getMockNotifications);
   
   // Track previously seen notification IDs to play sound only for new ones
-  const seenIdsRef = useRef<Set<string>>(new Set(getMockNotifications().map(n => n.id)));
+  const seenIdsRef = useRef<Set<string>>(new Set());
   const isInitialFetch = useRef(true);
 
-  // Sync mock notifications with localStorage
-  useEffect(() => {
-    if (USE_MOCK_DATA) {
-      saveMockNotifications(mockNotifications);
-    }
-  }, [mockNotifications]);
-
-  const { data: notifications } = useQuery<NotificationType[]>({
+  // Query for notifications
+  const { data: notifications = [], refetch } = useQuery<NotificationType[]>({
     queryKey: ["notifications", role],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        return mockNotifications;
+        return getMockNotifications();
       }
 
       const { data, error } = await supabase
@@ -69,17 +56,60 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
         .select("*")
         .eq("target_role", role)
         .order("created_at", { ascending: false })
-        .limit(20);
+        .limit(50);
       if (error) throw error;
-      return data;
+      return data || [];
     },
     enabled: !!role,
-    refetchInterval: USE_MOCK_DATA ? false : 30_000,
+    refetchInterval: USE_MOCK_DATA ? false : 15_000,
+    staleTime: 5_000,
   });
+
+  // Realtime subscription for new notifications (Supabase only)
+  useEffect(() => {
+    if (USE_MOCK_DATA || !role) return;
+
+    const channel = supabase
+      .channel("notifications-realtime")
+      .on(
+        "postgres_changes",
+        {
+          event: "INSERT",
+          schema: "public",
+          table: "notifications",
+          filter: `target_role=eq.${role}`,
+        },
+        (payload) => {
+          const newNotification = payload.new as NotificationType;
+          // Add to cache immediately
+          queryClient.setQueryData<NotificationType[]>(
+            ["notifications", role],
+            (old = []) => [newNotification, ...old].slice(0, 50)
+          );
+        }
+      )
+      .on(
+        "postgres_changes",
+        {
+          event: "UPDATE",
+          schema: "public",
+          table: "notifications",
+        },
+        () => {
+          // Refetch on updates (e.g., when marked as read from another device)
+          refetch();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [role, queryClient, refetch]);
 
   // Handle sound notifications when new notifications arrive
   useEffect(() => {
-    if (!notifications) return;
+    if (!notifications || notifications.length === 0) return;
 
     let hasNewUnread = false;
     notifications.forEach(n => {
@@ -89,7 +119,6 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
           hasNewUnread = true;
         }
       } else if (n.read) {
-        // Just in case, add read ones to seen too
         seenIdsRef.current.add(n.id);
       }
     });
@@ -98,53 +127,62 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
       playNotificationSound();
     }
     
-    if (notifications.length > 0) {
-      isInitialFetch.current = false;
-    }
+    isInitialFetch.current = false;
   }, [notifications, playNotificationSound]);
+
+  // Optimistic update helper - update cache immediately
+  const updateNotificationsCache = useCallback((updater: (notifications: NotificationType[]) => NotificationType[]) => {
+    queryClient.setQueryData<NotificationType[]>(["notifications", role], (old = []) => {
+      const updated = updater(old);
+      if (USE_MOCK_DATA) {
+        saveMockNotifications(updated);
+      }
+      return updated;
+    });
+  }, [queryClient, role]);
 
   // Mark single notification as read
   const markAsReadMutation = useMutation({
     mutationFn: async (notificationId: string) => {
-      if (USE_MOCK_DATA) {
-        const updated = mockNotifications.map(n => 
-          n.id === notificationId ? { ...n, read: true } : n
-        );
-        setMockNotifications(updated);
-        return updated;
+      // Optimistic update
+      updateNotificationsCache((notifications) =>
+        notifications.map(n => n.id === notificationId ? { ...n, read: true } : n)
+      );
+
+      if (!USE_MOCK_DATA) {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("id", notificationId);
+        if (error) throw error;
       }
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("id", notificationId);
-      if (error) throw error;
     },
-    onSuccess: (data) => {
-      if (USE_MOCK_DATA && data) {
-        queryClient.setQueryData(["notifications", role], data);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["notifications", role] });
-      }
+    onError: () => {
+      // Revert on error
+      refetch();
     },
   });
 
   // Mark all notifications as read
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
-      if (USE_MOCK_DATA) {
-        setMockNotifications(prev => prev.map(n => ({ ...n, read: true })));
-        return true;
+      // Optimistic update - mark all as read immediately
+      updateNotificationsCache((notifications) =>
+        notifications.map(n => ({ ...n, read: true }))
+      );
+
+      if (!USE_MOCK_DATA) {
+        const { error } = await supabase
+          .from("notifications")
+          .update({ read: true })
+          .eq("target_role", role)
+          .eq("read", false);
+        if (error) throw error;
       }
-      const { error } = await supabase
-        .from("notifications")
-        .update({ read: true })
-        .eq("target_role", role)
-        .eq("read", false);
-      if (error) throw error;
-      return true;
     },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["notifications", role] });
+    onError: () => {
+      // Revert on error
+      refetch();
     },
   });
 
@@ -164,6 +202,8 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
         return <Package2 className="w-4 h-4 text-green-500" />;
       case "status_change":
         return <Check className="w-4 h-4 text-blue-500" />;
+      case "payment_received":
+        return <CreditCard className="w-4 h-4 text-emerald-500" />;
       default:
         return <Bell className="w-4 h-4 text-gray-500" />;
     }
