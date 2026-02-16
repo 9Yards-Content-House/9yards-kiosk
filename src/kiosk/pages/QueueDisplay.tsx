@@ -255,40 +255,43 @@ export default function QueueDisplay() {
       </div>
 
       {/* Queue Display - Kanban Board Layout */}
-      <div className="flex-1 p-3 md:p-6 overflow-hidden min-h-0">
+      <div className="flex-1 p-4 md:p-8 overflow-hidden min-h-0">
         <div 
-          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 h-full"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 h-full"
         >
           {QUEUE_STATUSES.map((status) => {
             const orders = (status === 'arrived' ? arrivedOrders : ordersByStatus[status]);
 
             return (
-              <div key={status} className="flex flex-col h-full rounded-2xl bg-[#f1f1f1] overflow-hidden border border-[#e6e6e6]">
+              <div key={status} className="flex flex-col h-full rounded-2xl bg-[#f1f1f1] overflow-hidden border border-[#e6e6e6] shadow-[inset_0_2px_4px_rgba(0,0,0,0.02)]">
                 {/* Lane Header */}
                 <div
-                  className="flex items-center justify-between px-4 py-3 bg-transparent"
+                  className="flex items-center justify-between px-5 py-4 bg-transparent"
                 >
-                  <h2 className="text-sm font-bold text-gray-700">
+                  <h2 className="text-sm font-bold text-gray-600 uppercase tracking-wider">
                     {QUEUE_STATUS_LABELS[status]}
                   </h2>
-                  <span className="text-xs font-medium text-gray-400">
+                  <span className="text-xs font-bold text-gray-500 bg-white px-2.5 py-1 rounded-full shadow-sm border border-gray-100">
                     {orders.length}
                   </span>
                 </div>
 
                 {/* Orders Lane */}
-                <div className="flex-1 px-3 pb-3 overflow-y-auto min-h-0 space-y-3">
+                <div className="flex-1 px-4 pb-4 overflow-y-auto min-h-0 space-y-4 custom-scrollbar">
                   <AnimatePresence mode="popLayout">
                     {orders.length === 0 ? (
                       <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center py-10 opacity-30 min-h-[100px]"
+                        className="flex flex-col items-center justify-center py-12 opacity-30 min-h-[120px]"
                       >
-                         <p className="text-xs font-semibold text-gray-400 tracking-wide">Empty</p>
+                         <div className="w-12 h-12 rounded-full bg-gray-200/50 flex items-center justify-center mb-3">
+                            <Package className="w-5 h-5 text-gray-400" />
+                         </div>
+                         <p className="text-xs font-bold text-gray-400 uppercase tracking-widest">No orders</p>
                       </motion.div>
                     ) : (
-                      <div className="flex flex-col gap-3">
+                      <div className="flex flex-col gap-4">
                         {orders.map((order) => {
                           const isPriority = order.is_priority || order.special_instructions?.toLowerCase().includes('priority');
                           
@@ -300,39 +303,40 @@ export default function QueueDisplay() {
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.95 }}
-                               className="bg-white rounded-xl p-4 shadow-sm border border-slate-100 relative group"
+                               className="bg-white rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100/50 relative group hover:shadow-md transition-shadow duration-300"
                             >
                               {/* Top Row: Tags / Priority */}
-                              <div className="flex items-center justify-between mb-2">
+                              <div className="flex items-center justify-between mb-3 min-h-[24px]">
                                 {isPriority ? (
-                                  <div className="bg-rose-50 text-rose-600 px-2.5 py-1 rounded md:rounded-lg text-[10px] font-bold uppercase tracking-wider inline-block">
+                                  <div className="bg-rose-50 text-rose-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1">
+                                    <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
                                     High priority
                                   </div>
                                 ) : (
-                                   // Spacer if no priority to keep alignment or just empty
+                                   // Spacer
                                    <div />
                                 )}
                               </div>
 
                               {/* Middle Row: Content */}
-                              <div className="mb-4">
-                                <h3 className="text-lg font-bold text-gray-900 leading-tight">
+                              <div className="mb-5">
+                                <h3 className="text-xl font-black text-gray-900 leading-tight mb-1">
                                   Order #{order.order_order_number || order.order_number}
                                 </h3>
-                                <p className="text-sm text-gray-500 mt-1 line-clamp-2">
+                                <p className="text-sm font-medium text-gray-500 line-clamp-1">
                                   {order.customer_name}
                                 </p>
                               </div>
 
                               {/* Bottom Row: Meta */}
-                              <div className="flex items-center gap-3 pt-3 border-t border-gray-50 text-xs text-gray-400 font-medium">
+                              <div className="flex items-center gap-3 pt-4 border-t border-gray-100 text-xs text-gray-400 font-bold uppercase tracking-wide">
                                 <div className="flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5" />
                                   <span>{getTimeSince(order.created_at)}</span>
                                 </div>
                                 
                                 {status === 'arrived' && (
-                                   <div className="flex items-center gap-1.5 text-emerald-600 ml-auto">
+                                   <div className="flex items-center gap-1.5 text-emerald-600 ml-auto bg-emerald-50 px-2 py-1 rounded-lg">
                                      <Check className="w-3.5 h-3.5" />
                                      <span>Ready</span>
                                    </div>
