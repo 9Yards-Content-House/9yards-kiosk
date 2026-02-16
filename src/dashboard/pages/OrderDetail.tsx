@@ -25,6 +25,8 @@ export default function OrderDetail() {
   const updateStatus = useUpdateOrderStatus();
   const cancelOrder = useCancelOrder();
   const [editModalOpen, setEditModalOpen] = useState(false);
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
 
   if (isLoading) {
     return (
@@ -48,9 +50,6 @@ export default function OrderDetail() {
     currentIdx >= 0 && currentIdx < ORDER_STATUS_FLOW.length - 1
       ? ORDER_STATUS_FLOW[currentIdx + 1]
       : null;
-
-  const [assignModalOpen, setAssignModalOpen] = useState(false);
-  const [isAssigning, setIsAssigning] = useState(false);
 
   const handleAdvance = async () => {
     if (!nextStatus) return;
