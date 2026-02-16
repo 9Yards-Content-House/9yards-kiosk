@@ -44,6 +44,8 @@ export default function QueueDisplay() {
   
   // Track which arrived orders we've already notified about
   const notifiedOrdersRef = useRef<Set<string>>(new Set());
+  // Flag to prevent notifications on first load
+  const isInitialLoad = useRef(true);
   // Track when orders arrived to auto-remove them
   const [arrivedTimestamps, setArrivedTimestamps] = useState<Record<string, number>>({});
 
@@ -118,10 +120,19 @@ export default function QueueDisplay() {
         }
       });
 
-    // Sort each group by created_at (oldest first)
+    // Sort each group
     Object.keys(grouped).forEach((status) => {
       grouped[status as OrderStatus].sort(
-        (a, b) => new Date(a.created_at).getTime() - new Date(b.created_at).getTime()
+        (a, b) => {
+          const timeA = new Date(a.created_at).getTime();
+          const timeB = new Date(b.created_at).getTime();
+          
+          // Latest first for "New" column as requested
+          if (status === "new") return timeB - timeA;
+          
+          // Oldest first for preparing/delivery to show the queue order
+          return timeA - timeB;
+        }
       );
     });
 
@@ -139,17 +150,27 @@ export default function QueueDisplay() {
 
     allOrders.forEach((order) => {
       if (order.status === READY_STATUS) {
-        // If this order just became "arrived" and we haven't notified
+        // Record when this order arrived if not already tracked
+        if (!newArrivedTimestamps[order.id]) {
+          newArrivedTimestamps[order.id] = now;
+        }
+
+        // Handle notifications
         if (!notifiedOrdersRef.current.has(order.id)) {
           notifiedOrdersRef.current.add(order.id);
-          hasNewArrivals = true;
-          // Record when this order arrived
-          if (!newArrivedTimestamps[order.id]) {
-            newArrivedTimestamps[order.id] = now;
+          
+          // Only trigger banner/sound if it's NOT the first time we see these orders
+          if (!isInitialLoad.current) {
+            hasNewArrivals = true;
           }
         }
       }
     });
+
+    // Mark initial load as complete after first check
+    if (allOrders.length > 0 || !isLoading) {
+      isInitialLoad.current = false;
+    }
 
     // Update timestamps if there are new arrivals
     if (Object.keys(newArrivedTimestamps).length !== Object.keys(arrivedTimestamps).length) {
@@ -163,7 +184,7 @@ export default function QueueDisplay() {
       setShowReadyBanner(true);
       setTimeout(() => setShowReadyBanner(false), READY_BANNER_DURATION);
     }
-  }, [allOrders, arrivedTimestamps, soundEnabled, play]);
+  }, [allOrders, arrivedTimestamps, soundEnabled, play, isLoading]);
 
   // Countdown timer state - updates every second
   const [countdownTick, setCountdownTick] = useState(0);
@@ -284,23 +305,33 @@ export default function QueueDisplay() {
             exit={{ height: 0, opacity: 0 }}
             transition={{ duration: 0.3 }}
             className="overflow-hidden"
+            role="status"
+            aria-live="polite"
           >
-            <div className="bg-emerald-600 px-6 py-3">
-              <div className="flex items-center justify-center gap-4">
-                <span className="text-lg font-bold text-white">
-                  {arrivedOrders.length === 1 ? 'Order Ready' : `${arrivedOrders.length} Orders Ready`}
-                </span>
-                <div className="flex items-center gap-2 flex-wrap">
+            <div className="bg-emerald-600 px-6 py-4 shadow-inner">
+              <div className="flex items-center justify-center gap-6">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
+                    <Volume2 className="w-5 h-5 text-emerald-600 animate-pulse" />
+                  </div>
+                  <span className="text-xl font-black text-white uppercase tracking-wider">
+                    {arrivedOrders.length === 1 ? 'Order Ready' : `${arrivedOrders.length} Orders Ready`}
+                  </span>
+                </div>
+                <div className="flex items-center gap-3 flex-wrap">
                   {arrivedOrders.slice(0, 3).map((order) => (
-                    <span
+                    <motion.span
+                      layoutId={`ready-${order.id}`}
                       key={order.id}
-                      className="bg-white text-emerald-700 font-bold px-3 py-1 rounded-full text-sm"
+                      className="bg-white text-emerald-700 font-black px-4 py-2 rounded-xl text-lg shadow-sm border-b-4 border-emerald-900/20"
                     >
-                      #{order.order_number} - {getFirstName(order.customer_name)}
-                    </span>
+                      #{order.order_number} <span className="text-emerald-500 font-bold ml-1">{getFirstName(order.customer_name).toUpperCase()}</span>
+                    </motion.span>
                   ))}
                   {arrivedOrders.length > 3 && (
-                    <span className="text-white/80 text-sm">+{arrivedOrders.length - 3} more</span>
+                    <span className="text-white/90 font-bold bg-emerald-700/50 px-3 py-1 rounded-lg text-sm">
+                      +{arrivedOrders.length - 3} more
+                    </span>
                   )}
                 </div>
               </div>
