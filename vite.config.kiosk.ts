@@ -71,6 +71,8 @@ export default defineConfig({
       "react-router-dom",
       "framer-motion",
       "@tanstack/react-query",
+      "@radix-ui/react-dialog",
+      "@radix-ui/react-alert-dialog",
     ],
     exclude: [],
   },
