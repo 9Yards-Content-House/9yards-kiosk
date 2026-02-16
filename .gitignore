@@ -11,7 +11,9 @@ dist-kiosk/
 dist-dashboard/
 dist/
 *.tgz
-
+build_output*.txt
+final_build_output.txt
+supabase.zip
 # ===========================================
 # Environment & Secrets
 # ===========================================
