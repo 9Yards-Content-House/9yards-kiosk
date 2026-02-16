@@ -13,6 +13,13 @@ import { useSound } from "../hooks/useSound";
 // Show all statuses as columns
 const QUEUE_STATUSES: OrderStatus[] = ["new", "preparing", "out_for_delivery", "arrived"];
 
+const QUEUE_STATUS_LABELS: Record<string, string> = {
+  new: "ORDERED",
+  preparing: "PREPARING",
+  out_for_delivery: "ON THE WAY",
+  arrived: "READY",
+};
+
 
 // How long to show the ready banner before auto-dismiss (in ms)
 const READY_BANNER_DURATION = 8000; // 8 seconds
@@ -174,9 +181,12 @@ export default function QueueDisplay() {
     const orderTime = new Date(createdAt);
     const diffMs = currentTime.getTime() - orderTime.getTime();
     const diffMins = Math.floor(diffMs / 60000);
-    if (diffMins < 1) return t('queue.justNow');
-    if (diffMins === 1) return t('queue.min');
-    return `${diffMins} ${t('queue.mins')}`;
+    
+    if (diffMins < 1) return "Just now";
+    if (diffMins < 60) return `${diffMins}m ago`;
+    const diffHours = Math.floor(diffMins / 60);
+    if (diffHours < 24) return `${diffHours}h ago`;
+    return `${Math.floor(diffHours / 24)}d ago`;
   };
 
   const handleBackToOrder = () => {
@@ -198,11 +208,11 @@ export default function QueueDisplay() {
       <div className="flex items-center justify-between px-6 py-4 bg-[#212282]">
         <Button
           variant="ghost"
-          className="text-white hover:bg-white/10"
+          className="text-white hover:bg-white/10 p-6 -m-2 h-auto"
           onClick={handleBackToOrder}
         >
           <ArrowLeft className="w-5 h-5 mr-2" />
-          {t('queue.backToOrder')}
+          <span className="font-bold tracking-tight">Back to Order</span>
         </Button>
         <div className="text-center flex-1 mx-4">
           <h1 className="text-lg md:text-2xl font-black text-white uppercase tracking-tight">{t('queue.title')}</h1>
@@ -210,11 +220,20 @@ export default function QueueDisplay() {
             {t('queue.updated')} {lastRefresh.toLocaleTimeString("en-UG", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-3">
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/10"
+            className="text-white hover:bg-white/10 p-6 -m-2 h-auto"
+            onClick={() => setSoundEnabled(!soundEnabled)}
+            title={soundEnabled ? "Mute" : "Unmute"}
+          >
+            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            className="text-white hover:bg-white/10 p-6 -m-2 h-auto"
             onClick={toggleFullscreen}
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
@@ -223,7 +242,7 @@ export default function QueueDisplay() {
           <Button
             variant="ghost"
             size="icon"
-            className="text-white hover:bg-white/10"
+            className="text-white hover:bg-white/10 p-6 -m-2 h-auto"
             onClick={() => refetch().then(() => setLastRefresh(new Date()))}
           >
             <RefreshCw className="w-5 h-5" />
@@ -248,13 +267,13 @@ export default function QueueDisplay() {
                   )}
                 >
                   <div className="flex items-center gap-2 mb-1">
-                    <div className={cn("w-3 h-3 rounded-full", STATUS_COLORS[status])} />
-                    <h2 className="text-sm font-black tracking-widest uppercase text-gray-900">
-                      {status === 'arrived' ? 'READY' : ORDER_STATUS_LABELS[status]}
+                    <div className={cn("w-2 h-2 rounded-full", STATUS_COLORS[status])} />
+                    <h2 className="text-xl font-black text-gray-900 tracking-tighter">
+                      {QUEUE_STATUS_LABELS[status]}
                     </h2>
                   </div>
-                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
-                    {orders.length} {orders.length !== 1 ? t('queue.orders') : t('queue.order')}
+                  <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest">
+                    {orders.length} {orders.length === 1 ? 'ORDER' : 'ORDERS'}
                   </p>
                 </div>
 
@@ -284,10 +303,10 @@ export default function QueueDisplay() {
                             initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
-                            className={cn(
+                             className={cn(
                               "bg-white rounded-2xl border p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col gap-4",
                               status === 'new' && "border-yards-orange/50 shadow-yards-orange/5 ring-1 ring-yards-orange/10",
-                              status === 'arrived' && "border-emerald-200 shadow-emerald-50 bg-emerald-50/10"
+                              status === 'arrived' && "border-emerald-200 shadow-emerald-50 bg-emerald-50/5 ring-2 ring-emerald-500/20 animate-pulse-subtle"
                             )}
                           >
                             <div className="flex items-center justify-between">
@@ -345,8 +364,8 @@ export default function QueueDisplay() {
             className="h-6 md:h-8 object-contain"
           />
           <div className="hidden sm:block h-4 w-px bg-gray-200" />
-          <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest hidden sm:inline">
-            {QUEUE_STATUSES.reduce((sum, status) => sum + ordersByStatus[status].length, 0)} {t('queue.ordersInQueue')}
+          <span className="text-gray-900 text-sm font-black uppercase tracking-tighter hidden sm:inline">
+            {allOrders.length} {allOrders.length === 1 ? 'ORDER' : 'ORDERS'} IN QUEUE
           </span>
         </div>
         <div className="flex items-center gap-6 md:gap-8">
