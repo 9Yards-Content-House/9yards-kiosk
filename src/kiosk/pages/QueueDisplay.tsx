@@ -207,7 +207,7 @@ export default function QueueDisplay() {
   }
 
   return (
-    <div className="kiosk-screen flex flex-col bg-[#f8fafc]">
+    <div className="kiosk-screen flex flex-col bg-[#ffffff]">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 bg-[#212282]">
         <Button
@@ -263,7 +263,7 @@ export default function QueueDisplay() {
             const orders = (status === 'arrived' ? arrivedOrders : ordersByStatus[status]);
 
             return (
-              <div key={status} className="flex flex-col h-full rounded-2xl bg-slate-50/80 overflow-hidden border border-slate-100">
+              <div key={status} className="flex flex-col h-full rounded-2xl bg-[#f1f1f1] overflow-hidden border border-[#e6e6e6]">
                 {/* Lane Header */}
                 <div
                   className="flex items-center justify-between px-4 py-3 bg-transparent"
@@ -312,12 +312,6 @@ export default function QueueDisplay() {
                                    // Spacer if no priority to keep alignment or just empty
                                    <div />
                                 )}
-                                
-                                {/* Meatball menu placeholder from template (visual only) */}
-                                <div className="text-gray-300">
-                                  <div className="w-1 h-1 bg-current rounded-full mb-0.5" />
-                                  <div className="w-1 h-1 bg-current rounded-full" />
-                                </div>
                               </div>
 
                               {/* Middle Row: Content */}
