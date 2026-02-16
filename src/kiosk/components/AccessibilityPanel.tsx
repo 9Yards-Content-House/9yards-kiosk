@@ -4,7 +4,6 @@ import {
   Accessibility,
   Sun,
   Type,
-  Zap,
   Hand,
   RotateCcw,
   X,
@@ -24,7 +23,6 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
     settings,
     toggleHighContrast,
     toggleLargeText,
-    toggleReducedMotion,
     toggleSound,
     updateSetting,
     resetToDefaults
@@ -32,7 +30,7 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
 
   const { play } = useSound();
 
-  const hasChanges = settings.highContrast || settings.largeText || settings.reducedMotion || settings.touchTargetSize !== "normal" || !settings.soundEnabled;
+  const hasChanges = settings.highContrast || settings.largeText || settings.touchTargetSize !== "normal" || !settings.soundEnabled;
 
   // Close on Escape key
   useEffect(() => {
@@ -117,16 +115,6 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                 description="Bigger text across all screens"
                 enabled={settings.largeText}
                 onToggle={() => handleToggle(toggleLargeText)}
-              />
-
-              {/* Reduced Motion */}
-              <ToggleOption
-                id="reduced-motion-toggle"
-                icon={<Zap />}
-                title="Reduce Motion"
-                description="Less movement on screen"
-                enabled={settings.reducedMotion}
-                onToggle={() => handleToggle(toggleReducedMotion)}
               />
 
               {/* Sound Effects */}

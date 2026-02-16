@@ -3,7 +3,6 @@ import { createContext, useContext, useState, useEffect, ReactNode } from "react
 export interface AccessibilitySettings {
   highContrast: boolean;
   largeText: boolean;
-  reducedMotion: boolean;
   screenReader: boolean;
   touchTargetSize: "normal" | "large" | "extra-large";
   soundEnabled: boolean;
@@ -17,7 +16,6 @@ interface AccessibilityContextType {
   ) => void;
   toggleHighContrast: () => void;
   toggleLargeText: () => void;
-  toggleReducedMotion: () => void;
   toggleSound: () => void;
   resetToDefaults: () => void;
   isAccessibilityMode: boolean;
@@ -27,10 +25,9 @@ interface AccessibilityContextType {
 const defaultSettings: AccessibilitySettings = {
   highContrast: false,
   largeText: false,
-  reducedMotion: false,
   screenReader: false,
   touchTargetSize: "normal",
-  soundEnabled: true, // Sound enabled by default for premium kiosk feel
+  soundEnabled: true,
 };
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
@@ -42,7 +39,9 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
-        return { ...defaultSettings, ...JSON.parse(saved) };
+        // Filter out any legacy reducedMotion setting
+        const { reducedMotion, ...rest } = JSON.parse(saved);
+        return { ...defaultSettings, ...rest };
       }
     } catch {
       // Ignore parsing errors
@@ -77,13 +76,6 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
       root.classList.remove("large-text");
     }
     
-    // Reduced motion
-    if (settings.reducedMotion) {
-      root.classList.add("reduced-motion");
-    } else {
-      root.classList.remove("reduced-motion");
-    }
-    
     // Touch target size
     root.classList.remove("touch-normal", "touch-large", "touch-extra-large");
     root.classList.add(`touch-${settings.touchTargetSize}`);
@@ -91,12 +83,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
 
   // Check for system preferences
   useEffect(() => {
-    const prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)");
     const prefersContrast = window.matchMedia("(prefers-contrast: more)");
-    
-    if (prefersReducedMotion.matches && !settings.reducedMotion) {
-      setSettings(prev => ({ ...prev, reducedMotion: true }));
-    }
     
     if (prefersContrast.matches && !settings.highContrast) {
       setSettings(prev => ({ ...prev, highContrast: true }));
@@ -118,10 +105,6 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setSettings(prev => ({ ...prev, largeText: !prev.largeText }));
   };
 
-  const toggleReducedMotion = () => {
-    setSettings(prev => ({ ...prev, reducedMotion: !prev.reducedMotion }));
-  };
-
   const toggleSound = () => {
     setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }));
   };
@@ -130,7 +113,7 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setSettings(defaultSettings);
   };
 
-  const isAccessibilityMode = settings.highContrast || settings.largeText || settings.reducedMotion;
+  const isAccessibilityMode = settings.highContrast || settings.largeText;
 
   return (
     <AccessibilityContext.Provider
@@ -139,7 +122,6 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         updateSetting,
         toggleHighContrast,
         toggleLargeText,
-        toggleReducedMotion,
         toggleSound,
         resetToDefaults,
         isAccessibilityMode,
@@ -159,10 +141,23 @@ export function useAccessibility() {
   return context;
 }
 
-// Helper hook for animations that respect reduced motion
+// Helper hook for animations that strictly respects OS preference
 export function useReducedMotion() {
-  const { settings } = useAccessibility();
-  return settings.reducedMotion;
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(false);
+
+  useEffect(() => {
+    const mediaQuery = window.matchMedia("(prefers-reduced-motion: reduce)");
+    setPrefersReducedMotion(mediaQuery.matches);
+
+    const handleChange = (e: MediaQueryListEvent) => {
+      setPrefersReducedMotion(e.matches);
+    };
+
+    mediaQuery.addEventListener("change", handleChange);
+    return () => mediaQuery.removeEventListener("change", handleChange);
+  }, []);
+
+  return prefersReducedMotion;
 }
 
 // Helper for getting appropriate touch target class

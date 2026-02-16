@@ -23,7 +23,6 @@ export default function Welcome() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showAccessibility, setShowAccessibility] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     // Preload images
@@ -82,11 +81,11 @@ export default function Welcome() {
       {/* Animated gradient background - Apple-style color shift */}
       {/* Dynamic Background Slideshow */}
       <div className="absolute inset-0 bg-black">
-        <AnimatePresence mode="popLayout">
+        <AnimatePresence>
           <motion.div
             key={currentImageIndex}
             initial={{ opacity: 0, scale: 1.0 }}
-            animate={{ opacity: 0.6, scale: shouldReduceMotion ? 1.0 : 1.15 }}
+            animate={{ opacity: 0.6, scale: 1.15 }}
             exit={{ opacity: 0 }}
             transition={{ 
               opacity: { duration: 1, ease: "easeInOut" },
@@ -95,6 +94,7 @@ export default function Welcome() {
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: `url(${BACKGROUND_IMAGES[currentImageIndex]})`,
+              willChange: "transform, opacity",
             }}
           />
         </AnimatePresence>
