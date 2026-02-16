@@ -1,6 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, Save, Loader2, Upload, Trash2, Image as ImageIcon, X, Plus, Copy } from "lucide-react";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+import * as z from "zod";
 import { useCategories } from "@shared/hooks/useMenu";
 import { useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from "@shared/hooks/useMenuMutations";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
@@ -19,7 +22,50 @@ import {
   AlertDialogTrigger,
 } from "@shared/components/ui/alert-dialog";
 import { toast } from "sonner";
-import type { SaucePreparation, SauceSize, MenuItemType } from "@shared/types/menu";
+import type { MenuItemType } from "@shared/types/menu";
+
+// Define Validation Schema
+const menuItemSchema = z.object({
+  name: z.string().min(1, "Name is required"),
+  description: z.string().optional().default(""),
+  price: z.coerce.number().min(0, "Price must be positive"),
+  category_id: z.string().min(1, "Category is required"),
+  image_url: z.string().optional().default(""),
+  available: z.boolean().default(true),
+  sort_order: z.coerce.number().default(0),
+  is_popular: z.boolean().default(false),
+  is_new: z.boolean().default(false),
+  item_type: z.enum(["standalone", "combo_component", "combo_driver"]).default("standalone"),
+  preparations: z.array(z.object({
+    name: z.string().min(1, "Preparation name is required"),
+    priceModifier: z.coerce.number().default(0),
+  })).optional().default([]),
+  sizes: z.array(z.object({
+    name: z.string().min(1, "Size name is required"),
+    price: z.coerce.number().min(0, "Size price is required"),
+  })).optional().default([]),
+}).superRefine((data, ctx) => {
+  // Validate Combo Driver Requirements
+  if (data.item_type === 'combo_driver') {
+    if (!data.sizes || data.sizes.length === 0) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: "Combo drivers (sauces) need at least one size with a price",
+        path: ["sizes"],
+      });
+    }
+  }
+  // Validate Standalone Requirements
+  if (data.item_type === 'standalone' && data.price <= 0) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Standalone items need a price greater than 0",
+      path: ["price"],
+    });
+  }
+});
+
+type MenuItemFormValues = z.infer<typeof menuItemSchema>;
 
 export default function MenuItemEdit() {
   const { id } = useParams<{ id: string }>();
@@ -32,23 +78,38 @@ export default function MenuItemEdit() {
   const updateMenuItem = useUpdateMenuItem();
   const deleteMenuItem = useDeleteMenuItem();
 
-  const [form, setForm] = useState({
-    name: "",
-    description: "",
-    price: 0,
-    category_id: "",
-    image_url: "",
-    available: true,
-    sort_order: 0,
-    is_popular: false,
-    is_new: false,
-    item_type: "standalone" as MenuItemType,
-    preparations: [] as SaucePreparation[],
-    sizes: [] as SauceSize[],
+  const [uploading, setUploading] = useState(false);
+  
+  const form = useForm<MenuItemFormValues>({
+    resolver: zodResolver(menuItemSchema),
+    defaultValues: {
+      name: "",
+      description: "",
+      price: 0,
+      category_id: "",
+      image_url: "",
+      available: true,
+      sort_order: 0,
+      is_popular: false,
+      is_new: false,
+      item_type: "standalone",
+      preparations: [],
+      sizes: [],
+    },
   });
 
-  const [uploading, setUploading] = useState(false);
-  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const { fields: preparationFields, append: appendPrep, remove: removePrep } = useFieldArray({
+    control: form.control,
+    name: "preparations",
+  });
+
+  const { fields: sizeFields, append: appendSize, remove: removeSize } = useFieldArray({
+    control: form.control,
+    name: "sizes",
+  });
+
+  const watchedItemType = form.watch("item_type");
+  const watchedImageUrl = form.watch("image_url");
 
   // Fetch existing item
   useEffect(() => {
@@ -60,9 +121,9 @@ export default function MenuItemEdit() {
       .single()
       .then(({ data }) => {
         if (data) {
-          setForm({
+          form.reset({
             name: data.name,
-            description: data.description,
+            description: data.description || "",
             price: data.price,
             category_id: data.category_id,
             image_url: data.image_url || "",
@@ -70,136 +131,23 @@ export default function MenuItemEdit() {
             sort_order: data.sort_order,
             is_popular: data.is_popular || false,
             is_new: data.is_new || false,
-            item_type: data.item_type || "standalone",
+            item_type: (data.item_type as MenuItemType) || "standalone",
             preparations: data.preparations || [],
             sizes: data.sizes || [],
           });
-          if (data.image_url) {
-            setImagePreview(data.image_url);
-          }
         }
       });
-  }, [id, isNew]);
+  }, [id, isNew, form]);
 
-  // Handle image upload
-  const handleImageUpload = async (file: File) => {
-    if (!file) return;
-
-    // Validate file
-    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
-    if (!allowedTypes.includes(file.type)) {
-      toast.error("Please upload an image file (JPG, PNG, WebP, or GIF)");
-      return;
-    }
-
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
-      return;
-    }
-
-    setUploading(true);
-
-    try {
-      if (USE_MOCK_DATA) {
-        // For mock mode, create a local preview
-        const url = URL.createObjectURL(file);
-        setImagePreview(url);
-        update("image_url", url);
-        toast.success("Image preview ready (mock mode)");
-        return;
-      }
-
-      // Generate unique filename
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
-      const fileName = `menu/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
-
-      // Upload to Supabase Storage
-      const { data, error } = await supabase.storage
-        .from("images")
-        .upload(fileName, file, {
-          cacheControl: "3600",
-          upsert: false,
-        });
-
-      if (error) {
-        // If bucket doesn't exist, fall back to manual URL entry
-        if (error.message.includes("bucket") || error.message.includes("not found")) {
-          toast.error("Storage not configured. Please enter image URL manually or setup Supabase Storage.");
-          return;
-        }
-        throw error;
-      }
-
-      // Get public URL
-      const { data: urlData } = supabase.storage
-        .from("images")
-        .getPublicUrl(fileName);
-
-      const publicUrl = urlData.publicUrl;
-      setImagePreview(publicUrl);
-      update("image_url", publicUrl);
-      toast.success("Image uploaded successfully!");
-    } catch (err) {
-      console.error("Upload error:", err);
-      toast.error("Failed to upload image. You can enter the URL manually.");
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  const handleDrop = (e: React.DragEvent) => {
-    e.preventDefault();
-    const file = e.dataTransfer.files?.[0];
-    if (file) {
-      handleImageUpload(file);
-    }
-  };
-
-  const removeImage = () => {
-    setImagePreview(null);
-    update("image_url", "");
-    if (fileInputRef.current) {
-      fileInputRef.current.value = "";
-    }
-  };
-
-  const handleSave = async () => {
-    // Validation
-    if (!form.name.trim()) {
-      toast.error("Please enter an item name");
-      return;
-    }
-    if (!form.category_id) {
-      toast.error("Please select a category");
-      return;
-    }
-    if (form.item_type === 'combo_driver' && form.sizes.length === 0) {
-      toast.error("Combo drivers (sauces) need at least one size with a price");
-      return;
-    }
-    if (form.item_type === 'combo_driver' && form.sizes.some(s => !s.name.trim())) {
-      toast.error("All sizes need a name");
-      return;
-    }
-    if (form.item_type === 'standalone' && form.price <= 0) {
-      toast.error("Standalone items need a price greater than 0");
-      return;
-    }
-
+  const onSubmit = async (data: MenuItemFormValues) => {
     try {
       const payload = {
-        ...form,
-        // Ensure combo components are always free
-        price: form.item_type === 'combo_component' ? 0 : form.price,
-        preparations: form.preparations.length > 0 ? form.preparations : null,
-        sizes: form.sizes.length > 0 ? form.sizes : null,
+        ...data,
+        // Ensure combo components are always free (redundant safeguard)
+        price: data.item_type === 'combo_component' ? 0 : data.price,
+        // Sanitize arrays
+        preparations: data.preparations && data.preparations.length > 0 ? data.preparations : null,
+        sizes: data.sizes && data.sizes.length > 0 ? data.sizes : null,
       };
 
       if (isNew) {
@@ -226,132 +174,126 @@ export default function MenuItemEdit() {
 
   const handleDuplicate = async () => {
     try {
+      const currentValues = form.getValues();
       const duplicatePayload = {
-        ...form,
-        name: `${form.name} (Copy)`,
-        preparations: form.preparations.length > 0 ? form.preparations : null,
-        sizes: form.sizes.length > 0 ? form.sizes : null,
+        ...currentValues,
+        name: `${currentValues.name} (Copy)`,
+        preparations: currentValues.preparations?.length ? currentValues.preparations : null,
+        sizes: currentValues.sizes?.length ? currentValues.sizes : null,
       };
+      
       const result = await createMenuItem.mutateAsync(duplicatePayload);
       toast.success("Item duplicated");
-      // Navigate to the new item
-      if (result?.id) {
-        navigate(`/menu/${result.id}`);
-      } else {
-        navigate("/menu");
-      }
+      if (result?.id) navigate(`/menu/${result.id}`);
+      else navigate("/menu");
     } catch {
       toast.error("Failed to duplicate item");
     }
   };
 
-  const isPending = createMenuItem.isPending || updateMenuItem.isPending;
-
-  const update = (field: string, value: unknown) =>
-    setForm((prev) => ({ ...prev, [field]: value }));
-
-  // Preparation management
-  const addPreparation = () => {
-    setForm((prev) => ({
-      ...prev,
-      preparations: [...prev.preparations, { name: "", priceModifier: 0 }],
-    }));
-  };
-
-  const updatePreparation = (index: number, field: keyof SaucePreparation, value: string | number) => {
-    setForm((prev) => ({
-      ...prev,
-      preparations: prev.preparations.map((p, i) =>
-        i === index ? { ...p, [field]: value } : p
-      ),
-    }));
-  };
-
-  const removePreparation = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      preparations: prev.preparations.filter((_, i) => i !== index),
-    }));
-  };
-
-  // Size management
-  const addSize = () => {
-    setForm((prev) => ({
-      ...prev,
-      sizes: [...prev.sizes, { name: "", price: 0 }],
-    }));
-  };
-
-  const updateSize = (index: number, field: keyof SauceSize, value: string | number) => {
-    setForm((prev) => ({
-      ...prev,
-      sizes: prev.sizes.map((s, i) =>
-        i === index ? { ...s, [field]: value } : s
-      ),
-    }));
-  };
-
-  const removeSize = (index: number) => {
-    setForm((prev) => ({
-      ...prev,
-      sizes: prev.sizes.filter((_, i) => i !== index),
-    }));
-  };
-
-  // Check if this is a combo driver item (shows preparations/sizes)
-  const showPreparationsAndSizes = form.item_type === 'combo_driver';
-  
-  // Auto-suggest item_type based on category selection
+  // Logic Adapters
   const handleCategoryChange = (categoryId: string) => {
-    update("category_id", categoryId);
+    form.setValue("category_id", categoryId);
     const category = categories?.find(c => c.id === categoryId);
     if (category) {
-      // Auto-suggest item_type based on category
       if (category.slug === 'sauces') {
-        update("item_type", 'combo_driver');
+        form.setValue("item_type", 'combo_driver');
       } else if (category.slug === 'main-dishes' || category.slug === 'side-dishes') {
-        update("item_type", 'combo_component');
-        update("price", 0); // Combo components are free
+        form.setValue("item_type", 'combo_component');
+        form.setValue("price", 0);
       } else {
-        update("item_type", 'standalone');
+        form.setValue("item_type", 'standalone');
       }
     }
   };
 
-  // Handle item_type change with price auto-adjustment
   const handleItemTypeChange = (newType: MenuItemType) => {
-    update("item_type", newType);
+    form.setValue("item_type", newType);
     if (newType === 'combo_component') {
-      update("price", 0); // Combo components are always free
+      form.setValue("price", 0);
     }
-    // Clear preparations/sizes if not a combo_driver
     if (newType !== 'combo_driver') {
-      setForm(prev => ({ ...prev, preparations: [], sizes: [] }));
+      form.setValue("preparations", []);
+      form.setValue("sizes", []);
     }
   };
+
+  // Image Upload Logic
+  const handleImageUpload = async (file: File) => {
+    if (!file) return;
+    const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
+    if (!allowedTypes.includes(file.type)) {
+      toast.error("Please upload an image file (JPG, PNG, WebP, or GIF)");
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      toast.error("Image must be smaller than 5MB");
+      return;
+    }
+
+    setUploading(true);
+    try {
+      if (USE_MOCK_DATA) {
+        const url = URL.createObjectURL(file);
+        form.setValue("image_url", url);
+        toast.success("Image preview ready (mock mode)");
+        return;
+      }
+
+      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `menu/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
+
+      const { error } = await supabase.storage
+        .from("images")
+        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+
+      if (error) throw error;
+
+      const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
+      form.setValue("image_url", urlData.publicUrl);
+      toast.success("Image uploaded successfully!");
+    } catch (err) {
+      console.error("Upload error:", err);
+      toast.error("Failed to upload image. You can enter the URL manually.");
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (file) handleImageUpload(file);
+  };
+
+  const handleDrop = (e: React.DragEvent) => {
+    e.preventDefault();
+    const file = e.dataTransfer.files?.[0];
+    if (file) handleImageUpload(file);
+  };
+
+  const removeImage = () => {
+    form.setValue("image_url", "");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const isPending = createMenuItem.isPending || updateMenuItem.isPending || form.formState.isSubmitting;
+  const showPreparationsAndSizes = watchedItemType === 'combo_driver';
 
   return (
     <div className="p-4 md:p-6 max-w-2xl">
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-4">
-          <button
-            onClick={() => navigate("/menu")}
-            className="w-10 h-10 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80"
-          >
+          <Button variant="ghost" size="icon" onClick={() => navigate("/menu")}>
             <ArrowLeft className="w-5 h-5" />
-          </button>
+          </Button>
           <h1 className="text-2xl font-bold">
             {isNew ? "Add Menu Item" : "Edit Menu Item"}
           </h1>
         </div>
         {!isNew && (
           <div className="flex items-center gap-2">
-            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={createMenuItem.isPending}>
-              {createMenuItem.isPending ? (
-                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
-              ) : (
-                <Copy className="w-4 h-4 mr-2" />
-              )}
+            <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={isPending}>
+              {isPending ? <Loader2 className="w-4 h-4 mr-2 animate-spin" /> : <Copy className="w-4 h-4 mr-2" />}
               Duplicate
             </Button>
             <AlertDialog>
@@ -365,12 +307,12 @@ export default function MenuItemEdit() {
                 <AlertDialogHeader>
                   <AlertDialogTitle>Delete Menu Item?</AlertDialogTitle>
                   <AlertDialogDescription>
-                    This will permanently delete "{form.name}" from the menu. This action cannot be undone.
+                    This will permanently delete "{form.getValues("name")}" from the menu.
                   </AlertDialogDescription>
                 </AlertDialogHeader>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                  <AlertDialogAction onClick={handleDelete} className="bg-destructive text-destructive-foreground">
                     Delete
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -380,7 +322,7 @@ export default function MenuItemEdit() {
         )}
       </div>
 
-      <div className="bg-card rounded-xl border p-6 space-y-5">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="bg-card rounded-xl border p-6 space-y-5">
         {/* Image Upload */}
         <div>
           <label className="block text-sm font-medium mb-1.5">Image</label>
@@ -389,21 +331,23 @@ export default function MenuItemEdit() {
             onDragOver={(e) => e.preventDefault()}
             className="relative"
           >
-            {imagePreview || form.image_url ? (
+            {watchedImageUrl ? (
               <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted">
                 <img
-                  src={imagePreview || form.image_url}
+                  src={watchedImageUrl}
                   alt="Preview"
                   className="w-full h-full object-cover"
-                  onError={() => setImagePreview(null)}
+                  onError={() => form.setValue("image_url", "")}
                 />
                 <button
+                  type="button"
                   onClick={removeImage}
                   className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center"
                 >
                   <X className="w-4 h-4" />
                 </button>
                 <button
+                  type="button"
                   onClick={() => fileInputRef.current?.click()}
                   className="absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white text-sm flex items-center gap-2"
                 >
@@ -435,85 +379,64 @@ export default function MenuItemEdit() {
               className="hidden"
             />
           </div>
-          {/* Manual URL fallback */}
-          <div className="mt-2">
-            <details className="text-sm">
-              <summary className="cursor-pointer text-muted-foreground hover:text-foreground">
-                Or enter image URL manually
-              </summary>
-              <Input
-                value={form.image_url}
-                onChange={(e) => {
-                  update("image_url", e.target.value);
-                  setImagePreview(e.target.value);
-                }}
-                placeholder="/images/menu/..."
-                className="mt-2"
-              />
-            </details>
+          <div className="mt-2 text-sm text-muted-foreground">
+             <Input
+               {...form.register("image_url")}
+               placeholder="Or enter image URL manually"
+               className="mt-2"
+             />
           </div>
         </div>
 
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Name</label>
-          <Input
-            value={form.name}
-            onChange={(e) => update("name", e.target.value)}
-            placeholder="Item name"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Description</label>
-          <textarea
-            value={form.description}
-            onChange={(e) => update("description", e.target.value)}
-            placeholder="Short description"
-            className="w-full h-24 p-3 border rounded-lg resize-none bg-background text-sm"
-          />
-        </div>
-
-        <div className="grid grid-cols-2 gap-4">
+        {/* Basic Info */}
+        <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">
-              Price (UGX)
-              {form.item_type === 'combo_component' && (
-                <span className="ml-2 text-xs font-normal text-green-600">
-                  Free with combo
-                </span>
-              )}
-            </label>
-            <Input
-              type="number"
-              value={form.price}
-              onChange={(e) => update("price", parseInt(e.target.value, 10) || 0)}
-              min={0}
-              disabled={form.item_type === 'combo_component'}
-              className={form.item_type === 'combo_component' ? 'bg-muted' : ''}
-            />
-            {form.item_type === 'combo_component' && (
-              <p className="text-xs text-muted-foreground mt-1">
-                Combo components (main dishes, sides) are included free in combos
-              </p>
+            <label className="block text-sm font-medium mb-1.5">Name</label>
+            <Input {...form.register("name")} placeholder="Item name" />
+            {form.formState.errors.name && (
+              <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
             )}
           </div>
+          
           <div>
-            <label className="block text-sm font-medium mb-1.5">Category</label>
-            <select
-              value={form.category_id}
-              onChange={(e) => handleCategoryChange(e.target.value)}
-              className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-            >
-              <option value="">Select category</option>
-              {categories?.map((cat) => (
-                <option key={cat.id} value={cat.id}>
-                  {cat.name}
-                </option>
-              ))}
-            </select>
-            <p className="text-xs text-muted-foreground mt-1">
-              Item type will be auto-suggested based on category
-            </p>
+            <label className="block text-sm font-medium mb-1.5">Description</label>
+            <textarea
+              {...form.register("description")}
+              placeholder="Short description"
+              className="w-full h-24 p-3 border rounded-lg resize-none bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+            />
+          </div>
+
+          <div className="grid grid-cols-2 gap-4">
+             <div>
+               <label className="block text-sm font-medium mb-1.5">Price (UGX)</label>
+               <Input
+                 type="number"
+                 {...form.register("price")}
+                 disabled={watchedItemType === 'combo_component'}
+                 className={watchedItemType === 'combo_component' ? 'bg-muted' : ''}
+               />
+               {form.formState.errors.price && (
+                 <p className="text-red-500 text-xs mt-1">{form.formState.errors.price.message}</p>
+               )}
+             </div>
+             
+             <div>
+               <label className="block text-sm font-medium mb-1.5">Category</label>
+               <select
+                 {...form.register("category_id")}
+                 onChange={(e) => handleCategoryChange(e.target.value)}
+                 className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+               >
+                 <option value="">Select category</option>
+                 {categories?.map((cat) => (
+                   <option key={cat.id} value={cat.id}>{cat.name}</option>
+                 ))}
+               </select>
+               {form.formState.errors.category_id && (
+                 <p className="text-red-500 text-xs mt-1">{form.formState.errors.category_id.message}</p>
+               )}
+             </div>
           </div>
         </div>
 
@@ -521,203 +444,110 @@ export default function MenuItemEdit() {
         <div>
           <label className="block text-sm font-medium mb-1.5">Item Type</label>
           <select
-            value={form.item_type}
+            {...form.register("item_type")}
             onChange={(e) => handleItemTypeChange(e.target.value as MenuItemType)}
-            className="w-full h-10 px-3 rounded-md border bg-background text-sm"
+            className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
           >
-            <option value="standalone">Standalone - Sold separately (Lusaniya, Juices, Desserts)</option>
-            <option value="combo_component">Combo Component - Free in combo (Main dishes, Side dishes)</option>
-            <option value="combo_driver">Combo Driver - Sets combo price (Sauces with sizes)</option>
+            <option value="standalone">Standalone</option>
+            <option value="combo_component">Combo Component</option>
+            <option value="combo_driver">Combo Driver (Sauce)</option>
           </select>
-          <div className="mt-2 p-3 rounded-lg bg-muted/50 text-sm">
-            {form.item_type === 'combo_component' && (
-              <div className="flex items-start gap-2">
-                <span className="text-blue-500 text-lg">📦</span>
-                <div>
-                  <p className="font-medium text-blue-700">Combo Component</p>
-                  <p className="text-muted-foreground text-xs">
-                    Appears as a free selection in the combo builder. Examples: Matooke, White Rice, Cabbage, Avocado.
-                    Price should be 0 as these are included free with any combo.
-                  </p>
-                </div>
-              </div>
-            )}
-            {form.item_type === 'combo_driver' && (
-              <div className="flex items-start gap-2">
-                <span className="text-purple-500 text-lg">🍖</span>
-                <div>
-                  <p className="font-medium text-purple-700">Combo Driver (Sauce)</p>
-                  <p className="text-muted-foreground text-xs">
-                    The main protein/sauce that determines combo price. Customers choose size and preparation.
-                    Add sizes (Regular, Half-Chicken, etc.) and preparations (Fried, Grilled, etc.) below.
-                  </p>
-                </div>
-              </div>
-            )}
-            {form.item_type === 'standalone' && (
-              <div className="flex items-start gap-2">
-                <span className="text-green-500 text-lg">🥤</span>
-                <div>
-                  <p className="font-medium text-green-700">Standalone Item</p>
-                  <p className="text-muted-foreground text-xs">
-                    Sold independently, can also be added as extras in combo builder.
-                    Examples: Ordinary Lusaniya, Passion Fruit Juice, Chapati, Samosa.
-                  </p>
-                </div>
-              </div>
-            )}
-          </div>
         </div>
 
-        {/* Preparations (for combo drivers / sauces) */}
+        {/* Dynamic Fields */}
         {showPreparationsAndSizes && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Preparations (e.g. Fried, Grilled, Boiled)</label>
-              <Button type="button" variant="outline" size="sm" onClick={addPreparation}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add
-              </Button>
+          <div className="space-y-6 border-t pt-4">
+            {/* Preparations */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium">Preparations</label>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendPrep({ name: "", priceModifier: 0 })}>
+                  <Plus className="w-4 h-4 mr-1" /> Add
+                </Button>
+              </div>
+              <div className="space-y-2">
+                 {preparationFields.map((field, index) => (
+                   <div key={field.id} className="flex gap-2">
+                     <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" />
+                     <Button type="button" variant="ghost" size="icon" onClick={() => removePrep(index)}>
+                       <X className="w-4 h-4" />
+                     </Button>
+                   </div>
+                 ))}
+                 {form.formState.errors.preparations && (
+                    <p className="text-red-500 text-xs">{form.formState.errors.preparations.message}</p>
+                 )}
+              </div>
             </div>
-            <p className="text-xs text-muted-foreground mb-2">
-              How should this item be prepared? Leave empty if no preparation options.
-            </p>
-            <div className="space-y-2">
-              {form.preparations.map((prep, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={prep.name}
-                    onChange={(e) => updatePreparation(index, "name", e.target.value)}
-                    placeholder="e.g. Fried, Grilled, Boiled"
-                    className="flex-1"
-                  />
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removePreparation(index)}
-                    className="shrink-0 hover:text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-              {form.preparations.length === 0 && (
-                <p className="text-sm text-muted-foreground italic">No preparations - customers won't be asked how they want it prepared</p>
-              )}
+
+            {/* Sizes */}
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium">Sizes</label>
+                <Button type="button" variant="outline" size="sm" onClick={() => appendSize({ name: "", price: 0 })}>
+                  <Plus className="w-4 h-4 mr-1" /> Add Size
+                </Button>
+              </div>
+              <div className="space-y-2">
+                 {sizeFields.map((field, index) => (
+                   <div key={field.id} className="flex gap-2">
+                     <Input {...form.register(`sizes.${index}.name` as const)} placeholder="Size Name" />
+                     <Input type="number" {...form.register(`sizes.${index}.price` as const)} placeholder="Price" />
+                     <Button type="button" variant="ghost" size="icon" onClick={() => removeSize(index)}>
+                       <X className="w-4 h-4" />
+                     </Button>
+                   </div>
+                 ))}
+                 {form.formState.errors.sizes && (
+                    <p className="text-red-500 text-xs">{form.formState.errors.sizes.message}</p>
+                 )}
+              </div>
             </div>
           </div>
         )}
 
-        {/* Sizes (for combo drivers / sauces) */}
-        {showPreparationsAndSizes && (
-          <div>
-            <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Sizes & Prices</label>
-              <Button type="button" variant="outline" size="sm" onClick={addSize}>
-                <Plus className="w-4 h-4 mr-1" />
-                Add Size
-              </Button>
-            </div>
-            <p className="text-xs text-muted-foreground mb-2">
-              Different portion sizes with their prices. The first size is the default shown in menus.
-            </p>
-            <div className="space-y-2">
-              {form.sizes.map((size, index) => (
-                <div key={index} className="flex items-center gap-2">
-                  <Input
-                    value={size.name}
-                    onChange={(e) => updateSize(index, "name", e.target.value)}
-                    placeholder="e.g. Regular, Half-Chicken, Full"
-                    className="flex-1"
-                  />
-                  <div className="relative w-36">
-                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">UGX</span>
-                    <Input
-                      type="number"
-                      value={size.price}
-                      onChange={(e) => updateSize(index, "price", parseInt(e.target.value, 10) || 0)}
-                      placeholder="Price"
-                      className="pl-12"
-                    />
-                  </div>
-                  <Button
-                    type="button"
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => removeSize(index)}
-                    className="shrink-0 hover:text-destructive"
-                  >
-                    <X className="w-4 h-4" />
-                  </Button>
-                </div>
-              ))}
-              {form.sizes.length === 0 && (
-                <div className="p-3 border border-amber-200 bg-amber-50 rounded-lg">
-                  <p className="text-sm text-amber-800 font-medium">⚠️ No sizes added</p>
-                  <p className="text-xs text-amber-700">Combo drivers need at least one size. Add "Regular" as a starting point.</p>
-                </div>
-              )}
-            </div>
-          </div>
-        )}
-
-        <div className="grid grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Sort Order</label>
-            <Input
-              type="number"
-              value={form.sort_order}
-              onChange={(e) => update("sort_order", parseInt(e.target.value, 10) || 0)}
-            />
-          </div>
-          <div className="space-y-3 pt-1">
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.available}
-                onCheckedChange={(v) => update("available", v)}
-              />
-              <label className="text-sm font-medium">Available</label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.is_popular}
-                onCheckedChange={(v) => update("is_popular", v)}
-              />
-              <label className="text-sm font-medium">Mark as Popular</label>
-            </div>
-            <div className="flex items-center gap-3">
-              <Switch
-                checked={form.is_new}
-                onCheckedChange={(v) => update("is_new", v)}
-              />
-              <label className="text-sm font-medium">Mark as New</label>
-            </div>
-          </div>
+        {/* Toggles */}
+        <div className="grid grid-cols-2 gap-4 pt-2">
+           <div>
+             <label className="block text-sm font-medium mb-1.5">Sort Order</label>
+             <Input type="number" {...form.register("sort_order")} />
+           </div>
+           <div className="space-y-3 pt-1">
+             <div className="flex items-center gap-3">
+               <Switch
+                 checked={form.watch("available")}
+                 onCheckedChange={(v) => form.setValue("available", v)}
+               />
+               <label className="text-sm font-medium">Available</label>
+             </div>
+             <div className="flex items-center gap-3">
+               <Switch
+                 checked={form.watch("is_popular")}
+                 onCheckedChange={(v) => form.setValue("is_popular", v)}
+               />
+               <label className="text-sm font-medium">Mark as Popular</label>
+             </div>
+             <div className="flex items-center gap-3">
+               <Switch
+                 checked={form.watch("is_new")}
+                 onCheckedChange={(v) => form.setValue("is_new", v)}
+               />
+               <label className="text-sm font-medium">Mark as New</label>
+             </div>
+           </div>
         </div>
 
-        <div className="flex gap-3 pt-2">
-          <Button
-            variant="outline"
-            onClick={() => navigate("/menu")}
-            className="flex-1"
-          >
+        {/* Actions */}
+        <div className="flex gap-3 pt-4 border-t">
+          <Button type="button" variant="outline" onClick={() => navigate("/menu")} className="flex-1">
             Cancel
           </Button>
-          <Button
-            onClick={handleSave}
-            disabled={isPending || !form.name || !form.category_id}
-            className="flex-1"
-          >
-            {isPending ? (
-              <Loader2 className="w-4 h-4 animate-spin mr-2" />
-            ) : (
-              <Save className="w-4 h-4 mr-2" />
-            )}
+          <Button type="submit" disabled={isPending} className="flex-1">
+            {isPending ? <Loader2 className="w-4 h-4 animate-spin mr-2" /> : <Save className="w-4 h-4 mr-2" />}
             {isNew ? "Create Item" : "Save Changes"}
           </Button>
         </div>
-      </div>
+      </form>
     </div>
   );
 }
