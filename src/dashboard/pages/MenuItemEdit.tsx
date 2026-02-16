@@ -171,9 +171,33 @@ export default function MenuItemEdit() {
   };
 
   const handleSave = async () => {
+    // Validation
+    if (!form.name.trim()) {
+      toast.error("Please enter an item name");
+      return;
+    }
+    if (!form.category_id) {
+      toast.error("Please select a category");
+      return;
+    }
+    if (form.item_type === 'combo_driver' && form.sizes.length === 0) {
+      toast.error("Combo drivers (sauces) need at least one size with a price");
+      return;
+    }
+    if (form.item_type === 'combo_driver' && form.sizes.some(s => !s.name.trim())) {
+      toast.error("All sizes need a name");
+      return;
+    }
+    if (form.item_type === 'standalone' && form.price <= 0) {
+      toast.error("Standalone items need a price greater than 0");
+      return;
+    }
+
     try {
       const payload = {
         ...form,
+        // Ensure combo components are always free
+        price: form.item_type === 'combo_component' ? 0 : form.price,
         preparations: form.preparations.length > 0 ? form.preparations : null,
         sizes: form.sizes.length > 0 ? form.sizes : null,
       };
@@ -274,9 +298,37 @@ export default function MenuItemEdit() {
     }));
   };
 
-  // Check if this is a sauce category
-  const selectedCategory = categories?.find((c) => c.id === form.category_id);
-  const isSauceCategory = selectedCategory?.slug === "sauces";
+  // Check if this is a combo driver item (shows preparations/sizes)
+  const showPreparationsAndSizes = form.item_type === 'combo_driver';
+  
+  // Auto-suggest item_type based on category selection
+  const handleCategoryChange = (categoryId: string) => {
+    update("category_id", categoryId);
+    const category = categories?.find(c => c.id === categoryId);
+    if (category) {
+      // Auto-suggest item_type based on category
+      if (category.slug === 'sauces') {
+        update("item_type", 'combo_driver');
+      } else if (category.slug === 'main-dishes' || category.slug === 'side-dishes') {
+        update("item_type", 'combo_component');
+        update("price", 0); // Combo components are free
+      } else {
+        update("item_type", 'standalone');
+      }
+    }
+  };
+
+  // Handle item_type change with price auto-adjustment
+  const handleItemTypeChange = (newType: MenuItemType) => {
+    update("item_type", newType);
+    if (newType === 'combo_component') {
+      update("price", 0); // Combo components are always free
+    }
+    // Clear preparations/sizes if not a combo_driver
+    if (newType !== 'combo_driver') {
+      setForm(prev => ({ ...prev, preparations: [], sizes: [] }));
+    }
+  };
 
   return (
     <div className="p-4 md:p-6 max-w-2xl">
@@ -423,19 +475,33 @@ export default function MenuItemEdit() {
 
         <div className="grid grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium mb-1.5">Price (UGX)</label>
+            <label className="block text-sm font-medium mb-1.5">
+              Price (UGX)
+              {form.item_type === 'combo_component' && (
+                <span className="ml-2 text-xs font-normal text-green-600">
+                  Free with combo
+                </span>
+              )}
+            </label>
             <Input
               type="number"
               value={form.price}
               onChange={(e) => update("price", parseInt(e.target.value, 10) || 0)}
               min={0}
+              disabled={form.item_type === 'combo_component'}
+              className={form.item_type === 'combo_component' ? 'bg-muted' : ''}
             />
+            {form.item_type === 'combo_component' && (
+              <p className="text-xs text-muted-foreground mt-1">
+                Combo components (main dishes, sides) are included free in combos
+              </p>
+            )}
           </div>
           <div>
             <label className="block text-sm font-medium mb-1.5">Category</label>
             <select
               value={form.category_id}
-              onChange={(e) => update("category_id", e.target.value)}
+              onChange={(e) => handleCategoryChange(e.target.value)}
               className="w-full h-10 px-3 rounded-md border bg-background text-sm"
             >
               <option value="">Select category</option>
@@ -445,6 +511,9 @@ export default function MenuItemEdit() {
                 </option>
               ))}
             </select>
+            <p className="text-xs text-muted-foreground mt-1">
+              Item type will be auto-suggested based on category
+            </p>
           </div>
         </div>
 
@@ -453,37 +522,73 @@ export default function MenuItemEdit() {
           <label className="block text-sm font-medium mb-1.5">Item Type</label>
           <select
             value={form.item_type}
-            onChange={(e) => update("item_type", e.target.value as MenuItemType)}
+            onChange={(e) => handleItemTypeChange(e.target.value as MenuItemType)}
             className="w-full h-10 px-3 rounded-md border bg-background text-sm"
           >
-            <option value="standalone">Standalone - Independent purchase (Lusaniya, Juices)</option>
-            <option value="combo_component">Combo Component - Free with combo (Main/Side dishes)</option>
-            <option value="combo_driver">Combo Driver - Determines combo price (Sauces)</option>
+            <option value="standalone">Standalone - Sold separately (Lusaniya, Juices, Desserts)</option>
+            <option value="combo_component">Combo Component - Free in combo (Main dishes, Side dishes)</option>
+            <option value="combo_driver">Combo Driver - Sets combo price (Sauces with sizes)</option>
           </select>
-          <p className="text-xs text-muted-foreground mt-1">
-            {form.item_type === 'combo_component' && 'This item appears as a free selection in the combo builder (e.g., Matooke, Cabbage)'}
-            {form.item_type === 'combo_driver' && 'This item drives the combo price - customers select size/preparation (e.g., Chicken Stew)'}
-            {form.item_type === 'standalone' && 'This item is purchased independently or as an optional extra (e.g., Ordinary Lusaniya, Juices)'}
-          </p>
+          <div className="mt-2 p-3 rounded-lg bg-muted/50 text-sm">
+            {form.item_type === 'combo_component' && (
+              <div className="flex items-start gap-2">
+                <span className="text-blue-500 text-lg">📦</span>
+                <div>
+                  <p className="font-medium text-blue-700">Combo Component</p>
+                  <p className="text-muted-foreground text-xs">
+                    Appears as a free selection in the combo builder. Examples: Matooke, White Rice, Cabbage, Avocado.
+                    Price should be 0 as these are included free with any combo.
+                  </p>
+                </div>
+              </div>
+            )}
+            {form.item_type === 'combo_driver' && (
+              <div className="flex items-start gap-2">
+                <span className="text-purple-500 text-lg">🍖</span>
+                <div>
+                  <p className="font-medium text-purple-700">Combo Driver (Sauce)</p>
+                  <p className="text-muted-foreground text-xs">
+                    The main protein/sauce that determines combo price. Customers choose size and preparation.
+                    Add sizes (Regular, Half-Chicken, etc.) and preparations (Fried, Grilled, etc.) below.
+                  </p>
+                </div>
+              </div>
+            )}
+            {form.item_type === 'standalone' && (
+              <div className="flex items-start gap-2">
+                <span className="text-green-500 text-lg">🥤</span>
+                <div>
+                  <p className="font-medium text-green-700">Standalone Item</p>
+                  <p className="text-muted-foreground text-xs">
+                    Sold independently, can also be added as extras in combo builder.
+                    Examples: Ordinary Lusaniya, Passion Fruit Juice, Chapati, Samosa.
+                  </p>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Preparations (for sauces) */}
-        {isSauceCategory && (
+        {/* Preparations (for combo drivers / sauces) */}
+        {showPreparationsAndSizes && (
           <div>
             <div className="flex items-center justify-between mb-2">
-              <label className="text-sm font-medium">Preparations (e.g. Fried, Grilled)</label>
+              <label className="text-sm font-medium">Preparations (e.g. Fried, Grilled, Boiled)</label>
               <Button type="button" variant="outline" size="sm" onClick={addPreparation}>
                 <Plus className="w-4 h-4 mr-1" />
                 Add
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              How should this item be prepared? Leave empty if no preparation options.
+            </p>
             <div className="space-y-2">
               {form.preparations.map((prep, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
                     value={prep.name}
                     onChange={(e) => updatePreparation(index, "name", e.target.value)}
-                    placeholder="Preparation name"
+                    placeholder="e.g. Fried, Grilled, Boiled"
                     className="flex-1"
                   />
                   <Button
@@ -491,58 +596,67 @@ export default function MenuItemEdit() {
                     variant="ghost"
                     size="icon"
                     onClick={() => removePreparation(index)}
-                    className="shrink-0"
+                    className="shrink-0 hover:text-destructive"
                   >
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
               {form.preparations.length === 0 && (
-                <p className="text-sm text-muted-foreground">No preparations added</p>
+                <p className="text-sm text-muted-foreground italic">No preparations - customers won't be asked how they want it prepared</p>
               )}
             </div>
           </div>
         )}
 
-        {/* Sizes (for sauces) */}
-        {isSauceCategory && (
+        {/* Sizes (for combo drivers / sauces) */}
+        {showPreparationsAndSizes && (
           <div>
             <div className="flex items-center justify-between mb-2">
               <label className="text-sm font-medium">Sizes & Prices</label>
               <Button type="button" variant="outline" size="sm" onClick={addSize}>
                 <Plus className="w-4 h-4 mr-1" />
-                Add
+                Add Size
               </Button>
             </div>
+            <p className="text-xs text-muted-foreground mb-2">
+              Different portion sizes with their prices. The first size is the default shown in menus.
+            </p>
             <div className="space-y-2">
               {form.sizes.map((size, index) => (
                 <div key={index} className="flex items-center gap-2">
                   <Input
                     value={size.name}
                     onChange={(e) => updateSize(index, "name", e.target.value)}
-                    placeholder="Size name (e.g. Regular)"
+                    placeholder="e.g. Regular, Half-Chicken, Full"
                     className="flex-1"
                   />
-                  <Input
-                    type="number"
-                    value={size.price}
-                    onChange={(e) => updateSize(index, "price", parseInt(e.target.value, 10) || 0)}
-                    placeholder="Price"
-                    className="w-32"
-                  />
+                  <div className="relative w-36">
+                    <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground text-sm">UGX</span>
+                    <Input
+                      type="number"
+                      value={size.price}
+                      onChange={(e) => updateSize(index, "price", parseInt(e.target.value, 10) || 0)}
+                      placeholder="Price"
+                      className="pl-12"
+                    />
+                  </div>
                   <Button
                     type="button"
                     variant="ghost"
                     size="icon"
                     onClick={() => removeSize(index)}
-                    className="shrink-0"
+                    className="shrink-0 hover:text-destructive"
                   >
                     <X className="w-4 h-4" />
                   </Button>
                 </div>
               ))}
               {form.sizes.length === 0 && (
-                <p className="text-sm text-muted-foreground">No sizes added</p>
+                <div className="p-3 border border-amber-200 bg-amber-50 rounded-lg">
+                  <p className="text-sm text-amber-800 font-medium">⚠️ No sizes added</p>
+                  <p className="text-xs text-amber-700">Combo drivers need at least one size. Add "Regular" as a starting point.</p>
+                </div>
               )}
             </div>
           </div>
