@@ -15,6 +15,7 @@ import StatusBadge from "../components/StatusBadge";
 import OrderTimeline from "../components/OrderTimeline";
 import PrintReceipt from "../components/PrintReceipt";
 import EditOrderModal from "../components/EditOrderModal";
+import { AssignRiderModal } from "../components/AssignRiderModal";
 import { toast } from "sonner";
 
 export default function OrderDetail() {
@@ -48,8 +49,17 @@ export default function OrderDetail() {
       ? ORDER_STATUS_FLOW[currentIdx + 1]
       : null;
 
+  const [assignModalOpen, setAssignModalOpen] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+
   const handleAdvance = async () => {
     if (!nextStatus) return;
+
+    if (nextStatus === "out_for_delivery") {
+      setAssignModalOpen(true);
+      return;
+    }
+
     try {
       await updateStatus.mutateAsync({
         orderId: order.id,
@@ -59,6 +69,25 @@ export default function OrderDetail() {
     } catch (err) {
       const message = err instanceof Error ? err.message : "Failed to update order status";
       toast.error(message);
+    }
+  };
+
+  const handleAssignRider = async (orderId: string, riderId: string) => {
+    setIsAssigning(true);
+    try {
+      await updateStatus.mutateAsync({
+        orderId: order.id,
+        status: "out_for_delivery",
+        riderId, // Note: the hook might need adjustment if it doesn't support riderId yet
+      });
+      // The shared updateStatus hook might need verification. 
+      // Let's check the useUpdateOrderStatus hook implementation if it supports riderId.
+      toast.success("Rider assigned! Order is out for delivery.");
+      setAssignModalOpen(false);
+    } catch (err) {
+      toast.error("Failed to assign rider");
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -211,6 +240,15 @@ export default function OrderDetail() {
         order={order}
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
+      />
+
+      {/* Rider Assignment Modal */}
+      <AssignRiderModal
+        open={assignModalOpen}
+        onOpenChange={setAssignModalOpen}
+        order={order}
+        onAssign={handleAssignRider}
+        isAssigning={isAssigning}
       />
     </div>
   );

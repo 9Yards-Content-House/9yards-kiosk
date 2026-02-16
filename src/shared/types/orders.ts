@@ -1,6 +1,6 @@
 // Order types — mirrors the Supabase DB schema
 
-export type OrderStatus = "new" | "preparing" | "out_for_delivery" | "arrived" | "cancelled";
+export type OrderStatus = "new" | "preparing" | "out_for_delivery" | "arrived" | "delivered" | "cancelled";
 export type PaymentMethod = "cash" | "mobile_money" | "pay_at_counter";
 export type PaymentStatus = "pending" | "paid" | "failed";
 export type OrderItemType = "combo" | "single";
@@ -117,6 +117,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
   preparing: "Preparing",
   out_for_delivery: "Out for Delivery",
   arrived: "Arrived",
+  delivered: "Delivered",
   cancelled: "Cancelled",
 };
 
@@ -125,5 +126,6 @@ export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   preparing: "bg-yellow-100 text-yellow-800",
   out_for_delivery: "bg-purple-100 text-purple-800",
   arrived: "bg-green-100 text-green-800",
+  delivered: "bg-blue-100 text-blue-800",
   cancelled: "bg-red-100 text-red-800",
 };

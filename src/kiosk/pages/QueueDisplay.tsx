@@ -110,7 +110,7 @@ export default function QueueDisplay() {
     allOrders
       .filter((order) => {
         const orderDate = new Date(order.created_at);
-        return orderDate >= today;
+        return orderDate >= today && !order.picked_up_at;
       })
       .forEach((order) => {
         if (QUEUE_STATUSES.includes(order.status)) {
@@ -338,11 +338,6 @@ export default function QueueDisplay() {
                               )}
                             </div>
 
-                            {status === 'arrived' && (
-                              <div className="absolute top-0 right-0 p-3">
-                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
-                              </div>
-                            )}
                           </motion.div>
                         ))}
                       </div>

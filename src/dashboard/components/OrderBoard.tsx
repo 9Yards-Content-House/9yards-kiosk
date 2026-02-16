@@ -223,6 +223,19 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
                 <OrderCard
                   order={order}
                   isNew={status === "new"}
+                  onAdvance={(order, nextStatus) => {
+                    if (nextStatus === "out_for_delivery") {
+                      setOrderToAssign(order);
+                      setAssignModalOpen(true);
+                    } else {
+                      updateStatus.mutate({
+                        orderId: order.id,
+                        status: nextStatus,
+                      });
+                      toast.success(`Order moved to ${ORDER_STATUS_LABELS[nextStatus]}`);
+                      onStatusChange?.();
+                    }
+                  }}
                 />
               </div>
             ))}

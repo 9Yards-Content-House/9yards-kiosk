@@ -10,9 +10,10 @@ import { toast } from "sonner";
 interface OrderCardProps {
   order: Order;
   isNew?: boolean;
+  onAdvance?: (order: Order, nextStatus: OrderStatus) => void;
 }
 
-export default function OrderCard({ order, isNew }: OrderCardProps) {
+export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
   const navigate = useNavigate();
   const updateStatus = useUpdateOrderStatus();
   const cancelOrder = useCancelOrder();
@@ -26,6 +27,13 @@ export default function OrderCard({ order, isNew }: OrderCardProps) {
   const handleAdvance = async (e: React.MouseEvent) => {
     e.stopPropagation();
     if (!nextStatus) return;
+
+    // If parent provides a callback, let it handle the logic (e.g. showing rider modal)
+    if (onAdvance) {
+      onAdvance(order, nextStatus);
+      return;
+    }
+
     try {
       await updateStatus.mutateAsync({
         orderId: order.id,

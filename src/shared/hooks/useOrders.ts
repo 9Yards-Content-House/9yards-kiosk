@@ -543,9 +543,11 @@ export function useUpdateOrderStatus() {
     mutationFn: async ({
       orderId,
       status,
+      riderId,
     }: {
       orderId: string;
       status: OrderStatus;
+      riderId?: string;
     }) => {
       const now = new Date().toISOString();
       
@@ -555,7 +557,13 @@ export function useUpdateOrderStatus() {
         updated_at: now,
       };
       if (status === "preparing") updates.prepared_at = now;
-      if (status === "out_for_delivery") updates.ready_at = now;
+      if (status === "out_for_delivery") {
+        updates.ready_at = now;
+        if (riderId) {
+          updates.rider_id = riderId;
+          updates.assigned_at = now;
+        }
+      }
       if (status === "arrived") updates.delivered_at = now;
       
       // Mock mode - use in-memory store

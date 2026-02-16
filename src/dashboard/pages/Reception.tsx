@@ -19,7 +19,7 @@ export default function Reception() {
 
   // Filter orders that have arrived at reception
   const arrivedOrders = useMemo(() => {
-    let orders = allOrders.filter((order) => order.status === "arrived");
+    let orders = allOrders.filter((order) => order.status === "arrived" && !order.picked_up_at);
 
     // Apply search filter
     if (searchQuery.trim()) {
@@ -49,6 +49,7 @@ export default function Reception() {
       const { error } = await supabase
         .from("orders")
         .update({
+          status: "delivered",
           picked_up_at: new Date().toISOString(),
           picked_up_by: user?.id,
         })
