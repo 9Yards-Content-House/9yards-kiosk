@@ -8,7 +8,6 @@ import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Order, OrderItem } from '@shared/types';
 import { Button } from '@shared/components/ui/button';
-import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import { getMockOrdersStore, applyLocalOverlay } from '@shared/hooks/useOrders';
 import FeedbackModal from '../components/FeedbackModal';
 
@@ -80,8 +79,6 @@ export default function OrderLookup() {
       supabase.removeChannel(channel);
     };
   }, [order?.id, refetch]);
-
-  const { data: waitTime } = useWaitTime();
 
   // Handle numpad input
   const handleNumpadPress = useCallback((digit: string) => {
@@ -285,21 +282,6 @@ export default function OrderLookup() {
 
                       {/* Status badge */}
                       <OrderStatusBadge status={order.status} />
-
-                      {/* Wait time */}
-                      {(order.status === 'new' || order.status === 'preparing') && waitTime && (
-                        <div className="bg-amber-50 rounded-[clamp(0.625rem,1.5vmin,0.875rem)] p-[clamp(0.625rem,2vmin,1rem)] text-center border border-amber-200">
-                          <p className="text-[clamp(0.6rem,1.2vmin,0.75rem)] text-amber-600 mb-[clamp(0.0625rem,0.2vmin,0.125rem)]">
-                            {t('confirmation.estimatedWait')}
-                          </p>
-                          <p className="text-[clamp(1.25rem,3.5vmin,2rem)] font-bold text-amber-700">
-                            {formatWaitTime(waitTime.estimatedMinutes)}
-                          </p>
-                          <p className="text-[clamp(0.6rem,1.2vmin,0.75rem)] text-amber-600">
-                            {waitTime.ordersAhead} {t('confirmation.ordersAhead')}
-                          </p>
-                        </div>
-                      )}
 
                       {/* Out for Delivery celebration */}
                       {order.status === 'out_for_delivery' && (

@@ -10,6 +10,7 @@ import {
   Minus,
   Flame,
   ShoppingCart,
+  Clock,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
@@ -330,12 +331,16 @@ export default function MenuNew() {
               }}
             />
           </div>
-          <h1 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-sm">
-            What are you craving?
-          </h1>
-          <p className="text-white/80 text-sm md:text-base">
-            Fresh, delicious meals made with love 🍲
-          </p>
+          <div className="flex items-center justify-between gap-4">
+            <div>
+              <h1 className="text-2xl md:text-3xl font-bold mb-2 drop-shadow-sm">
+                What are you craving?
+              </h1>
+              <p className="text-white/80 text-sm md:text-base">
+                Fresh, delicious meals made with love 🍲
+              </p>
+            </div>
+          </div>
         </div>
       </div>
 

@@ -1,12 +1,12 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Clock, User, MapPin, CreditCard, Phone } from "lucide-react";
+import { ArrowLeft, User, MapPin, CreditCard, Phone, FileEdit } from "lucide-react";
 import { useOrderByNumber } from "@shared/hooks/useOrders";
 import { useUpdateOrderStatus, useCancelOrder } from "@shared/hooks/useOrders";
 import { formatPrice, timeAgo } from "@shared/lib/utils";
 import {
   ORDER_STATUS_FLOW,
   ORDER_STATUS_LABELS,
-  ORDER_STATUS_COLORS,
 } from "@shared/types/orders";
 import type { OrderStatus } from "@shared/types/orders";
 import { Button } from "@shared/components/ui/button";
@@ -14,6 +14,7 @@ import { Badge } from "@shared/components/ui/badge";
 import StatusBadge from "../components/StatusBadge";
 import OrderTimeline from "../components/OrderTimeline";
 import PrintReceipt from "../components/PrintReceipt";
+import EditOrderModal from "../components/EditOrderModal";
 import { toast } from "sonner";
 
 export default function OrderDetail() {
@@ -22,6 +23,7 @@ export default function OrderDetail() {
   const { data: order, isLoading } = useOrderByNumber(id || null);
   const updateStatus = useUpdateOrderStatus();
   const cancelOrder = useCancelOrder();
+  const [editModalOpen, setEditModalOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -73,17 +75,29 @@ export default function OrderDetail() {
   return (
     <div className="p-4 md:p-6 max-w-3xl">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-6">
+      <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
         <button
           onClick={() => navigate("/orders")}
-          className="w-10 h-10 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80"
+          className="w-11 h-11 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 active:scale-95 transition-all"
         >
           <ArrowLeft className="w-5 h-5" />
         </button>
-        <div className="flex-1">
-          <h1 className="text-2xl font-bold">{order.order_number}</h1>
-          <p className="text-muted-foreground">{timeAgo(order.created_at)}</p>
+        <div className="flex-1 min-w-0">
+          <h1 className="text-xl md:text-2xl font-bold truncate">{order.order_number}</h1>
+          <p className="text-muted-foreground text-sm">{timeAgo(order.created_at)}</p>
         </div>
+        {/* Edit button - only show for non-completed orders */}
+        {order.status !== "arrived" && order.status !== "cancelled" && (
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setEditModalOpen(true)}
+            className="min-h-[44px] px-4"
+          >
+            <FileEdit className="w-4 h-4 mr-2" />
+            Edit
+          </Button>
+        )}
         <PrintReceipt order={order} />
         <StatusBadge status={order.status} />
       </div>
@@ -174,7 +188,7 @@ export default function OrderDetail() {
         <div className="flex gap-3">
           {nextStatus && (
             <Button
-              className="flex-1 bg-secondary hover:bg-secondary/90"
+              className="flex-1 bg-secondary hover:bg-secondary/90 min-h-[48px] text-base"
               onClick={handleAdvance}
               disabled={updateStatus.isPending}
             >
@@ -185,11 +199,19 @@ export default function OrderDetail() {
             variant="destructive"
             onClick={handleCancel}
             disabled={cancelOrder.isPending}
+            className="min-h-[48px]"
           >
             Cancel Order
           </Button>
         </div>
       )}
+
+      {/* Edit Order Modal */}
+      <EditOrderModal
+        order={order}
+        open={editModalOpen}
+        onOpenChange={setEditModalOpen}
+      />
     </div>
   );
 }

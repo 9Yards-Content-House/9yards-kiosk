@@ -1,18 +1,26 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
-import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed, Truck } from "lucide-react";
+import { Loader2, CheckCircle2, XCircle, ArrowLeft, UtensilsCrossed } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useCreateOrder } from "@shared/hooks/useOrders";
 import { useAllMenuItems } from "@shared/hooks/useMenu";
 import { cn, formatPrice } from "@shared/lib/utils";
 import { KIOSK } from "@shared/lib/constants";
-import { DELIVERY_FEE } from "@shared/types/orders";
 import KioskHeader from "../components/KioskHeader";
-import MoMoPayment from "../components/MoMoPayment";
 import { Button } from "@shared/components/ui/button";
 import { useSound } from "../hooks/useSound";
 import type { PaymentMethod, CreateOrderPayload } from "@shared/types/orders";
+
+// Helper to safely parse JSON
+function safeParseJSON<T>(json: string | null): T | null {
+  if (!json) return null;
+  try {
+    return JSON.parse(json);
+  } catch {
+    return null;
+  }
+}
 
 export default function Payment() {
   const navigate = useNavigate();
@@ -20,7 +28,7 @@ export default function Payment() {
   const { data: allMenuItems = [] } = useAllMenuItems();
   const createOrder = useCreateOrder();
   const { play } = useSound();
-  const [step, setStep] = useState<"review" | "momo" | "submitting" | "error">("review");
+  const [step, setStep] = useState<"review" | "submitting" | "error">("review");
 
   // Helper to find item image from menu data
   const getItemImage = useCallback((item: typeof items[0]) => {
@@ -31,9 +39,14 @@ export default function Payment() {
     return menuItem?.image_url || null;
   }, [allMenuItems]);
 
-  // Get stored details
-  const detailsRaw = sessionStorage.getItem("kiosk_order_details");
-  const details = detailsRaw ? JSON.parse(detailsRaw) : null;
+  // Get stored details - use safe parsing to prevent render errors
+  const details = safeParseJSON<{
+    customer_name: string;
+    customer_phone: string | null;
+    customer_location: string | null;
+    payment_method: string;
+    special_instructions: string | null;
+  }>(sessionStorage.getItem("kiosk_order_details"));
 
   useEffect(() => {
     if (!details || items.length === 0) {
@@ -43,9 +56,8 @@ export default function Payment() {
 
   if (!details) return null;
 
-  const paymentMethod: PaymentMethod = details.payment_method;
-  const isMoMo = paymentMethod === "mobile_money";
-  const total = subtotal + DELIVERY_FEE;
+  const paymentMethod: PaymentMethod = "pay_at_counter"; // Fixed for kiosk
+  const total = subtotal; // No delivery fee for kiosk pickup
 
   const handlePlaceOrder = async () => {
     setStep("submitting");
@@ -56,12 +68,12 @@ export default function Payment() {
       customer_location: details.customer_location,
       payment_method: paymentMethod,
       subtotal,
-      delivery_fee: DELIVERY_FEE,
+      delivery_fee: 0, // No delivery fee for kiosk (pickup)
       total,
       special_instructions: details.special_instructions,
       source: KIOSK.ORDER_SOURCE,
-      is_scheduled: details.is_scheduled || false,
-      scheduled_for: details.scheduled_for || undefined,
+      is_scheduled: false,
+      scheduled_for: undefined,
       items: items.map((item) => ({
         type: item.type,
         main_dishes: item.mainDishes,
@@ -138,17 +150,6 @@ export default function Payment() {
           </Button>
         </div>
       </div>
-    );
-  }
-
-  if (step === "momo") {
-    return (
-      <MoMoPayment
-        phone={details.customer_phone || ""}
-        amount={subtotal}
-        onSuccess={handlePlaceOrder}
-        onCancel={() => setStep("review")}
-      />
     );
   }
 
@@ -232,16 +233,9 @@ export default function Payment() {
           
           {/* Pricing Breakdown */}
           <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500">Subtotal</span>
-              <span className="text-gray-700">{formatPrice(subtotal)}</span>
-            </div>
-            <div className="flex justify-between items-center text-sm">
-              <span className="text-gray-500 flex items-center gap-1">
-                <Truck className="w-4 h-4" />
-                Delivery Fee
-              </span>
-              <span className="text-gray-700">{formatPrice(DELIVERY_FEE)}</span>
+            <div className="flex justify-between items-center">
+              <span className="text-gray-500">{items.reduce((sum, item) => sum + item.quantity, 0)} items</span>
+              <span className="text-sm text-gray-500">Pick up at counter</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-100">
               <span className="font-bold text-lg text-[#212282]">Total</span>
@@ -272,9 +266,7 @@ export default function Payment() {
             )}
             <div className="flex justify-between">
               <span className="text-gray-500">Payment</span>
-              <span className="font-medium text-[#212282]">
-                {paymentMethod === "cash" ? "Cash on Delivery" : paymentMethod === "mobile_money" ? "Mobile Money" : "Pay at Counter"}
-              </span>
+              <span className="font-medium text-[#212282]">Pay at Counter</span>
             </div>
           </div>
         </div>
@@ -294,7 +286,7 @@ export default function Payment() {
           <Button
             size="touch"
             className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
-            onClick={isMoMo ? () => setStep("momo") : handlePlaceOrder}
+            onClick={handlePlaceOrder}
           >
             <CheckCircle2 className="w-5 h-5 mr-2" />
             Place Order

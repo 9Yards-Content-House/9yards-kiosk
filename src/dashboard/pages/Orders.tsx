@@ -1,11 +1,12 @@
 import { useState, useMemo, useCallback } from "react";
-import { Search, Filter, X, Download } from "lucide-react";
+import { Search, Filter, X, Download, CalendarClock } from "lucide-react";
 import { useTodaysOrders, useAllOrders } from "@shared/hooks/useOrders";
 import { useOrderSubscription } from "../hooks/useOrderSubscription";
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS } from "@shared/types/orders";
 import type { Order, OrderStatus } from "@shared/types/orders";
 import OrderBoard from "../components/OrderBoard";
 import NewOrderAlert from "../components/NewOrderAlert";
+import ScheduledOrdersList from "../components/ScheduledOrdersList";
 import { useQueryClient } from "@tanstack/react-query";
 import { Input } from "@shared/components/ui/input";
 import { Button } from "@shared/components/ui/button";
@@ -20,7 +21,7 @@ import {
 import { Tabs, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import { exportOrders, type OrderExport } from "@shared/lib/export";
 
-type ViewMode = "board" | "list";
+type ViewMode = "board" | "list" | "scheduled";
 type TimeFilter = "today" | "week" | "all";
 
 export default function Orders() {
@@ -77,6 +78,29 @@ export default function Orders() {
     return result;
   }, [baseOrders, searchQuery, statusFilter]);
 
+  // Separate scheduled orders from regular orders
+  const { regularOrders, scheduledOrders } = useMemo(() => {
+    const now = new Date();
+    const regular: Order[] = [];
+    const scheduled: Order[] = [];
+    
+    filteredOrders.forEach((order) => {
+      if (order.is_scheduled && order.scheduled_for) {
+        const scheduledTime = new Date(order.scheduled_for);
+        // Only show as scheduled if it's still in the future and status is new/preparing
+        if (scheduledTime > now && (order.status === 'new' || order.status === 'preparing')) {
+          scheduled.push(order);
+        } else {
+          regular.push(order);
+        }
+      } else {
+        regular.push(order);
+      }
+    });
+    
+    return { regularOrders: regular, scheduledOrders: scheduled };
+  }, [filteredOrders]);
+
   // Group orders by status for board view
   const grouped: Record<OrderStatus, Order[]> = useMemo(() => {
     const groups: Record<OrderStatus, Order[]> = {
@@ -87,14 +111,14 @@ export default function Orders() {
       cancelled: [],
     };
 
-    filteredOrders.forEach((order) => {
+    regularOrders.forEach((order) => {
       if (groups[order.status]) {
         groups[order.status].push(order);
       }
     });
 
     return groups;
-  }, [filteredOrders]);
+  }, [regularOrders]);
 
   // Clear filters
   const clearFilters = () => {
@@ -140,6 +164,28 @@ export default function Orders() {
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {/* View Mode Toggle */}
+          <Tabs value={viewMode} onValueChange={(v) => setViewMode(v as ViewMode)}>
+            <TabsList>
+              <TabsTrigger value="board" className="gap-1.5">
+                Board
+                {grouped.new.length > 0 && (
+                  <Badge variant="destructive" className="h-5 px-1.5 min-w-[20px]">
+                    {grouped.new.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="scheduled" className="gap-1.5">
+                <CalendarClock className="w-4 h-4" />
+                Scheduled
+                {scheduledOrders.length > 0 && (
+                  <Badge variant="secondary" className="h-5 px-1.5 min-w-[20px] bg-blue-100 text-blue-700">
+                    {scheduledOrders.length}
+                  </Badge>
+                )}
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
           <NewOrderAlert count={grouped.new.length} />
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
@@ -236,8 +282,10 @@ export default function Orders() {
         </div>
       )}
 
-      {/* Order Board */}
-      {filteredOrders.length === 0 ? (
+      {/* Order Board or Scheduled View */}
+      {viewMode === 'scheduled' ? (
+        <ScheduledOrdersList orders={scheduledOrders} />
+      ) : filteredOrders.length === 0 ? (
         <div className="text-center py-12 text-muted-foreground">
           <p className="text-lg">No orders found</p>
           {hasFilters && (

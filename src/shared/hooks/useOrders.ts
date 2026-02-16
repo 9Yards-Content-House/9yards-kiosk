@@ -826,3 +826,129 @@ export function usePaginatedOrders(options?: {
     staleTime: 30_000,
   });
 }
+
+/** Update order items and special instructions (dashboard editing) */
+export interface UpdateOrderItemPayload {
+  itemId: string;
+  quantity: number;
+}
+
+export interface UpdateOrderPayload {
+  orderId: string;
+  items: UpdateOrderItemPayload[];
+  special_instructions?: string;
+}
+
+export function useUpdateOrder() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ orderId, items, special_instructions }: UpdateOrderPayload) => {
+      const now = new Date().toISOString();
+      
+      if (USE_MOCK_DATA) {
+        const order = mockOrdersStore.find(o => o.id === orderId);
+        if (!order) throw new Error("Order not found");
+        
+        // Update items
+        if (order.items) {
+          for (const update of items) {
+            const item = order.items.find(i => i.id === update.itemId);
+            if (item) {
+              if (update.quantity === 0) {
+                // Remove item
+                order.items = order.items.filter(i => i.id !== update.itemId);
+              } else {
+                item.quantity = update.quantity;
+                item.total_price = item.unit_price * update.quantity;
+              }
+            }
+          }
+        }
+        
+        // Update special instructions
+        if (special_instructions !== undefined) {
+          order.special_instructions = special_instructions;
+        }
+        
+        // Recalculate total
+        const subtotal = order.items?.reduce((sum, item) => sum + item.total_price, 0) || 0;
+        order.subtotal = subtotal;
+        order.total = subtotal + (order.delivery_fee || 0);
+        order.updated_at = now;
+        
+        saveMockOrdersStore();
+        console.log(`📦 Mock order ${order.order_number} items updated`);
+        return order;
+      }
+
+      // Real Supabase flow
+      try {
+        // Update each item
+        for (const update of items) {
+          if (update.quantity === 0) {
+            // Delete item
+            await supabase
+              .from("order_items")
+              .delete()
+              .eq("id", update.itemId);
+          } else {
+            // Update quantity - need to get unit_price first
+            const { data: itemData } = await supabase
+              .from("order_items")
+              .select("unit_price")
+              .eq("id", update.itemId)
+              .single();
+            
+            if (itemData) {
+              await supabase
+                .from("order_items")
+                .update({
+                  quantity: update.quantity,
+                  total_price: itemData.unit_price * update.quantity,
+                })
+                .eq("id", update.itemId);
+            }
+          }
+        }
+
+        // Recalculate order total from remaining items
+        const { data: updatedItems } = await supabase
+          .from("order_items")
+          .select("total_price")
+          .eq("order_id", orderId);
+        
+        const subtotal = updatedItems?.reduce((sum, item) => sum + (item.total_price || 0), 0) || 0;
+        
+        // Update order with new totals and special instructions
+        const orderUpdates: Record<string, unknown> = {
+          subtotal,
+          total: subtotal, // Assuming no delivery fee for kiosk orders
+          updated_at: now,
+        };
+        
+        if (special_instructions !== undefined) {
+          orderUpdates.special_instructions = special_instructions;
+        }
+
+        const { data, error } = await supabase
+          .from("orders")
+          .update(orderUpdates)
+          .eq("id", orderId)
+          .select("*, items:order_items(*)")
+          .single();
+
+        if (error) throw error;
+        
+        console.log(`✅ Order ${orderId} items updated`);
+        return data as Order;
+      } catch (err) {
+        console.error(`❌ Failed to update order items:`, err);
+        throw err;
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["orders"] });
+    },
+  });
+}

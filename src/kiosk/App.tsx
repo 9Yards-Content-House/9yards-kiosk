@@ -19,7 +19,6 @@ const CartNew = lazy(() => import("./pages/CartNew"));
 const Details = lazy(() => import("./pages/Details"));
 const Payment = lazy(() => import("./pages/Payment"));
 const ConfirmationNew = lazy(() => import("./pages/ConfirmationNew"));
-const TrackOrders = lazy(() => import("./pages/TrackOrders"));
 const OrderLookup = lazy(() => import("./pages/OrderLookup"));
 const QueueDisplay = lazy(() => import("./pages/QueueDisplay"));
 
@@ -54,7 +53,6 @@ function KioskRoutes() {
           <Route path="/details" element={<Details />} />
           <Route path="/payment" element={<Payment />} />
           <Route path="/confirmation" element={<ConfirmationNew />} />
-          <Route path="/track" element={<TrackOrders />} />
           <Route path="/lookup" element={<OrderLookup />} />
           <Route path="/lookup/:orderNumber" element={<OrderLookup />} />
           <Route path="/queue" element={<QueueDisplay />} />

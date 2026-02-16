@@ -1,14 +1,12 @@
-import { useState, useCallback, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, User, Phone, CheckCircle2, Truck, Clock, CalendarClock } from "lucide-react";
+import { ArrowRight, User, Phone, CheckCircle2, ChevronDown, MessageSquare } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useTranslation } from "@shared/context/LanguageContext";
 import { formatPrice, vibrate, cn } from "@shared/lib/utils";
 import { normalizePhone } from "@shared/lib/validation";
 import KioskHeader from "../components/KioskHeader";
-import PaymentMethodSelector from "../components/PaymentMethodSelector";
 import { Button } from "@shared/components/ui/button";
-import { DELIVERY_FEE } from "@shared/types/orders";
 import type { PaymentMethod } from "@shared/types/orders";
 
 // Sanitize text input to prevent XSS
@@ -96,12 +94,9 @@ const detectNetworkOperator = (phone: string): { name: string; color: string; lo
 
 export default function Details() {
   const navigate = useNavigate();
-  const { t } = useTranslation();
+  const { t: _t } = useTranslation();
   const { subtotal, itemCount } = useKioskCart();
   const nameInputRef = useRef<HTMLInputElement>(null);
-
-  // Calculate total with delivery fee
-  const total = subtotal + DELIVERY_FEE;
 
   // Load saved details from sessionStorage on mount
   const savedDetails = sessionStorage.getItem("kiosk_order_details");
@@ -116,71 +111,44 @@ export default function Details() {
   const [name, setName] = useState(initialDetails?.customer_name || "");
   const [phone, setPhone] = useState(initialDetails?.customer_phone || "");
   const [phoneTouched, setPhoneTouched] = useState(false);
-  const [paymentMethod, setPaymentMethod] = useState<PaymentMethod>(
-    initialDetails?.payment_method || "mobile_money"
-  );
+  // Fixed to pay_at_counter for kiosk
+  const paymentMethod: PaymentMethod = "pay_at_counter";
   const [specialInstructions, setSpecialInstructions] = useState(
     initialDetails?.special_instructions || ""
   );
-  const [nameTouched, setNameTouched] = useState(false);
-  
-  // Scheduling state
-  const [isScheduled, setIsScheduled] = useState(initialDetails?.is_scheduled || false);
-  const [scheduledTime, setScheduledTime] = useState(initialDetails?.scheduled_for || "");
-
-  // Generate time slots (next 4 hours in 30 min increments)
-  const timeSlots = useMemo(() => {
-    const slots: { value: string; label: string }[] = [];
-    const now = new Date();
-    // Round up to next 30 min
-    const startTime = new Date(now);
-    startTime.setMinutes(Math.ceil(now.getMinutes() / 30) * 30 + 30);
-    startTime.setSeconds(0);
-    startTime.setMilliseconds(0);
-    
-    for (let i = 0; i < 8; i++) {
-      const slotTime = new Date(startTime);
-      slotTime.setMinutes(slotTime.getMinutes() + i * 30);
-      
-      slots.push({
-        value: slotTime.toISOString(),
-        label: slotTime.toLocaleTimeString("en-UG", {
-          hour: "2-digit",
-          minute: "2-digit",
-        }),
-      });
-    }
-    return slots;
-  }, []);
+  const [_nameTouched, setNameTouched] = useState(false);
+  const [showSpecialInstructions, setShowSpecialInstructions] = useState(
+    !!initialDetails?.special_instructions
+  );
 
   // Auto-save details to sessionStorage as user types
   useEffect(() => {
     const details = {
-      customer_name: sanitizeText(name),
+      customer_name: sanitizeText(name) || "Guest",
       customer_phone: phone.trim() ? normalizePhone(phone.trim()) : null,
       customer_location: null,
       payment_method: paymentMethod,
       special_instructions: sanitizeText(specialInstructions) || null,
-      delivery_fee: DELIVERY_FEE,
-      is_scheduled: isScheduled,
-      scheduled_for: isScheduled ? scheduledTime : null,
+      delivery_fee: 0, // No delivery fee for kiosk orders (pickup)
+      is_scheduled: false,
+      scheduled_for: null,
     };
     sessionStorage.setItem("kiosk_order_details", JSON.stringify(details));
-  }, [name, phone, paymentMethod, specialInstructions, isScheduled, scheduledTime]);
+  }, [name, phone, paymentMethod, specialInstructions]);
 
-  // Auto-focus name input on mount (only if empty)
+  // Auto-focus phone input on mount (phone is the main required field)
   useEffect(() => {
-    if (!name) {
-      nameInputRef.current?.focus();
+    if (!phone) {
+      // Focus phone input after a short delay
+      setTimeout(() => {
+        document.getElementById("phone-input")?.focus();
+      }, 100);
     }
   }, []);
 
-  // Phone is always required for WhatsApp notifications
-  const isNameValid = name.trim().length >= 2;
+  // Phone is always required for notifications - name is optional (defaults to "Guest")
   const isPhoneValid = phone.trim().length >= 10;
-  // Scheduling validation
-  const isScheduleValid = !isScheduled || (isScheduled && scheduledTime);
-  const isValid = isNameValid && isPhoneValid && isScheduleValid;
+  const isValid = isPhoneValid;
 
   // Detect network operator from phone number
   const networkOperator = useMemo(() => detectNetworkOperator(phone), [phone]);
@@ -189,8 +157,8 @@ export default function Details() {
     vibrate();
     if (!isValid) return;
 
-    // Validate and sanitize inputs
-    const sanitizedName = sanitizeText(name);
+    // Use "Guest" if name is empty
+    const sanitizedName = sanitizeText(name) || "Guest";
     const sanitizedInstructions = sanitizeText(specialInstructions);
     const formattedPhone = normalizePhone(phone.trim());
 
@@ -203,9 +171,9 @@ export default function Details() {
         customer_location: null,
         payment_method: paymentMethod,
         special_instructions: sanitizedInstructions || null,
-        delivery_fee: DELIVERY_FEE,
-        is_scheduled: isScheduled,
-        scheduled_for: isScheduled ? scheduledTime : null,
+        delivery_fee: 0, // No delivery fee for kiosk (pickup)
+        is_scheduled: false,
+        scheduled_for: null,
       })
     );
 
@@ -242,11 +210,12 @@ export default function Details() {
             </div>
           </div>
 
-          {/* Name Field */}
+          {/* Name Field - Optional */}
           <div className="mb-6">
             <label className="flex items-center gap-2 text-base font-bold text-[#212282] mb-3">
               <User className="w-5 h-5" />
               What's your name?
+              <span className="text-sm font-normal text-gray-400">(optional)</span>
             </label>
             <input
               ref={nameInputRef}
@@ -255,21 +224,17 @@ export default function Details() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               onBlur={() => setNameTouched(true)}
-              placeholder="Enter your name"
+              placeholder="Guest"
               aria-label="Your name"
               className={cn(
                 "w-full h-16 px-5 text-xl font-medium rounded-2xl border-2 transition-all outline-none",
                 "placeholder:text-gray-400",
-                nameTouched && !isNameValid
-                  ? "border-red-400 bg-red-50 focus:border-red-500"
-                  : name.trim().length >= 2
-                    ? "border-green-400 bg-green-50/50 focus:border-green-500"
-                    : "border-gray-200 bg-gray-50 focus:border-[#212282] focus:bg-white"
+                name.trim().length >= 2
+                  ? "border-green-400 bg-green-50/50 focus:border-green-500"
+                  : "border-gray-200 bg-gray-50 focus:border-[#212282] focus:bg-white"
               )}
             />
-            {nameTouched && !isNameValid && (
-              <p className="text-sm text-red-500 mt-2">Please enter at least 2 characters</p>
-            )}
+            <p className="text-sm text-gray-400 mt-2">Leave blank to order as "Guest"</p>
           </div>
 
           {/* Phone Field */}
@@ -323,107 +288,48 @@ export default function Details() {
             )}
           </div>
 
-          {/* Payment Method */}
-          <div className="mb-6">
-            <label className="block text-base font-bold text-[#212282] mb-3">
-              How will you pay?
-            </label>
-            <PaymentMethodSelector
-              selected={paymentMethod}
-              onChange={setPaymentMethod}
-            />
+          {/* Payment Info - Fixed to Pay at Counter */}
+          <div className="mb-6 p-4 bg-[#212282]/5 rounded-2xl border border-[#212282]/10">
+            <div className="flex items-center gap-3">
+              <div className="w-12 h-12 rounded-full bg-[#212282] text-white flex items-center justify-center">
+                <CheckCircle2 className="w-6 h-6" />
+              </div>
+              <div>
+                <p className="font-bold text-[#212282]">Pay at Counter</p>
+                <p className="text-sm text-gray-500">Pay when you pick up your order</p>
+              </div>
+            </div>
           </div>
 
-          {/* Order Timing */}
+          {/* Special Instructions - Collapsible */}
           <div className="mb-6">
-            <label className="flex items-center gap-2 text-base font-bold text-[#212282] mb-3">
-              <CalendarClock className="w-5 h-5" />
-              When do you want it?
-            </label>
-            <div className="grid grid-cols-2 gap-3">
-              {/* Order Now */}
-              <button
-                type="button"
-                onClick={() => {
-                  setIsScheduled(false);
-                  setScheduledTime("");
-                }}
-                className={cn(
-                  "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all",
-                  !isScheduled
-                    ? "border-[#E6411C] bg-[#E6411C]/5"
-                    : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                )}
-              >
-                <Clock className={cn("w-6 h-6 mb-2", !isScheduled ? "text-[#E6411C]" : "text-gray-400")} />
-                <span className={cn("font-medium", !isScheduled ? "text-[#E6411C]" : "text-gray-600")}>
-                  Order Now
-                </span>
-                <span className="text-xs text-gray-400 mt-1">~25-35 min</span>
-              </button>
-
-              {/* Schedule for Later */}
-              <button
-                type="button"
-                onClick={() => setIsScheduled(true)}
-                className={cn(
-                  "flex flex-col items-center justify-center p-4 rounded-2xl border-2 transition-all",
-                  isScheduled
-                    ? "border-[#E6411C] bg-[#E6411C]/5"
-                    : "border-gray-200 bg-gray-50 hover:border-gray-300"
-                )}
-              >
-                <CalendarClock className={cn("w-6 h-6 mb-2", isScheduled ? "text-[#E6411C]" : "text-gray-400")} />
-                <span className={cn("font-medium", isScheduled ? "text-[#E6411C]" : "text-gray-600")}>
-                  Schedule
-                </span>
-                <span className="text-xs text-gray-400 mt-1">Pick a time</span>
-              </button>
-            </div>
-
-            {/* Time Picker (shown when scheduling) */}
-            {isScheduled && (
-              <div className="mt-4">
-                <label className="block text-sm font-medium text-gray-600 mb-2">
-                  Select delivery time
-                </label>
-                <div className="grid grid-cols-4 gap-2">
-                  {timeSlots.map((slot) => (
-                    <button
-                      key={slot.value}
-                      type="button"
-                      onClick={() => setScheduledTime(slot.value)}
-                      className={cn(
-                        "py-3 px-2 rounded-xl border-2 text-sm font-medium transition-all",
-                        scheduledTime === slot.value
-                          ? "border-[#E6411C] bg-[#E6411C] text-white"
-                          : "border-gray-200 bg-white hover:border-[#E6411C]/50"
-                      )}
-                    >
-                      {slot.label}
-                    </button>
-                  ))}
-                </div>
-                {isScheduled && !scheduledTime && (
-                  <p className="text-sm text-amber-600 mt-2">Please select a time slot</p>
-                )}
+            <button
+              type="button"
+              onClick={() => setShowSpecialInstructions(!showSpecialInstructions)}
+              className="flex items-center justify-between w-full p-4 rounded-2xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors"
+            >
+              <span className="flex items-center gap-2 text-base font-bold text-[#212282]">
+                <MessageSquare className="w-5 h-5" />
+                Add Special Requests
+                <span className="text-sm font-normal text-gray-400">(optional)</span>
+              </span>
+              <ChevronDown className={cn(
+                "w-5 h-5 text-gray-400 transition-transform",
+                showSpecialInstructions && "rotate-180"
+              )} />
+            </button>
+            {showSpecialInstructions && (
+              <div className="mt-3">
+                <textarea
+                  value={specialInstructions}
+                  onChange={(e) => setSpecialInstructions(e.target.value)}
+                  placeholder="E.g., extra spicy, no onions, allergies..."
+                  rows={2}
+                  className="w-full p-4 text-base border-2 border-gray-200 rounded-2xl resize-none bg-gray-50 focus:border-[#212282] focus:bg-white outline-none transition-all placeholder:text-gray-400"
+                  autoFocus
+                />
               </div>
             )}
-          </div>
-
-          {/* Special Instructions */}
-          <div className="mb-6">
-            <label className="block text-base font-bold text-[#212282] mb-3">
-              Special Requests
-              <span className="text-sm font-normal text-gray-400 ml-2">(optional)</span>
-            </label>
-            <textarea
-              value={specialInstructions}
-              onChange={(e) => setSpecialInstructions(e.target.value)}
-              placeholder="E.g., extra spicy, no onions, allergies..."
-              rows={2}
-              className="w-full p-4 text-base border-2 border-gray-200 rounded-2xl resize-none bg-gray-50 focus:border-[#212282] focus:bg-white outline-none transition-all placeholder:text-gray-400"
-            />
           </div>
         </div>
       </div>
@@ -432,20 +338,13 @@ export default function Details() {
       <div className="border-t bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
         {/* Order Summary */}
         <div className="space-y-2 mb-4">
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500">{itemCount} items</span>
-            <span className="text-gray-700">{formatPrice(subtotal)}</span>
-          </div>
-          <div className="flex justify-between items-center text-sm">
-            <span className="text-gray-500 flex items-center gap-1">
-              <Truck className="w-4 h-4" />
-              Delivery Fee
-            </span>
-            <span className="text-gray-700">{formatPrice(DELIVERY_FEE)}</span>
-          </div>
-          <div className="flex justify-between items-center pt-2 border-t border-gray-100">
+          <div className="flex justify-between items-center">
+            <span className="text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
             <span className="text-lg font-bold text-[#212282]">Total</span>
-            <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(total)}</span>
+          </div>
+          <div className="flex justify-between items-center">
+            <span className="text-sm text-gray-400">Pick up at counter</span>
+            <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
           </div>
         </div>
         <Button

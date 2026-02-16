@@ -13,7 +13,6 @@ import {
   XCircle,
 } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
-import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import { useCancelOrder } from '@shared/hooks/useOrders';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
@@ -39,7 +38,6 @@ export default function ConfirmationNew() {
   const location = useLocation();
   const { t } = useTranslation();
   const { setLanguage } = useLanguage();
-  const { data: waitTime } = useWaitTime();
   const { play } = useSound();
   const cancelOrder = useCancelOrder();
 
@@ -437,33 +435,6 @@ export default function ConfirmationNew() {
               <QRCode value={orderNumber} size={160} asTrackingLink />
             </div>
           </motion.div>
-
-          {/* Wait time */}
-          {waitTime && (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: 0.8 }}
-              className="bg-amber-50 rounded-2xl p-5 border border-amber-200"
-            >
-              <div className="flex items-center gap-3">
-                <div className="w-12 h-12 bg-amber-100 rounded-full flex items-center justify-center">
-                  <Clock className="w-6 h-6 text-amber-600" />
-                </div>
-                <div>
-                  <p className="text-sm text-amber-700">
-                    {t('confirmation.estimatedWait')}
-                  </p>
-                  <p className="text-2xl font-bold text-amber-800">
-                    {formatWaitTime(waitTime.estimatedMinutes)}
-                  </p>
-                  <p className="text-xs text-amber-600">
-                    {waitTime.ordersAhead} {t('confirmation.ordersAhead')}
-                  </p>
-                </div>
-              </div>
-            </motion.div>
-          )}
 
           {/* WhatsApp notification note */}
           {customerPhone && (

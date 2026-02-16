@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, ArrowRight } from "lucide-react";
+import { ShoppingCart, ArrowRight, Check } from "lucide-react";
 import { formatPrice } from "@shared/lib/utils";
 import { useEffect, useState, useRef } from "react";
 
@@ -11,15 +11,21 @@ interface CartBarProps {
 
 export default function CartBar({ itemCount, total, onClick }: CartBarProps) {
   const [isAnimating, setIsAnimating] = useState(false);
+  const [showCheck, setShowCheck] = useState(false);
   const prevCountRef = useRef(itemCount);
 
-  // Animate when item count changes
+  // Animate when item count changes (item added)
   useEffect(() => {
-    if (itemCount !== prevCountRef.current && itemCount > 0) {
+    if (itemCount > prevCountRef.current && itemCount > 0) {
       setIsAnimating(true);
-      const timer = setTimeout(() => setIsAnimating(false), 300);
+      setShowCheck(true);
+      const animTimer = setTimeout(() => setIsAnimating(false), 400);
+      const checkTimer = setTimeout(() => setShowCheck(false), 1200);
       prevCountRef.current = itemCount;
-      return () => clearTimeout(timer);
+      return () => {
+        clearTimeout(animTimer);
+        clearTimeout(checkTimer);
+      };
     }
     prevCountRef.current = itemCount;
   }, [itemCount]);
@@ -53,8 +59,8 @@ export default function CartBar({ itemCount, total, onClick }: CartBarProps) {
         <div className="flex items-center gap-3 relative z-10">
           <div className="relative">
             <motion.div
-              animate={isAnimating ? { scale: [1, 1.3, 1] } : {}}
-              transition={{ duration: 0.3 }}
+              animate={isAnimating ? { scale: [1, 1.4, 1], rotate: [0, -10, 10, 0] } : {}}
+              transition={{ duration: 0.4 }}
             >
               <ShoppingCart className="w-6 h-6" />
             </motion.div>
@@ -70,7 +76,31 @@ export default function CartBar({ itemCount, total, onClick }: CartBarProps) {
               </motion.span>
             </AnimatePresence>
           </div>
-          <span className="text-lg font-bold">View Cart</span>
+          {/* Show "Added!" feedback or "View Cart" */}
+          <AnimatePresence mode="wait">
+            {showCheck ? (
+              <motion.span
+                key="added"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="text-lg font-bold flex items-center gap-1.5"
+              >
+                <Check className="w-5 h-5" />
+                Added!
+              </motion.span>
+            ) : (
+              <motion.span
+                key="viewcart"
+                initial={{ opacity: 0, x: -10 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: 10 }}
+                className="text-lg font-bold"
+              >
+                View Cart
+              </motion.span>
+            )}
+          </AnimatePresence>
         </div>
         <div className="flex items-center gap-2 relative z-10">
           <AnimatePresence mode="wait">

@@ -34,7 +34,7 @@ export default function MobileNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 bg-card border-t md:hidden z-50 safe-area-pb">
-      <div className="flex items-center justify-around py-2">
+      <div className="flex items-center justify-around py-1">
         {filteredPrimary.map((link) => {
           const Icon = link.icon;
           return (
@@ -43,8 +43,8 @@ export default function MobileNav() {
               to={link.to}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs font-medium transition-colors",
-                  isActive ? "text-secondary" : "text-muted-foreground"
+                  "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-xs font-medium transition-colors rounded-lg",
+                  isActive ? "text-secondary bg-secondary/10" : "text-muted-foreground active:bg-muted"
                 )
               }
             >
@@ -59,8 +59,8 @@ export default function MobileNav() {
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
-                  "flex flex-col items-center gap-0.5 px-3 py-1.5 text-xs font-medium transition-colors",
-                  isMoreActive ? "text-secondary" : "text-muted-foreground"
+                  "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-xs font-medium transition-colors rounded-lg",
+                  isMoreActive ? "text-secondary bg-secondary/10" : "text-muted-foreground active:bg-muted"
                 )}
               >
                 <MoreHorizontal className="w-5 h-5" />
@@ -72,11 +72,11 @@ export default function MobileNav() {
                 const Icon = link.icon;
                 const isActive = location.pathname === link.to;
                 return (
-                  <DropdownMenuItem key={link.to} asChild>
+                  <DropdownMenuItem key={link.to} asChild className="min-h-[44px]">
                     <NavLink
                       to={link.to}
                       className={cn(
-                        "flex items-center gap-2 w-full",
+                        "flex items-center gap-2 w-full py-3",
                         isActive && "bg-muted"
                       )}
                     >

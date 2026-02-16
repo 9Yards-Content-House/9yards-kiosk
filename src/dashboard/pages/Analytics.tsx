@@ -1,7 +1,7 @@
 import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { motion } from 'framer-motion';
-import { subDays, endOfDay, startOfDay } from 'date-fns';
+import { subDays, endOfDay, startOfDay, differenceInDays } from 'date-fns';
 import { DateRange } from 'react-day-picker';
 import {
   TrendingUp,
@@ -14,6 +14,7 @@ import {
   Download,
   PieChart,
   BarChart3,
+  GitCompare,
 } from 'lucide-react';
 import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { formatPrice, cn } from '@shared/lib/utils';
@@ -25,6 +26,7 @@ import { Button } from '@shared/components/ui/button';
 import { DateRangePicker } from '@shared/components/ui/date-range-picker';
 import { Skeleton } from '@shared/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
+import { Switch } from '@shared/components/ui/switch';
 import { exportAnalyticsSummary, type AnalyticsSummary } from '@shared/lib/export';
 import type { Order, OrderItem } from '@shared/types/orders';
 
@@ -139,6 +141,8 @@ export default function Analytics() {
     from: subDays(new Date(), 29),
     to: new Date(),
   });
+  
+  const [showComparison, setShowComparison] = useState(false);
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['analytics', 'orders', dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
@@ -304,6 +308,85 @@ export default function Analytics() {
     };
   }, [orders]);
 
+  // Calculate period-over-period comparison (current period vs previous equivalent period)
+  const comparison = useMemo(() => {
+    if (!orders || !dateRange?.from || !dateRange?.to) {
+      return null;
+    }
+
+    const periodDays = differenceInDays(dateRange.to, dateRange.from) + 1;
+    const prevPeriodEnd = subDays(dateRange.from, 1);
+    const prevPeriodStart = subDays(prevPeriodEnd, periodDays - 1);
+
+    // For comparison, we'd need to fetch more data. For now, use the available data
+    // and split based on date ranges if we have historical data
+    const currentPeriodOrders = orders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return orderDate >= dateRange.from! && orderDate <= dateRange.to!;
+    });
+
+    // Check if we have data from previous period (only works if date range is recent)
+    const prevPeriodOrders = orders.filter(o => {
+      const orderDate = new Date(o.created_at);
+      return orderDate >= prevPeriodStart && orderDate <= prevPeriodEnd;
+    });
+
+    if (prevPeriodOrders.length === 0) {
+      return null; // No previous period data available
+    }
+
+    const currentRevenue = currentPeriodOrders.reduce((sum, o) => sum + o.total, 0);
+    const prevRevenue = prevPeriodOrders.reduce((sum, o) => sum + o.total, 0);
+    const currentOrders = currentPeriodOrders.length;
+    const prevOrders = prevPeriodOrders.length;
+    const currentAvg = currentOrders > 0 ? currentRevenue / currentOrders : 0;
+    const prevAvg = prevOrders > 0 ? prevRevenue / prevOrders : 0;
+
+    // Calculate prep time comparison
+    const getPrepTime = (orderList: Order[]) => {
+      const times: number[] = [];
+      orderList.forEach(o => {
+        if (o.created_at && o.prepared_at) {
+          const mins = Math.round((new Date(o.prepared_at).getTime() - new Date(o.created_at).getTime()) / 60000);
+          if (mins > 0 && mins < 120) times.push(mins);
+        }
+      });
+      return times.length > 0 ? times.reduce((a, b) => a + b, 0) / times.length : 0;
+    };
+
+    const currentPrepTime = getPrepTime(currentPeriodOrders);
+    const prevPrepTime = getPrepTime(prevPeriodOrders);
+
+    const calcChange = (current: number, prev: number) => {
+      if (prev === 0) return current > 0 ? 100 : 0;
+      return ((current - prev) / prev) * 100;
+    };
+
+    return {
+      periodLabel: `vs previous ${periodDays} days`,
+      orders: {
+        current: currentOrders,
+        previous: prevOrders,
+        change: calcChange(currentOrders, prevOrders),
+      },
+      revenue: {
+        current: currentRevenue,
+        previous: prevRevenue,
+        change: calcChange(currentRevenue, prevRevenue),
+      },
+      avgOrder: {
+        current: currentAvg,
+        previous: prevAvg,
+        change: calcChange(currentAvg, prevAvg),
+      },
+      prepTime: {
+        current: currentPrepTime,
+        previous: prevPrepTime,
+        change: calcChange(prevPrepTime, currentPrepTime), // Inverted - lower is better
+      },
+    };
+  }, [orders, dateRange]);
+
   const handleExport = () => {
     if (!orders || orders.length === 0) return;
     const summary: AnalyticsSummary = {
@@ -331,10 +414,43 @@ export default function Analytics() {
   }
 
   const stats = [
-    { label: 'Total Orders', value: metrics.totalOrders.toString(), icon: ShoppingBag, change: metrics.ordersChange, color: 'text-blue-600', bg: 'bg-blue-50' },
-    { label: 'Revenue', value: formatPrice(metrics.totalRevenue), icon: DollarSign, change: metrics.revenueChange, color: 'text-green-600', bg: 'bg-green-50' },
-    { label: 'Avg Order', value: formatPrice(metrics.avgOrderValue), icon: TrendingUp, color: 'text-purple-600', bg: 'bg-purple-50' },
-    { label: 'Avg Prep Time', value: metrics.avgPrepTime > 0 ? `${metrics.avgPrepTime} min` : 'N/A', icon: Clock, color: 'text-amber-600', bg: 'bg-amber-50' },
+    { 
+      label: 'Total Orders', 
+      value: metrics.totalOrders.toString(), 
+      icon: ShoppingBag, 
+      change: showComparison && comparison ? comparison.orders.change : metrics.ordersChange,
+      previousValue: showComparison && comparison ? comparison.orders.previous.toString() : undefined,
+      color: 'text-blue-600', 
+      bg: 'bg-blue-50' 
+    },
+    { 
+      label: 'Revenue', 
+      value: formatPrice(metrics.totalRevenue), 
+      icon: DollarSign, 
+      change: showComparison && comparison ? comparison.revenue.change : metrics.revenueChange,
+      previousValue: showComparison && comparison ? formatPrice(comparison.revenue.previous) : undefined,
+      color: 'text-green-600', 
+      bg: 'bg-green-50' 
+    },
+    { 
+      label: 'Avg Order', 
+      value: formatPrice(metrics.avgOrderValue), 
+      icon: TrendingUp, 
+      change: showComparison && comparison ? comparison.avgOrder.change : undefined,
+      previousValue: showComparison && comparison ? formatPrice(comparison.avgOrder.previous) : undefined,
+      color: 'text-purple-600', 
+      bg: 'bg-purple-50' 
+    },
+    { 
+      label: 'Avg Prep Time', 
+      value: metrics.avgPrepTime > 0 ? `${metrics.avgPrepTime} min` : 'N/A', 
+      icon: Clock, 
+      change: showComparison && comparison && comparison.prepTime.current > 0 ? comparison.prepTime.change : undefined,
+      previousValue: showComparison && comparison && comparison.prepTime.previous > 0 ? `${Math.round(comparison.prepTime.previous)} min` : undefined,
+      color: 'text-amber-600', 
+      bg: 'bg-amber-50',
+      invertedChange: true, // Lower prep time is better
+    },
   ];
 
   return (
@@ -344,7 +460,19 @@ export default function Analytics() {
           <h1 className="text-2xl font-bold">Analytics</h1>
           <p className="text-muted-foreground">Track performance and insights</p>
         </div>
-        <div className="flex flex-col sm:flex-row gap-2">
+        <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
+          {/* Comparison Toggle */}
+          {comparison && (
+            <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-muted/50">
+              <GitCompare className="w-4 h-4 text-muted-foreground" />
+              <span className="text-sm text-muted-foreground">Compare</span>
+              <Switch 
+                checked={showComparison} 
+                onCheckedChange={setShowComparison}
+                aria-label="Show period comparison"
+              />
+            </div>
+          )}
           <DateRangePicker value={dateRange} onChange={setDateRange} />
           <Button variant="outline" onClick={handleExport} disabled={!orders || orders.length === 0}>
             <Download className="w-4 h-4 mr-2" />
@@ -352,6 +480,16 @@ export default function Analytics() {
           </Button>
         </div>
       </div>
+      
+      {/* Comparison Period Indicator */}
+      {showComparison && comparison && (
+        <div className="flex items-center gap-2 px-4 py-2 bg-blue-50 border border-blue-200 rounded-lg text-sm">
+          <GitCompare className="w-4 h-4 text-blue-600" />
+          <span className="text-blue-700">
+            Comparing {comparison.periodLabel}
+          </span>
+        </div>
+      )}
 
       {isLoading && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -363,6 +501,11 @@ export default function Analytics() {
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
           {stats.map((stat, idx) => {
             const Icon = stat.icon;
+            // For inverted metrics (like prep time), lower is better so we flip the color logic
+            const isPositive = stat.invertedChange 
+              ? (stat.change !== undefined && stat.change < 0) 
+              : (stat.change !== undefined && stat.change > 0);
+            
             return (
               <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} className="bg-card rounded-xl border p-4">
                 <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-3', stat.bg)}>
@@ -370,10 +513,22 @@ export default function Analytics() {
                 </div>
                 <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
                 <p className="text-xl font-bold">{stat.value}</p>
+                
+                {/* Show previous value when comparison is enabled */}
+                {showComparison && stat.previousValue && (
+                  <p className="text-xs text-muted-foreground">
+                    was {stat.previousValue}
+                  </p>
+                )}
+                
                 {stat.change !== undefined && stat.change !== 0 && (
-                  <div className={cn('flex items-center gap-1 text-xs mt-1', stat.change > 0 ? 'text-green-600' : 'text-red-600')}>
+                  <div className={cn(
+                    'flex items-center gap-1 text-xs mt-1', 
+                    isPositive ? 'text-green-600' : 'text-red-600'
+                  )}>
                     {stat.change > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                    {Math.abs(stat.change).toFixed(1)}% vs prev period
+                    {Math.abs(stat.change).toFixed(1)}%
+                    {showComparison && comparison ? '' : ' vs prev period'}
                   </div>
                 )}
               </motion.div>

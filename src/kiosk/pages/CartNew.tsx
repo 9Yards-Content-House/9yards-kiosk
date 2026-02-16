@@ -10,6 +10,7 @@ import {
   AlertCircle,
   UtensilsCrossed,
   X,
+  Clock,
 } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useKioskCart } from '../context/KioskCartContext';
@@ -30,6 +31,7 @@ import { saveOrderToHistory } from '../components/QuickReorder';
 import { useAllMenuItems, useCategories } from '@shared/hooks/useMenu';
 import { getUpsellSuggestions } from '@shared/lib/recommendations';
 import { useSound } from '../hooks/useSound';
+import { useWaitTime, formatWaitTime } from '@shared/hooks/useWaitTime';
 import type { MenuItem } from '@shared/types/menu';
 
 // Type for order history items
@@ -45,6 +47,7 @@ export default function CartNew() {
   const { data: allMenuItems = [] } = useAllMenuItems();
   const { data: categories = [] } = useCategories();
   const { play } = useSound();
+  const { data: waitTimeData } = useWaitTime();
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -234,14 +237,46 @@ export default function CartNew() {
         }
       />
 
-      {/* Item count */}
-      <div className="px-4 py-2 bg-muted/50 flex items-center justify-between text-sm">
-        <span className="text-muted-foreground">
-          {itemCount} {itemCount === 1 ? t('cart.item') : t('cart.items')}
-        </span>
-        <span className="text-muted-foreground">
-          Swipe left to remove
-        </span>
+      {/* Visual Cart Summary - Tray Illustration */}
+      <div className="px-4 py-4 bg-gradient-to-b from-[#212282]/5 to-transparent">
+        <div className="flex items-center gap-4">
+          {/* Visual Bag */}
+          <motion.div 
+            className="relative w-16 h-16 bg-gradient-to-br from-[#E6411C] to-[#d13a18] rounded-2xl flex items-center justify-center shadow-lg"
+            animate={{ 
+              scale: [1, 1.02, 1],
+            }}
+            transition={{ 
+              duration: 2,
+              repeat: Infinity,
+              ease: "easeInOut"
+            }}
+          >
+            <ShoppingBag className="w-8 h-8 text-white" />
+            <motion.span 
+              className="absolute -top-2 -right-2 bg-[#212282] text-white text-sm font-bold w-7 h-7 rounded-full flex items-center justify-center shadow-md"
+              key={itemCount}
+              initial={{ scale: 0.5 }}
+              animate={{ scale: 1 }}
+            >
+              {itemCount}
+            </motion.span>
+          </motion.div>
+          
+          {/* Summary Text */}
+          <div className="flex-1">
+            <h3 className="font-bold text-[#212282] text-lg">
+              {itemCount} {itemCount === 1 ? t('cart.item') : t('cart.items')} in your order
+            </h3>
+            <p className="text-sm text-gray-500">Swipe left on items to remove</p>
+          </div>
+          
+          {/* Total Preview */}
+          <div className="text-right">
+            <p className="text-sm text-gray-500">Total</p>
+            <p className="font-bold text-xl text-[#E6411C]">{formatPrice(subtotal)}</p>
+          </div>
+        </div>
       </div>
 
       {/* Cart items */}
@@ -384,6 +419,21 @@ export default function CartNew() {
 
       {/* Footer */}
       <div className="border-t bg-white p-4 space-y-4">
+        {/* Wait Time Indicator */}
+        {waitTimeData && (
+          <div className="flex items-center justify-center gap-2 py-2 px-4 bg-[#212282]/5 rounded-xl">
+            <Clock className="w-4 h-4 text-[#212282]" />
+            <span className="text-sm font-medium text-[#212282]">
+              Estimated wait: <span className="font-bold">{formatWaitTime(waitTimeData.estimatedMinutes)}</span>
+            </span>
+            {waitTimeData.ordersAhead > 0 && (
+              <span className="text-xs text-gray-500">
+                ({waitTimeData.ordersAhead} orders ahead)
+              </span>
+            )}
+          </div>
+        )}
+        
         <div className="flex items-center justify-between">
           <span className="text-gray-600 font-medium">{t('cart.subtotal')}</span>
           <span className="font-bold text-2xl text-[#E6411C]">

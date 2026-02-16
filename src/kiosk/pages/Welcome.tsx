@@ -61,8 +61,23 @@ export default function Welcome() {
 
   return (
     <div className="kiosk-screen flex flex-col relative overflow-hidden">
-      {/* Background gradient */}
-      <div className="absolute inset-0 gradient-hero" />
+      {/* Animated gradient background - Apple-style color shift */}
+      <motion.div
+        className="absolute inset-0"
+        animate={{
+          background: [
+            'linear-gradient(135deg, hsl(240, 60%, 32%) 0%, hsl(240, 50%, 25%) 100%)',
+            'linear-gradient(135deg, hsl(250, 55%, 35%) 0%, hsl(235, 55%, 28%) 100%)',
+            'linear-gradient(135deg, hsl(235, 58%, 30%) 0%, hsl(245, 52%, 26%) 100%)',
+            'linear-gradient(135deg, hsl(240, 60%, 32%) 0%, hsl(240, 50%, 25%) 100%)',
+          ],
+        }}
+        transition={{
+          duration: 12,
+          repeat: Infinity,
+          ease: 'easeInOut',
+        }}
+      />
 
       {/* Top bar */}
       <div className="relative z-10 flex items-center justify-between px-[clamp(1rem,4vw,2.5rem)] py-[clamp(0.75rem,2.5vh,1.5rem)]">
