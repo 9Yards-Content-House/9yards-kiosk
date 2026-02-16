@@ -8,6 +8,7 @@ import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@shared/components/ui/card";
 import { formatPrice, cn } from "@shared/lib/utils";
+import { formatPhoneDisplay } from "@shared/lib/validation";
 import { supabase } from "@shared/lib/supabase";
 import { toast } from "sonner";
 
@@ -220,24 +221,45 @@ export default function Reception() {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-3">
+                <CardContent className="space-y-4">
                   {/* Customer Info */}
-                  <div className="flex items-center gap-2 text-gray-700">
-                    <User className="w-4 h-4" />
-                    <span className="font-medium">{order.customer_name}</span>
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2 text-gray-700">
+                      <User className="w-4 h-4" />
+                      <span className="font-bold text-lg">{order.customer_name}</span>
+                    </div>
+                    <div className="text-xl font-bold text-[#E6411C]">
+                      {formatPrice(order.total)}
+                    </div>
                   </div>
                   
                   {order.customer_phone && (
-                    <div className="flex items-center gap-2 text-gray-600 text-sm">
+                    <div className="flex items-center gap-2 text-gray-600">
                       <Phone className="w-4 h-4" />
-                      <span>{order.customer_phone}</span>
+                      <span className="font-mono">{formatPhoneDisplay(order.customer_phone)}</span>
                     </div>
                   )}
 
-                  {/* Order Total */}
-                  <div className="text-lg font-bold text-[#E6411C]">
-                    {formatPrice(order.total)}
+                  {/* Order Items Summary */}
+                  <div className="bg-white/50 rounded-xl p-3 border border-gray-100 space-y-2">
+                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Items</p>
+                    <div className="space-y-1">
+                      {order.items?.map((item, idx) => (
+                        <div key={idx} className="text-sm text-gray-700 flex justify-between">
+                          <span className="line-clamp-1">
+                            {item.quantity}x {item.sauce_name || item.type}
+                          </span>
+                        </div>
+                      ))}
+                    </div>
                   </div>
+
+                  {/* Special Instructions */}
+                  {order.special_instructions && (
+                    <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-100 italic text-sm text-yellow-800">
+                      "{order.special_instructions}"
+                    </div>
+                  )}
 
                   {/* Action Buttons */}
                   <div className="flex flex-col gap-2 pt-2">

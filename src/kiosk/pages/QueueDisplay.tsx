@@ -93,7 +93,7 @@ export default function QueueDisplay() {
   }, []);
 
   // Filter and group orders by status
-  const { ordersByStatus, arrivedOrders } = useMemo(() => {
+  const { ordersByStatus, arrivedOrders, totalActiveOrders } = useMemo(() => {
     const grouped: Record<OrderStatus, Order[]> = {
       new: [],
       preparing: [],
@@ -134,9 +134,13 @@ export default function QueueDisplay() {
       );
     });
 
+    // Calculate total active (visible) orders
+    const totalActive = QUEUE_STATUSES.reduce((sum, status) => sum + grouped[status].length, 0);
+
     return { 
       ordersByStatus: grouped, 
-      arrivedOrders: grouped.arrived 
+      arrivedOrders: grouped.arrived,
+      totalActiveOrders: totalActive
     };
   }, [allOrders]);
 
@@ -360,7 +364,7 @@ export default function QueueDisplay() {
           />
           <div className="hidden sm:block h-4 w-px bg-gray-200" />
           <span className="text-gray-900 text-sm font-black uppercase tracking-tighter hidden sm:inline">
-            {allOrders.length} {allOrders.length === 1 ? 'ORDER' : 'ORDERS'} IN QUEUE
+            {totalActiveOrders} {totalActiveOrders === 1 ? 'ORDER' : 'ORDERS'} IN QUEUE
           </span>
         </div>
         <div className="flex items-center gap-6 md:gap-8">
