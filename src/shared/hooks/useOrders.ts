@@ -301,7 +301,8 @@ export function useOrderByNumber(orderNumber: string | null) {
     },
     enabled: !!orderNumber,
     // Poll for updates - real-time subscription provides instant updates in addition
-    refetchInterval: USE_MOCK_DATA ? 3_000 : 10_000,
+    // Disable polling in production (rely on realtime), keep for mock
+    refetchInterval: USE_MOCK_DATA ? 3_000 : 0,
   });
 }
 
@@ -335,7 +336,8 @@ export function useOrders(status?: OrderStatus) {
         return applyOverlayToList(mockOrdersStore, status);
       }
     },
-    refetchInterval: USE_MOCK_DATA ? 5_000 : 30_000,
+    // Disable polling for orders list, rely on realtime subscription
+    refetchInterval: USE_MOCK_DATA ? 5_000 : 0,
   });
 }
 
@@ -372,7 +374,8 @@ export function useTodaysOrders() {
         return applyOverlayToList(mockOrdersStore);
       }
     },
-    refetchInterval: USE_MOCK_DATA ? 5_000 : 30_000,
+    // Disable polling for today's orders, rely on realtime subscription
+    refetchInterval: USE_MOCK_DATA ? 5_000 : 0,
   });
 }
 
@@ -403,7 +406,8 @@ export function useAllOrders() {
         return applyOverlayToList(mockOrdersStore);
       }
     },
-    refetchInterval: USE_MOCK_DATA ? 5_000 : 60_000, // Slower refresh for all orders
+    // Disable polling for all orders, rely on realtime subscription
+    refetchInterval: USE_MOCK_DATA ? 5_000 : 0, // Slower refresh for all orders
   });
 }
 

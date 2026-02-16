@@ -1,6 +1,7 @@
 import { defineConfig, Plugin } from "vite";
 import react from "@vitejs/plugin-react-swc";
 import path from "path";
+import viteCompression from "vite-plugin-compression";
 
 // Plugin to serve index-dashboard.html for root URL
 function serveDashboardHtml(): Plugin {
@@ -23,7 +24,7 @@ export default defineConfig({
     host: "::",
     port: 3001,
   },
-  plugins: [serveDashboardHtml(), react()],
+  plugins: [serveDashboardHtml(), react(), viteCompression()],
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
