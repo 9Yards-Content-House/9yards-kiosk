@@ -1,11 +1,12 @@
-import { useState, useEffect } from "react";
-import { Bell, Check, CheckCheck, Package2 } from "lucide-react";
+import { useState, useEffect, useRef } from "react";
+import { Bell, Check, CheckCheck, Package2, RefreshCw } from "lucide-react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../context/AuthContext";
 import type { NotificationType } from "@shared/types/auth";
 import { timeAgo, cn } from "@shared/lib/utils";
 import { useNavigate } from "react-router-dom";
+import { useNotificationSound } from "../hooks/useNotificationSound";
 
 interface NotificationBellProps {
   sidebarCollapsed?: boolean;
@@ -38,11 +39,16 @@ function saveMockNotifications(notifications: NotificationType[]) {
 }
 
 export default function NotificationBell({ sidebarCollapsed = false }: NotificationBellProps) {
-  const { role } = useAuth();
+  const role = useAuth().role;
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const { play: playNotificationSound } = useNotificationSound();
   const [open, setOpen] = useState(false);
   const [mockNotifications, setMockNotifications] = useState<NotificationType[]>(getMockNotifications);
+  
+  // Track previously seen notification IDs to play sound only for new ones
+  const seenIdsRef = useRef<Set<string>>(new Set(getMockNotifications().map(n => n.id)));
+  const isInitialFetch = useRef(true);
 
   // Sync mock notifications with localStorage
   useEffect(() => {
@@ -70,6 +76,32 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
     enabled: !!role,
     refetchInterval: USE_MOCK_DATA ? false : 30_000,
   });
+
+  // Handle sound notifications when new notifications arrive
+  useEffect(() => {
+    if (!notifications) return;
+
+    let hasNewUnread = false;
+    notifications.forEach(n => {
+      if (!n.read && !seenIdsRef.current.has(n.id)) {
+        seenIdsRef.current.add(n.id);
+        if (n.type === "new_order") {
+          hasNewUnread = true;
+        }
+      } else if (n.read) {
+        // Just in case, add read ones to seen too
+        seenIdsRef.current.add(n.id);
+      }
+    });
+
+    if (hasNewUnread && !isInitialFetch.current) {
+      playNotificationSound();
+    }
+    
+    if (notifications.length > 0) {
+      isInitialFetch.current = false;
+    }
+  }, [notifications, playNotificationSound]);
 
   // Mark single notification as read
   const markAsReadMutation = useMutation({
@@ -100,9 +132,8 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
   const markAllAsReadMutation = useMutation({
     mutationFn: async () => {
       if (USE_MOCK_DATA) {
-        const updated = mockNotifications.map(n => ({ ...n, read: true }));
-        setMockNotifications(updated);
-        return updated;
+        setMockNotifications(prev => prev.map(n => ({ ...n, read: true })));
+        return true;
       }
       const { error } = await supabase
         .from("notifications")
@@ -110,13 +141,10 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
         .eq("target_role", role)
         .eq("read", false);
       if (error) throw error;
+      return true;
     },
-    onSuccess: (data) => {
-      if (USE_MOCK_DATA && data) {
-        queryClient.setQueryData(["notifications", role], data);
-      } else {
-        queryClient.invalidateQueries({ queryKey: ["notifications", role] });
-      }
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["notifications", role] });
     },
   });
 
@@ -167,14 +195,22 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
           )}>
             {/* Header */}
             <div className="px-4 py-3 border-b flex items-center justify-between bg-gradient-to-r from-[#212282]/5 to-transparent">
-              <span className="font-semibold text-sm">Notifications</span>
+              <span className="font-bold text-sm">Notifications</span>
               {unreadCount > 0 && (
                 <button
                   onClick={() => markAllAsReadMutation.mutate()}
-                  className="text-xs text-[#212282] hover:text-[#E6411C] font-medium flex items-center gap-1 transition-colors"
+                  disabled={markAllAsReadMutation.isPending}
+                  className={cn(
+                    "text-xs text-[#212282] hover:text-[#E6411C] font-semibold flex items-center gap-1 transition-colors",
+                    markAllAsReadMutation.isPending && "opacity-50 cursor-not-allowed"
+                  )}
                 >
-                  <CheckCheck className="w-3.5 h-3.5" />
-                  Mark all read
+                  {markAllAsReadMutation.isPending ? (
+                    <RefreshCw className="w-3 h-3 animate-spin" />
+                  ) : (
+                    <CheckCheck className="w-3.5 h-3.5" />
+                  )}
+                  {markAllAsReadMutation.isPending ? "Marking..." : "Mark all read"}
                 </button>
               )}
             </div>
@@ -197,7 +233,10 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
                         {getNotificationIcon(n.type)}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className={`text-sm ${!n.read ? "font-medium" : "text-muted-foreground"}`}>
+                        <p className={cn(
+                          "text-sm leading-tight",
+                          !n.read ? "font-bold text-slate-900" : "text-muted-foreground font-medium"
+                        )}>
                           {n.message}
                         </p>
                         <p className="text-xs text-muted-foreground mt-1">
@@ -211,9 +250,12 @@ export default function NotificationBell({ sidebarCollapsed = false }: Notificat
                   </button>
                 ))
               ) : (
-                <div className="px-4 py-12 text-center">
-                  <Bell className="w-10 h-10 text-muted-foreground/30 mx-auto mb-3" />
-                  <p className="text-sm text-muted-foreground">No notifications</p>
+                <div className="px-4 py-16 text-center select-none">
+                  <div className="w-16 h-16 bg-muted/30 rounded-full flex items-center justify-center mx-auto mb-4">
+                    <Bell className="w-8 h-8 text-muted-foreground/30" />
+                  </div>
+                  <p className="text-sm font-medium text-muted-foreground">All caught up!</p>
+                  <p className="text-xs text-muted-foreground/60 mt-1">No new notifications</p>
                 </div>
               )}
             </div>

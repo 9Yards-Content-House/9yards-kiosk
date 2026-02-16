@@ -87,7 +87,8 @@ export default function ComboBuilder({
   const navigate = useNavigate();
   const { data: groupedMenu = [] } = useGroupedMenu();
   const { addItem, removeItem, items } = useKioskCart();
-  const { play } = useSound();
+  // const { play } = useSound();
+  const play = (type: string) => console.log('Sound disabled:', type);
   const mainContentRef = useRef<HTMLElement>(null);
 
   const [step, setStep] = useState(1);

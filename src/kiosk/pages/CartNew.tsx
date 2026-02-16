@@ -44,7 +44,8 @@ export default function CartNew() {
   const { items, removeItem, updateQuantity, clearCart, subtotal, itemCount, addItem } = useKioskCart();
   const { data: allMenuItems = [] } = useAllMenuItems();
   const { data: categories = [] } = useCategories();
-  const { play } = useSound();
+  // const { play } = useSound();
+  const play = (type: string) => console.log('Sound disabled:', type);
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);

@@ -171,7 +171,7 @@ export default function QueueDisplay() {
     if (hasNewArrivals && soundEnabled) {
       play('success');
     }
-  }, [allOrders, soundEnabled, play, isLoading]);
+  }, [allOrders, isLoading, soundEnabled, play]);
 
 
 
