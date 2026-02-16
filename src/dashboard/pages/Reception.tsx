@@ -251,26 +251,14 @@ export default function Reception() {
                           Mark as Picked Up
                         </Button>
                         
-                        <div className="flex gap-2">
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleContactCustomer(order.customer_phone)}
-                          >
-                            <Phone className="w-4 h-4 mr-1" />
-                            Call
-                          </Button>
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="flex-1"
-                            onClick={() => handleSendArrivalNotification(order)}
-                          >
-                            <MessageCircle className="w-4 h-4 mr-1" />
-                            WhatsApp
-                          </Button>
-                        </div>
+                        <Button
+                          variant="outline"
+                          className="w-full"
+                          onClick={() => handleContactCustomer(order.customer_phone)}
+                        >
+                          <Phone className="w-4 h-4 mr-2" />
+                          Call Customer
+                        </Button>
                       </>
                     ) : (
                       <Badge variant="secondary" className="justify-center py-2">
