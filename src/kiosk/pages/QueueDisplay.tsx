@@ -10,11 +10,8 @@ import { cn } from "@shared/lib/utils";
 import { Button } from "@shared/components/ui/button";
 import { useSound } from "../hooks/useSound";
 
-// Only show orders that are in progress - exclude "arrived" as they get auto-removed
-const QUEUE_STATUSES: OrderStatus[] = ["new", "preparing", "out_for_delivery"];
-
-// Status for ready orders (shown in a special "Ready" column)
-const READY_STATUS: OrderStatus = "arrived";
+// Show all statuses as columns
+const QUEUE_STATUSES: OrderStatus[] = ["new", "preparing", "out_for_delivery", "arrived"];
 
 // How long to show "arrived" orders before auto-removing (in ms)
 const ARRIVED_DISPLAY_DURATION = 60000; // 60 seconds (industry standard)
@@ -39,7 +36,6 @@ export default function QueueDisplay() {
   const [lastRefresh, setLastRefresh] = useState(new Date());
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const [showReadyBanner, setShowReadyBanner] = useState(false);
   const { play } = useSound();
   
   // Track which arrived orders we've already notified about
@@ -107,11 +103,8 @@ export default function QueueDisplay() {
         return orderDate >= today;
       })
       .forEach((order) => {
-        // For arrived orders, check if they should still be shown
-        if (order.status === READY_STATUS) {
+        if (order.status === "arrived") {
           const arrivedAt = arrivedTimestamps[order.id];
-          // If we haven't tracked when it arrived, it's still visible
-          // If it arrived less than ARRIVED_DISPLAY_DURATION ago, show it
           if (!arrivedAt || (now - arrivedAt) < ARRIVED_DISPLAY_DURATION) {
             grouped[order.status].push(order);
           }
@@ -149,7 +142,7 @@ export default function QueueDisplay() {
     let hasNewArrivals = false;
 
     allOrders.forEach((order) => {
-      if (order.status === READY_STATUS) {
+      if (order.status === "arrived") {
         // Record when this order arrived if not already tracked
         if (!newArrivedTimestamps[order.id]) {
           newArrivedTimestamps[order.id] = now;
@@ -159,7 +152,7 @@ export default function QueueDisplay() {
         if (!notifiedOrdersRef.current.has(order.id)) {
           notifiedOrdersRef.current.add(order.id);
           
-          // Only trigger banner/sound if it's NOT the first time we see these orders
+          // Only trigger sound if it's NOT the first time we see these orders
           if (!isInitialLoad.current) {
             hasNewArrivals = true;
           }
@@ -180,9 +173,6 @@ export default function QueueDisplay() {
     // Play notification sound for new arrivals
     if (hasNewArrivals && soundEnabled) {
       play('success');
-      // Show ready banner briefly
-      setShowReadyBanner(true);
-      setTimeout(() => setShowReadyBanner(false), READY_BANNER_DURATION);
     }
   }, [allOrders, arrivedTimestamps, soundEnabled, play, isLoading]);
 
@@ -271,15 +261,6 @@ export default function QueueDisplay() {
             variant="ghost"
             size="icon"
             className="text-white hover:bg-white/10"
-            onClick={() => setSoundEnabled(!soundEnabled)}
-            title={soundEnabled ? "Mute notifications" : "Enable notifications"}
-          >
-            {soundEnabled ? <Volume2 className="w-5 h-5" /> : <VolumeX className="w-5 h-5" />}
-          </Button>
-          <Button
-            variant="ghost"
-            size="icon"
-            className="text-white hover:bg-white/10"
             onClick={toggleFullscreen}
             title={isFullscreen ? "Exit fullscreen" : "Enter fullscreen"}
           >
@@ -296,104 +277,97 @@ export default function QueueDisplay() {
         </div>
       </div>
 
-      {/* Ready for Pickup Banner - Show briefly when orders become ready */}
-      <AnimatePresence>
-        {showReadyBanner && arrivedOrders.length > 0 && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.3 }}
-            className="overflow-hidden"
-            role="status"
-            aria-live="polite"
-          >
-            <div className="bg-emerald-600 px-6 py-4 shadow-inner">
-              <div className="flex items-center justify-center gap-6">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-full bg-white flex items-center justify-center">
-                    <Volume2 className="w-5 h-5 text-emerald-600 animate-pulse" />
-                  </div>
-                  <span className="text-xl font-black text-white uppercase tracking-wider">
-                    {arrivedOrders.length === 1 ? 'Order Ready' : `${arrivedOrders.length} Orders Ready`}
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 flex-wrap">
-                  {arrivedOrders.slice(0, 3).map((order) => (
-                    <motion.span
-                      layoutId={`ready-${order.id}`}
-                      key={order.id}
-                      className="bg-white text-emerald-700 font-black px-4 py-2 rounded-xl text-lg shadow-sm border-b-4 border-emerald-900/20"
-                    >
-                      #{order.order_number} <span className="text-emerald-500 font-bold ml-1">{getFirstName(order.customer_name).toUpperCase()}</span>
-                    </motion.span>
-                  ))}
-                  {arrivedOrders.length > 3 && (
-                    <span className="text-white/90 font-bold bg-emerald-700/50 px-3 py-1 rounded-lg text-sm">
-                      +{arrivedOrders.length - 3} more
-                    </span>
-                  )}
-                </div>
-              </div>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
       {/* Queue Display */}
       <div className="flex-1 p-4 min-h-0">
-        <div className="grid grid-cols-3 gap-4 h-full">
+        <div 
+          className="grid grid-cols-4 gap-4 h-full"
+        >
           {QUEUE_STATUSES.map((status) => {
-            const orders = ordersByStatus[status];
+            const orders = (status === 'arrived' ? arrivedOrders : ordersByStatus[status]);
 
             return (
               <div key={status} className="flex flex-col min-h-0">
-                {/* Status Header - Single color, professional */}
+                {/* Status Header */}
                 <div
                   className={cn(
-                    "flex items-center justify-center py-3 rounded-t-xl",
-                    STATUS_HEADER_BG
+                    "flex items-center justify-center py-3 rounded-t-xl shadow-sm",
+                    status === 'arrived' ? "bg-emerald-600" : STATUS_HEADER_BG
                   )}
                 >
                   <div className="text-center">
-                    <h2 className="text-lg font-bold text-white">
-                      {ORDER_STATUS_LABELS[status]}
+                    <h2 className="text-lg font-bold text-white tracking-wide uppercase">
+                      {status === 'arrived' ? 'Ready for Collection' : ORDER_STATUS_LABELS[status]}
                     </h2>
-                    <p className="text-white/80 text-sm">
+                    <p className="text-white/80 text-xs font-medium">
                       {orders.length} {orders.length !== 1 ? t('queue.orders') : t('queue.order')}
                     </p>
                   </div>
                 </div>
 
-                {/* Orders List - Light theme */}
-                <div className="flex-1 bg-white rounded-b-xl p-3 overflow-y-auto min-h-0 border border-gray-200 border-t-0">
+                {/* Orders List */}
+                <div className={cn(
+                  "flex-1 rounded-b-xl p-3 overflow-y-auto min-h-0 border border-t-0 shadow-sm",
+                  status === 'arrived' ? "bg-emerald-50 border-emerald-100" : "bg-white border-gray-200"
+                )}>
                   <AnimatePresence mode="popLayout">
                     {orders.length === 0 ? (
-                      <div className="flex items-center justify-center h-full text-gray-400">
-                        <p className="text-sm">{t('queue.noOrders')}</p>
-                      </div>
+                      <motion.div 
+                        initial={{ opacity: 0 }}
+                        animate={{ opacity: 1 }}
+                        className="flex flex-col items-center justify-center h-full text-center p-6"
+                      >
+                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-2">
+                          <RefreshCw className="w-5 h-5 text-gray-200" />
+                        </div>
+                        <p className="text-sm text-gray-400 italic">{t('queue.noOrders')}</p>
+                      </motion.div>
                     ) : (
-                      <div className="space-y-2">
-                        {orders.map((order, index) => (
+                      <div className="space-y-3">
+                        {orders.map((order) => (
                           <motion.div
                             key={order.id}
-                            initial={{ opacity: 0, y: 10 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            exit={{ opacity: 0, scale: 0.95 }}
-                            transition={{ delay: index * 0.03 }}
-                            className="bg-gray-50 rounded-lg p-3 border border-gray-100"
+                            layoutId={`order-${order.id}`}
+                            layout="position"
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className={cn(
+                              "rounded-xl p-4 border flex flex-col gap-2 relative overflow-hidden shadow-sm",
+                              status === 'arrived' 
+                                ? "bg-white border-emerald-200 border-b-4 border-b-emerald-400" 
+                                : "bg-gray-50 border-gray-100"
+                            )}
                           >
                             <div className="flex items-center justify-between">
-                              <span className={cn("text-xl font-bold", ORDER_NUMBER_COLOR)}>
+                              <span className={cn(
+                                "text-2xl font-black tabular-nums", 
+                                status === 'arrived' ? "text-emerald-700" : ORDER_NUMBER_COLOR
+                              )}>
                                 #{order.order_number}
                               </span>
-                              <span className="text-xs text-gray-400">
-                                {getTimeSince(order.created_at)}
-                              </span>
+                              {status === 'arrived' ? (
+                                <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
+                                  <RefreshCw className="w-2 h-2 animate-spin" /> {getSecondsRemaining(order.id)}s
+                                </span>
+                              ) : (
+                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-lg">
+                                  {getTimeSince(order.created_at)}
+                                </span>
+                              )}
                             </div>
-                            <p className="text-gray-600 text-sm truncate mt-1">
-                              {getFirstName(order.customer_name)}
-                            </p>
+                            <div className="flex items-center justify-between mt-1">
+                              <p className={cn(
+                                "font-bold text-lg uppercase tracking-tight",
+                                status === 'arrived' ? "text-emerald-900" : "text-gray-900"
+                              )}>
+                                {getFirstName(order.customer_name)}
+                              </p>
+                              {(order.is_priority || order.special_instructions?.toLowerCase().includes('priority')) && (
+                                <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase flex items-center gap-1 border border-amber-200">
+                                  Priority
+                                </span>
+                              )}
+                            </div>
                           </motion.div>
                         ))}
                       </div>
@@ -410,15 +384,16 @@ export default function QueueDisplay() {
       <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white">
         <div className="flex items-center gap-4">
           <img
-            src="/images/logo/9Yards-Food-colored-Logo.png"
-            alt="9Yards"
-            className="h-6"
+            src="/images/logo/9Yards-Food-White-Logo-colored.png"
+            alt="9Yards Food"
+            className="h-8 object-contain"
           />
-          <span className="text-gray-500 text-sm">
+          <div className="h-4 w-px bg-gray-200" />
+          <span className="text-gray-500 text-xs font-medium uppercase tracking-wider">
             {QUEUE_STATUSES.reduce((sum, status) => sum + ordersByStatus[status].length, 0)} {t('queue.ordersInQueue')}
           </span>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-8">
           <span className="text-gray-400 text-xs flex items-center gap-1">
             <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
             {t('queue.autoRefreshing')}
