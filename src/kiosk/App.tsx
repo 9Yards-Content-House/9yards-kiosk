@@ -2,7 +2,6 @@ import { lazy, Suspense } from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 import { KioskCartProvider } from "./context/KioskCartContext";
 import { FavoritesProvider } from "./context/FavoritesContext";
-import { LanguageProvider } from "@shared/context/LanguageContext";
 import { AccessibilityProvider } from "./context/AccessibilityContext";
 import { AnnouncerProvider } from "@shared/context/AnnouncerContext";
 import { useInactivityTimer } from "./hooks/useInactivityTimer";
@@ -76,13 +75,11 @@ export default function App() {
     <ErrorBoundary>
       <AnnouncerProvider>
         <AccessibilityProvider>
-          <LanguageProvider>
-            <FavoritesProvider>
-              <KioskCartProvider>
-                <KioskRoutes />
-              </KioskCartProvider>
-            </FavoritesProvider>
-          </LanguageProvider>
+          <FavoritesProvider>
+            <KioskCartProvider>
+              <KioskRoutes />
+            </KioskCartProvider>
+          </FavoritesProvider>
         </AccessibilityProvider>
       </AnnouncerProvider>
     </ErrorBoundary>

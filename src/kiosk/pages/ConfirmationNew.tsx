@@ -7,7 +7,7 @@ import {
   Loader2,
   XCircle,
 } from 'lucide-react';
-import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
+import { useTranslation } from '@shared/context/LanguageContext';
 import { useCancelOrder, getMockOrdersStore } from '@shared/hooks/useOrders';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';

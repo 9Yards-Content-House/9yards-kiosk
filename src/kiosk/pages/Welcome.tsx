@@ -1,8 +1,8 @@
 import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCallback, useState, useEffect } from 'react';
-import { Globe, Accessibility, ListOrdered } from 'lucide-react';
-import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
+import { Accessibility, ListOrdered } from 'lucide-react';
+import { useTranslation } from '@shared/context/LanguageContext';
 import { Button } from '@shared/components/ui/button';
 import { cn } from '@shared/lib/utils';
 import AccessibilityPanel from '../components/AccessibilityPanel';
@@ -19,7 +19,6 @@ const BACKGROUND_IMAGES = [
 export default function Welcome() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { language, setLanguage } = useLanguage();
   const { isAccessibilityMode } = useAccessibility();
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showAccessibility, setShowAccessibility] = useState(false);
@@ -55,10 +54,6 @@ export default function Welcome() {
   const handleViewQueue = useCallback(() => {
     navigate('/queue');
   }, [navigate]);
-
-  const toggleLanguage = useCallback(() => {
-    setLanguage(language === 'en' ? 'lg' : 'en');
-  }, [language, setLanguage]);
 
   const formatDateTime = (date: Date) => {
     const day = date.toLocaleDateString('en-UG', {
@@ -125,16 +120,6 @@ export default function Welcome() {
             )}
           >
             <Accessibility className="w-[clamp(1.125rem,2.2vmin,1.375rem)] h-[clamp(1.125rem,2.2vmin,1.375rem)]" />
-          </button>
-          <button
-            onClick={toggleLanguage}
-            aria-label={`Switch to ${language === 'en' ? 'Luganda' : 'English'}`}
-            className="flex items-center gap-[clamp(0.25rem,0.6vw,0.5rem)] rounded-xl px-[clamp(0.625rem,1.5vw,1rem)] h-[clamp(2.5rem,5vmin,3rem)] text-white/60 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
-          >
-            <Globe className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
-            <span className="text-[clamp(0.8rem,1.6vmin,1rem)] font-medium">
-              {language === 'en' ? t('language.lg') : t('language.en')}
-            </span>
           </button>
         </div>
       </div>

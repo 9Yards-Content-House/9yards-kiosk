@@ -1,9 +1,9 @@
 /**
- * Internationalization (i18n) system for 9Yards Kiosk
- * Supports English (en) and Luganda (lg)
+ * Translation strings for 9Yards Kiosk
+ * English only (language switching has been removed)
  */
 
-export type Language = 'en' | 'lg';
+export type Language = 'en';
 
 export interface TranslationKeys {
   // Common
@@ -232,7 +232,7 @@ export interface TranslationKeys {
   'feedback.thankYou': string;
 }
 
-const translations: Record<Language, TranslationKeys> = {
+const translations: { en: TranslationKeys } = {
   en: {
     // Common
     'common.appName': '9Yards Food',
@@ -459,261 +459,23 @@ const translations: Record<Language, TranslationKeys> = {
     'feedback.title': 'Rate Your Experience',
     'feedback.thankYou': 'Thank you for your feedback!',
   },
-  
-  lg: {
-    // Common
-    'common.appName': '9Yards Food',
-    'common.tagline': 'Emmere ennungi eya Uganda',
-    'common.loading': 'Lindako...',
-    'common.error': 'Waliwo ekikyamu',
-    'common.retry': 'Gezaako nate',
-    'language.en': 'Olungereza',
-    'language.lg': 'Oluganda',
-    'common.cancel': 'Sazaamu',
-    'common.confirm': 'Kakasa',
-    'common.back': 'Emabega',
-    'common.next': 'Ekiddako',
-    'common.skip': 'Buuka',
-    'common.done': 'Weddeko',
-    'common.save': 'Tereka',
-    'common.close': 'Ggalawo',
-    'common.search': 'Noonya',
-    'common.free': 'BWEREERE',
-    'common.required': 'Kyetaagibwa',
-    'common.optional': 'Kyeyagalidde',
-    
-    // Welcome page
-    'welcome.greeting.morning': 'Wasuze Otya',
-    'welcome.greeting.afternoon': 'Osiibye Otya',
-    'welcome.greeting.evening': 'Olwidde Otya',
-    'welcome.subtitle': 'Funa emmere ennungi eya Uganda, eneetegekebwa mangu',
-    'welcome.startOrder': 'Teekawo Order Yo',
-    'welcome.trackOrder': 'Goberera Order Yange',
-    'welcome.viewQueue': 'Laba Oluliri lwa Orders',
-    'welcome.tapAnywhere': 'Koma wonna okutandika',
-    'welcome.poweredBy': 'Eteekebwawo 9Yards',
-    'welcome.wereOpen': 'Tuli Bbawo!',
-    'welcome.tapToBegin': 'Koma okutandika',
-    
-    // Menu
-    'menu.title': 'Menu Yaffe',
-    'menu.allItems': 'Byonna',
-    'menu.buildCombo': 'Zimba Combo Yo',
-    'menu.buildYourMeal': 'Kola emmere yo ng\'oyagala',
-    'menu.addToOrder': 'Ggyako ku Order',
-    'menu.startCombo': 'Tandika Combo',
-    'menu.popular': 'Ekyagalibwa',
-    'menu.new': 'Ekipya',
-    'menu.soldOut': 'Kiwedde',
-    'menu.unavailable': 'Tekiriwo',
-    'menu.searchPlaceholder': 'Noonya emmere...',
-    'menu.noResults': 'Tewali kilabise',
-    'menu.itemsInCategory': 'ebintu',
-    
-    // Categories
-    'category.all': 'Byonna',
-    'category.mainDishes': 'Emmere Enkulu',
-    'category.sauces': 'Enva',
-    'category.sideDishes': 'Ebyongerwako',
-    'category.lusaniya': 'Lusaniya',
-    'category.juices': 'Amazzi g\'ebibala',
-    'category.desserts': 'Ebinyebwa',
-    
-    // Combo Builder
-    'combo.title': 'Zimba Combo Yo',
-    'combo.step1Title': 'Londa Emmere',
-    'combo.step1Desc': 'Londa emmere yo enkulu (ya bwereere)',
-    'combo.step2Title': 'Londa Enva',
-    'combo.step2Desc': 'Londa ennyama yo - eno esalawo omuwendo',
-    'combo.step3Title': 'Londa Ekyongerwako',
-    'combo.step3Desc': 'Ggyako ekyongerwako ekya bwereere',
-    'combo.step4Title': 'Byongera',
-    'combo.step4Desc': 'Ebyokunywa n\'ebikalu',
-    'combo.step5Title': 'Kebera Order',
-    'combo.step5Desc': 'Kebera bye walondeddeko',
-    'combo.selectPreparation': 'Oyagala kifumbibwe otya?',
-    'combo.selectSize': 'Londa obunene',
-    'combo.selectedItems': 'By\'olondeddeko',
-    'combo.runningTotal': 'Omuwendo Gwonna',
-    'combo.addToCart': 'Tekawo mu Cart',
-    'combo.updateCart': 'Kyuusa Cart',
-    'combo.editSelection': 'Kyuusa',
-    'combo.includedFree': 'Muli BWEREERE',
-    
-    // Cart
-    'cart.title': 'Order Yo',
-    'cart.empty': 'Cart yo njereere',
-    'cart.emptyDesc': 'Ggyako emmere ennungi okutandika',
-    'cart.browseMenu': 'Laba Menu',
-    'cart.subtotal': 'Omuwendo',
-    'cart.total': 'Omuwendo Gwonna',
-    'cart.items': 'ebintu',
-    'cart.item': 'ekintu',
-    'cart.addMore': 'Ggyako Ebirala',
-    'cart.checkout': 'Sasula',
-    'cart.remove': 'Gyawo',
-    'cart.edit': 'Kyuusa',
-    'cart.combo': 'Combo',
-    'cart.with': 'ne',
-    'cart.clearCart': 'Jjamu Cart',
-    'cart.clearConfirm': 'Okakasa oyagala okuggyawo byonna?',
-    
-    // Details
-    'details.title': 'Ebikukwatako',
-    'details.yourInfo': 'Wandiika ebikukwatako',
-    'details.name': 'Erinnya Lyo',
-    'details.namePlaceholder': 'Wandiika erinnya lyo',
-    'details.phone': 'Ennamba y\'Essimu',
-    'details.phonePlaceholder': '07XX XXX XXX',
-    'details.phoneHint': 'Tukumanyise ku WhatsApp',
-    'details.location': 'Gy\'oli',
-    'details.locationPlaceholder': 'e.g., Waggulu owaakabiri, Desk 12',
-    'details.locationHint': 'Tukuzeemu wa?',
-    'details.specialInstructions': 'Ebiragiro Eby\'enjawulo',
-    'details.specialInstructionsPlaceholder': 'Waliwo allergy oba ekyo kirimu ky\'otayagala?',
-    'details.paymentMethod': 'Enkola y\'Okusasula',
-    'details.payAtCounter': 'Sasula ku Counter',
-    'details.payAtCounterDesc': 'Sasula bw\'onotwala order yo',
-    'details.cash': 'Ssente',
-    'details.cashDesc': 'Sasula ne ssente',
-    'details.mobileMoney': 'Mobile Money',
-    'details.mobileMoneyDesc': 'MTN MoMo oba Airtel Money',
-    'details.continue': 'Weyongerayo Okusasula',
-    'details.phoneRequired': 'Ennamba y\'essimu yeetaagibwa ku Mobile Money',
-    'details.phoneOptional': 'Ennamba y\'essimu (si ya buwaze)',
-    
-    // Payment
-    'payment.title': 'Okusasula',
-    'payment.review': 'Kebera Order Yo',
-    'payment.placeOrder': 'Tekawo Order',
-    'payment.processing': 'Kitambuzibwa...',
-    'payment.momoPrompt': 'Wandiika ennamba ya Mobile Money',
-    'payment.momoWaiting': 'Laba Essimu Yo',
-    'payment.momoApprove': 'Kakasa ku ssimu yo',
-    'payment.success': 'Ssente Zifunye!',
-    'payment.failed': 'Okusasula Kugazze',
-    'payment.tryAgain': 'Gezaako Nate',
-    'payment.changeMethod': 'Kyuusa Enkola',
-    
-    // Confirmation
-    'confirmation.title': 'Order Ekakasiddwa!',
-    'confirmation.orderPlaced': 'Order yo eteekeddwawo',
-    'confirmation.orderNumber': 'Ennamba y\'Order',
-    'confirmation.saveNumber': 'Tereka ennamba eno okuggyako order yo',
-    'confirmation.estimatedWait': 'Budde bw\'olindirira',
-    'confirmation.minutes': 'eddakiika',
-    'confirmation.ordersAhead': 'orders mu maso gwo',
-    'confirmation.trackOrder': 'Goberera Order',
-    'confirmation.newOrder': 'Tandika Order Empya',
-    'confirmation.autoReset': 'Ekifo kiddamu mu',
-    'confirmation.whatsappNotify': 'Tujja kukumanyisa ku WhatsApp bw\'enoba yeetegese',
-    'confirmation.scanQR': 'Soma QR code wammanga ogoberere ku ssimu yo',
-    'confirmation.scanPhone': 'Soma ne ssimu yo ogoberere order yo',
-    'confirmation.receiveUpdates': 'Tujja kukumanyisa order yo bw\'enoba yeetegese',
-    'confirmation.cancelOrder': 'Sazaamu Order',
-    'confirmation.cancelHint': 'Osobola okusazaamu ng\'ennaba tengafumbibwa',
-    
-    // Order Tracking
-    'tracking.title': 'Goberera Order Yo',
-    'tracking.preparing': 'Efumbibwa',
-    'tracking.ready': 'Yeetegese Okutwazibwa',
-    'tracking.delivered': 'Yutwaddwa',
-    'tracking.enterNumber': 'Wandiika ennamba y\'order yo',
-    'tracking.lookup': 'Noonya Order',
-    'tracking.notFound': 'Order terabika',
-    'tracking.status': 'Embeera y\'Order',
-    'tracking.timeline': 'Obudde',
-    'tracking.placedAt': 'Order Yateekeddwawo',
-    'tracking.startedAt': 'Yatandika Okufumbibwa',
-    'tracking.readyAt': 'Yeetegese',
-    'tracking.deliveredAt': 'Yatwaliddwa',
-    'tracking.liveUpdates': 'Ebipya birabika',
-    'tracking.enterHint': 'Wandiika ennamba 4 ku risiti yo',
-    'tracking.notFoundDesc': 'Tetusobodde kuzuula order eyo. Kebera ennamba ku risiti yo ogezeeko nate.',
-    'tracking.tryAgain': 'Gezaako Nate',
-    'tracking.readyPickup': 'Order yo yeetegese!',
-    'tracking.readyDesc': 'Jjangu ku kaawunta okukwata emmere yo.',
-    'tracking.searchAnother': 'Noonya Order Endala',
-    'tracking.yourItems': 'Ebintu Byo',
-    'tracking.placeOrder': 'Tekawo Order Empya',
-    'tracking.cancelled': 'Yakomezebwa',
-    'tracking.emptyState': 'Wandiika ennamba y\'order okumanya embeera yaayo',
-    
-    // Order Board
-    'board.title': 'Order Board',
-    'board.preparingColumn': 'Zifumbibwa Kati',
-    'board.readyColumn': 'Zeetegese',
-    'board.noOrders': 'Tewali orders kati',
-    
-    // Queue Display
-    'queue.title': 'Oluliri lwa Orders',
-    'queue.loading': 'Tutikka oluliri...',
-    'queue.backToOrder': 'Ddayo ku Order',
-    'queue.orders': 'orders',
-    'queue.order': 'order',
-    'queue.noOrders': 'Tewali orders',
-    'queue.justNow': 'Kati kati',
-    'queue.min': '1 ddakiika',
-    'queue.mins': 'ddakiika',
-    'queue.ordersInQueue': 'orders mu luliri',
-    'queue.autoRefreshing': 'Kizuulidwa buggya',
-    
-    // Inactivity
-    'inactivity.stillThere': 'Okyaliwo?',
-    'inactivity.tapToContinue': 'Koma wonna okuwangaala',
-    'inactivity.resettingIn': 'Kiddamu mu',
-    'inactivity.seconds': 'sekondi',
-    'inactivity.title': 'Okyaliwo?',
-    'inactivity.continue': 'Weyongerayo n\'Order',
-    'inactivity.startOver': 'Tandika Buggya',
-    'inactivity.returning': 'Giddayo mu',
-    
-    // Errors
-    'error.generic': 'Waliwo ekikyamu. Gezaako nate.',
-    'error.network': 'Kizibu ky\'enternet. Kebera connection yo.',
-    'error.orderFailed': 'Order tegenze bulungi. Gezaako nate.',
-    'error.paymentFailed': 'Okusasula kugazze. Gezaako nate.',
-    'error.invalidPhone': 'Wandiika ennamba y\'essimu entuufu',
-    'error.requiredField': 'Kino kyetaagibwa',
-    
-    // Network Status
-    'network.offline': 'Tolina nternet. Orders zirikuzitukuzibwa nga connection eddawo.',
-    'network.online': 'Connection eddawo!',
-    
-    // Feedback
-    'feedback.howWasYourMeal': 'Emmere yali etya? Twagala okumanya ky\'olowooza!',
-    'feedback.leaveFeedback': 'Waayo Ebirowoozo',
-    'feedback.title': 'Tuwandiikire Obude Bwo',
-    'feedback.thankYou': 'Webale nnyo obude bwo!',
-  },
 };
 
-let currentLanguage: Language = 'en';
-
-export function setLanguage(lang: Language): void {
-  currentLanguage = lang;
-  if (typeof sessionStorage !== 'undefined') {
-    sessionStorage.setItem('kiosk-language', lang);
-  }
+// English-only - language switching has been removed
+export function setLanguage(_lang: Language): void {
+  // No-op - language switching removed
 }
 
 export function getLanguage(): Language {
-  if (typeof sessionStorage !== 'undefined') {
-    const saved = sessionStorage.getItem('kiosk-language') as Language | null;
-    if (saved && (saved === 'en' || saved === 'lg')) {
-      currentLanguage = saved;
-    }
-  }
-  return currentLanguage;
+  return 'en';
 }
 
 export function t(key: keyof TranslationKeys): string {
-  const lang = getLanguage();
-  return translations[lang][key] || translations['en'][key] || key;
+  return translations['en'][key] || key;
 }
 
 export function getTranslations(): TranslationKeys {
-  return translations[getLanguage()];
+  return translations['en'];
 }
 
 export function getCategoryName(slug: string): string {
