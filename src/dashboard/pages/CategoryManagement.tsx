@@ -116,10 +116,12 @@ export default function CategoryManagement() {
       return;
     }
 
-    const slug = editSlug.trim() || generateSlug(editName);
+    // For protected slugs, always use the original slug
+    const isProtected = isProtectedSlug(editingCategory.slug);
+    const slug = isProtected ? editingCategory.slug : (editSlug.trim() || generateSlug(editName));
 
     // Check for duplicate slug (excluding current category)
-    if (categories.some((c) => c.slug === slug && c.id !== editingCategory.id)) {
+    if (!isProtected && categories.some((c) => c.slug === slug && c.id !== editingCategory.id)) {
       toast.error("A category with this slug already exists");
       return;
     }
@@ -138,6 +140,14 @@ export default function CategoryManagement() {
   };
 
   const handleDeleteCategory = async (categoryId: string) => {
+    const category = categories.find(c => c.id === categoryId);
+    
+    // Double-check protected categories can't be deleted
+    if (category && isProtectedSlug(category.slug)) {
+      toast.error("Cannot delete protected category");
+      return;
+    }
+
     try {
       await deleteCategory.mutateAsync(categoryId);
       toast.success("Category deleted successfully");
@@ -145,6 +155,9 @@ export default function CategoryManagement() {
       toast.error("Failed to delete category. Make sure it has no menu items.");
     }
   };
+
+  // Get item count for a category (for delete warnings)
+  const getCategoryItemCount = (categoryId: string) => itemCountByCategory[categoryId] || 0;
 
   const handleMoveUp = async (index: number) => {
     if (index === 0) return;
@@ -313,9 +326,18 @@ export default function CategoryManagement() {
                     <AlertDialogContent>
                       <AlertDialogHeader>
                         <AlertDialogTitle>Delete Category?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will permanently delete "{category.name}". Menu items in this
-                          category will need to be reassigned. This action cannot be undone.
+                        <AlertDialogDescription asChild>
+                          <div className="space-y-2">
+                            <p>
+                              This will permanently delete "{category.name}". This action cannot be undone.
+                            </p>
+                            {getCategoryItemCount(category.id) > 0 && (
+                              <p className="text-destructive font-medium">
+                                ⚠️ This category has {getCategoryItemCount(category.id)} menu item(s). 
+                                Deleting will also remove all associated items!
+                              </p>
+                            )}
+                          </div>
                         </AlertDialogDescription>
                       </AlertDialogHeader>
                       <AlertDialogFooter>
@@ -337,7 +359,17 @@ export default function CategoryManagement() {
       </div>
 
       {/* Add Category Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
+      <Dialog 
+        open={isAddDialogOpen} 
+        onOpenChange={(open) => {
+          setIsAddDialogOpen(open);
+          if (!open) {
+            // Reset form when closing
+            setNewCategoryName("");
+            setNewCategorySlug("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Add New Category</DialogTitle>
@@ -352,9 +384,8 @@ export default function CategoryManagement() {
                 value={newCategoryName}
                 onChange={(e) => {
                   setNewCategoryName(e.target.value);
-                  if (!newCategorySlug) {
-                    setNewCategorySlug(generateSlug(e.target.value));
-                  }
+                  // Always auto-generate slug as user types name
+                  setNewCategorySlug(generateSlug(e.target.value));
                 }}
                 placeholder="e.g. Appetizers"
                 autoFocus
@@ -371,7 +402,7 @@ export default function CategoryManagement() {
                 className="font-mono"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                Auto-generated from name. Used in combo builder logic.
+                Auto-generated from name. Edit if needed.
               </p>
             </div>
           </div>
@@ -392,7 +423,16 @@ export default function CategoryManagement() {
       </Dialog>
 
       {/* Edit Category Dialog */}
-      <Dialog open={!!editingCategory} onOpenChange={(open) => !open && setEditingCategory(null)}>
+      <Dialog 
+        open={!!editingCategory} 
+        onOpenChange={(open) => {
+          if (!open) {
+            setEditingCategory(null);
+            setEditName("");
+            setEditSlug("");
+          }
+        }}
+      >
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Edit Category</DialogTitle>
