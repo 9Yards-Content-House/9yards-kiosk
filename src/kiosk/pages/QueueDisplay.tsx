@@ -17,7 +17,7 @@ const QUEUE_STATUS_LABELS: Record<string, string> = {
   new: "ORDERED",
   preparing: "PREPARING",
   out_for_delivery: "ON THE WAY",
-  arrived: "READY",
+  arrived: "ARRIVED",
 };
 
 
@@ -304,14 +304,14 @@ export default function QueueDisplay() {
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                              className={cn(
-                              "bg-white rounded-2xl border p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col gap-4",
+                              "bg-white rounded-2xl border p-5 shadow-sm relative overflow-hidden flex flex-col gap-3",
                               status === 'new' && "border-yards-orange/50 shadow-yards-orange/5 ring-1 ring-yards-orange/10",
-                              status === 'arrived' && "border-emerald-200 shadow-emerald-50 bg-emerald-50/5 ring-2 ring-emerald-500/20 animate-pulse-subtle"
+                              status === 'arrived' && "border-emerald-200 shadow-emerald-50 bg-emerald-50/5"
                             )}
                           >
                             <div className="flex items-center justify-between">
                               <span className={cn(
-                                "text-4xl font-black tracking-tighter tabular-nums",
+                                "text-3xl font-black tracking-tighter tabular-nums",
                                 status === 'arrived' ? "text-emerald-600" : "text-gray-900"
                               )}>
                                 {order.order_number}
@@ -325,8 +325,8 @@ export default function QueueDisplay() {
 
                             <div className="flex items-center justify-between">
                               <div className="flex items-center gap-2.5 text-gray-600">
-                                <User className="w-5 h-5 text-gray-400" />
-                                <span className="text-xl font-black uppercase tracking-tight">
+                                <User className="w-4 h-4 text-gray-400" />
+                                <span className="text-lg font-black uppercase tracking-tight">
                                   {getFirstName(order.customer_name)}
                                 </span>
                               </div>
@@ -369,16 +369,6 @@ export default function QueueDisplay() {
           </span>
         </div>
         <div className="flex items-center gap-6 md:gap-8">
-          <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
-            <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
-            {t('queue.live')}
-          </span>
-          <p className="text-gray-900 text-sm font-black tabular-nums">
-            {currentTime.toLocaleTimeString("en-UG", {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </p>
         </div>
       </div>
     </div>
