@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo, useRef, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { ArrowLeft, RefreshCw, Maximize2, Minimize2, Volume2, VolumeX } from "lucide-react";
+import { ArrowLeft, RefreshCw, Maximize2, Minimize2, Volume2, VolumeX, User, Package, Clock } from "lucide-react";
 import { useAllOrders, useOrdersRealtime } from "@shared/hooks/useOrders";
-import { ORDER_STATUS_LABELS } from "@shared/types/orders";
+import { ORDER_STATUS_LABELS, ORDER_STATUS_COLORS } from "@shared/types/orders";
 import { useTranslation } from "@shared/context/LanguageContext";
 import type { Order, OrderStatus } from "@shared/types/orders";
 import { cn } from "@shared/lib/utils";
@@ -13,8 +13,6 @@ import { useSound } from "../hooks/useSound";
 // Show all statuses as columns
 const QUEUE_STATUSES: OrderStatus[] = ["new", "preparing", "out_for_delivery", "arrived"];
 
-// How long to show "arrived" orders before auto-removing (in ms)
-const ARRIVED_DISPLAY_DURATION = 60000; // 60 seconds (industry standard)
 
 // How long to show the ready banner before auto-dismiss (in ms)
 const READY_BANNER_DURATION = 8000; // 8 seconds
@@ -22,11 +20,18 @@ const READY_BANNER_DURATION = 8000; // 8 seconds
 // Auto-refresh interval as backup to realtime (in ms)
 const AUTO_REFRESH_INTERVAL = 15000; // 15 seconds
 
-// Single professional header color - matches app theme
-const STATUS_HEADER_BG = "bg-[#212282]";
+// Status-specific colors (Dashboard aligned)
+const STATUS_COLORS: Record<string, string> = {
+  new: "bg-blue-500",
+  preparing: "bg-amber-500", // matches dashboard yellow
+  out_for_delivery: "bg-green-500",
+  arrived: "bg-emerald-500",
+};
 
 // Text color for order numbers
-const ORDER_NUMBER_COLOR = "text-[#212282]";
+const ORDER_NUMBER_COLOR = "text-gray-900";
+const STATUS_HEADER_TEXT = "text-gray-900";
+const QUEUE_BG = "bg-[#f8fafc]"; // Slightly lighter, cleaner background
 
 export default function QueueDisplay() {
   const navigate = useNavigate();
@@ -42,8 +47,6 @@ export default function QueueDisplay() {
   const notifiedOrdersRef = useRef<Set<string>>(new Set());
   // Flag to prevent notifications on first load
   const isInitialLoad = useRef(true);
-  // Track when orders arrived to auto-remove them
-  const [arrivedTimestamps, setArrivedTimestamps] = useState<Record<string, number>>({});
 
   // Subscribe to realtime updates
   useOrdersRealtime();
@@ -103,12 +106,7 @@ export default function QueueDisplay() {
         return orderDate >= today;
       })
       .forEach((order) => {
-        if (order.status === "arrived") {
-          const arrivedAt = arrivedTimestamps[order.id];
-          if (!arrivedAt || (now - arrivedAt) < ARRIVED_DISPLAY_DURATION) {
-            grouped[order.status].push(order);
-          }
-        } else if (QUEUE_STATUSES.includes(order.status)) {
+        if (QUEUE_STATUSES.includes(order.status)) {
           grouped[order.status].push(order);
         }
       });
@@ -133,21 +131,14 @@ export default function QueueDisplay() {
       ordersByStatus: grouped, 
       arrivedOrders: grouped.arrived 
     };
-  }, [allOrders, arrivedTimestamps]);
+  }, [allOrders]);
 
   // Track newly arrived orders and play sound
   useEffect(() => {
-    const now = Date.now();
-    const newArrivedTimestamps = { ...arrivedTimestamps };
     let hasNewArrivals = false;
 
     allOrders.forEach((order) => {
       if (order.status === "arrived") {
-        // Record when this order arrived if not already tracked
-        if (!newArrivedTimestamps[order.id]) {
-          newArrivedTimestamps[order.id] = now;
-        }
-
         // Handle notifications
         if (!notifiedOrdersRef.current.has(order.id)) {
           notifiedOrdersRef.current.add(order.id);
@@ -165,50 +156,13 @@ export default function QueueDisplay() {
       isInitialLoad.current = false;
     }
 
-    // Update timestamps if there are new arrivals
-    if (Object.keys(newArrivedTimestamps).length !== Object.keys(arrivedTimestamps).length) {
-      setArrivedTimestamps(newArrivedTimestamps);
-    }
-
     // Play notification sound for new arrivals
     if (hasNewArrivals && soundEnabled) {
       play('success');
     }
-  }, [allOrders, arrivedTimestamps, soundEnabled, play, isLoading]);
+  }, [allOrders, soundEnabled, play, isLoading]);
 
-  // Countdown timer state - updates every second
-  const [countdownTick, setCountdownTick] = useState(0);
 
-  // Auto-remove arrived orders after timeout + update countdown
-  useEffect(() => {
-    const interval = setInterval(() => {
-      const now = Date.now();
-      // Trigger re-render for countdown display
-      setCountdownTick((t) => t + 1);
-      
-      setArrivedTimestamps((prev) => {
-        const updated = { ...prev };
-        let changed = false;
-        Object.entries(updated).forEach(([orderId, timestamp]) => {
-          if (now - timestamp >= ARRIVED_DISPLAY_DURATION) {
-            delete updated[orderId];
-            changed = true;
-          }
-        });
-        return changed ? updated : prev;
-      });
-    }, 1000); // Check every second for smooth countdown
-    return () => clearInterval(interval);
-  }, []);
-
-  // Calculate seconds remaining for an arrived order
-  const getSecondsRemaining = useCallback((orderId: string) => {
-    const arrivedAt = arrivedTimestamps[orderId];
-    if (!arrivedAt) return ARRIVED_DISPLAY_DURATION / 1000;
-    const elapsed = Date.now() - arrivedAt;
-    const remaining = Math.max(0, Math.ceil((ARRIVED_DISPLAY_DURATION - elapsed) / 1000));
-    return remaining;
-  }, [arrivedTimestamps, countdownTick]); // eslint-disable-line react-hooks/exhaustive-deps
 
   // Get first name only for privacy
   const getFirstName = (fullName: string) => {
@@ -239,7 +193,7 @@ export default function QueueDisplay() {
   }
 
   return (
-    <div className="kiosk-screen flex flex-col bg-[#f5f5f0]">
+    <div className="kiosk-screen flex flex-col bg-[#f8fafc]">
       {/* Header */}
       <div className="flex items-center justify-between px-6 py-4 bg-[#212282]">
         <Button
@@ -250,10 +204,10 @@ export default function QueueDisplay() {
           <ArrowLeft className="w-5 h-5 mr-2" />
           {t('queue.backToOrder')}
         </Button>
-        <div className="text-center">
-          <h1 className="text-2xl font-bold text-white">{t('queue.title')}</h1>
-          <p className="text-white/50 text-xs">
-            Updated {lastRefresh.toLocaleTimeString("en-UG", { hour: "2-digit", minute: "2-digit", second: "2-digit" })}
+        <div className="text-center flex-1 mx-4">
+          <h1 className="text-lg md:text-2xl font-black text-white uppercase tracking-tight">{t('queue.title')}</h1>
+          <p className="text-white/50 text-[10px] uppercase font-bold tracking-widest mt-0.5">
+            {t('queue.updated')} {lastRefresh.toLocaleTimeString("en-UG", { hour: "2-digit", minute: "2-digit" })}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -278,96 +232,98 @@ export default function QueueDisplay() {
       </div>
 
       {/* Queue Display */}
-      <div className="flex-1 p-4 min-h-0">
+      <div className="flex-1 p-3 md:p-6 overflow-y-auto lg:overflow-hidden min-h-0">
         <div 
-          className="grid grid-cols-4 gap-4 h-full"
+          className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 h-full"
         >
           {QUEUE_STATUSES.map((status) => {
             const orders = (status === 'arrived' ? arrivedOrders : ordersByStatus[status]);
 
             return (
-              <div key={status} className="flex flex-col min-h-0">
+              <div key={status} className="flex flex-col min-h-[300px] lg:min-h-0">
                 {/* Status Header */}
                 <div
                   className={cn(
-                    "flex items-center justify-center py-3 rounded-t-xl shadow-sm",
-                    status === 'arrived' ? "bg-emerald-600" : STATUS_HEADER_BG
+                    "flex flex-col items-center justify-center py-5 rounded-t-2xl bg-white border-b border-gray-100 shadow-sm"
                   )}
                 >
-                  <div className="text-center">
-                    <h2 className="text-lg font-bold text-white tracking-wide uppercase">
-                      {status === 'arrived' ? 'Ready for Collection' : ORDER_STATUS_LABELS[status]}
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className={cn("w-3 h-3 rounded-full", STATUS_COLORS[status])} />
+                    <h2 className="text-sm font-black tracking-widest uppercase text-gray-900">
+                      {status === 'arrived' ? 'READY' : ORDER_STATUS_LABELS[status]}
                     </h2>
-                    <p className="text-white/80 text-xs font-medium">
-                      {orders.length} {orders.length !== 1 ? t('queue.orders') : t('queue.order')}
-                    </p>
                   </div>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-gray-400">
+                    {orders.length} {orders.length !== 1 ? t('queue.orders') : t('queue.order')}
+                  </p>
                 </div>
 
                 {/* Orders List */}
                 <div className={cn(
-                  "flex-1 rounded-b-xl p-3 overflow-y-auto min-h-0 border border-t-0 shadow-sm",
-                  status === 'arrived' ? "bg-emerald-50 border-emerald-100" : "bg-white border-gray-200"
+                  "flex-1 rounded-b-2xl p-6 overflow-y-auto min-h-0 border border-gray-100 border-t-0 bg-white/50 backdrop-blur-sm shadow-sm"
                 )}>
                   <AnimatePresence mode="popLayout">
                     {orders.length === 0 ? (
                       <motion.div 
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
-                        className="flex flex-col items-center justify-center h-full text-center p-6"
+                        className="flex flex-col items-center justify-center h-full text-center py-10"
                       >
-                        <div className="w-12 h-12 rounded-full bg-gray-50 flex items-center justify-center mb-2">
-                          <RefreshCw className="w-5 h-5 text-gray-200" />
+                        <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4 transition-colors group-hover:bg-gray-100">
+                          <RefreshCw className="w-6 h-6 text-gray-200" />
                         </div>
-                        <p className="text-sm text-gray-400 italic">{t('queue.noOrders')}</p>
+                        <p className="text-xs font-bold text-gray-300 uppercase tracking-widest">{t('queue.noOrders')}</p>
                       </motion.div>
                     ) : (
-                      <div className="space-y-3">
+                      <div className="flex flex-col gap-6">
                         {orders.map((order) => (
                           <motion.div
                             key={order.id}
                             layoutId={`order-${order.id}`}
                             layout="position"
-                            initial={{ opacity: 0, scale: 0.9 }}
+                            initial={{ opacity: 0, scale: 0.95 }}
                             animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.9 }}
+                            exit={{ opacity: 0, scale: 0.95 }}
                             className={cn(
-                              "rounded-xl p-4 border flex flex-col gap-2 relative overflow-hidden shadow-sm",
-                              status === 'arrived' 
-                                ? "bg-white border-emerald-200 border-b-4 border-b-emerald-400" 
-                                : "bg-gray-50 border-gray-100"
+                              "bg-white rounded-2xl border p-6 shadow-sm hover:shadow-md transition-all duration-300 relative overflow-hidden flex flex-col gap-4",
+                              status === 'new' && "border-yards-orange/50 shadow-yards-orange/5 ring-1 ring-yards-orange/10",
+                              status === 'arrived' && "border-emerald-200 shadow-emerald-50 bg-emerald-50/10"
                             )}
                           >
                             <div className="flex items-center justify-between">
                               <span className={cn(
-                                "text-2xl font-black tabular-nums", 
-                                status === 'arrived' ? "text-emerald-700" : ORDER_NUMBER_COLOR
+                                "text-4xl font-black tracking-tighter tabular-nums",
+                                status === 'arrived' ? "text-emerald-600" : "text-gray-900"
                               )}>
-                                #{order.order_number}
+                                {order.order_number}
                               </span>
-                              {status === 'arrived' ? (
-                                <span className="text-[10px] font-black bg-emerald-100 text-emerald-800 px-1.5 py-0.5 rounded uppercase flex items-center gap-1">
-                                  <RefreshCw className="w-2 h-2 animate-spin" /> {getSecondsRemaining(order.id)}s
-                                </span>
-                              ) : (
-                                <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest bg-white/80 px-2 py-1 rounded-lg">
-                                  {getTimeSince(order.created_at)}
-                                </span>
-                              )}
+                              
+                              <div className="flex items-center gap-2 text-gray-400 font-bold uppercase tracking-widest text-[10px]">
+                                <Clock className="w-3.5 h-3.5" />
+                                {getTimeSince(order.created_at)}
+                              </div>
                             </div>
-                            <div className="flex items-center justify-between mt-1">
-                              <p className={cn(
-                                "font-bold text-lg uppercase tracking-tight",
-                                status === 'arrived' ? "text-emerald-900" : "text-gray-900"
-                              )}>
-                                {getFirstName(order.customer_name)}
-                              </p>
+
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2.5 text-gray-600">
+                                <User className="w-5 h-5 text-gray-400" />
+                                <span className="text-xl font-black uppercase tracking-tight">
+                                  {getFirstName(order.customer_name)}
+                                </span>
+                              </div>
+
                               {(order.is_priority || order.special_instructions?.toLowerCase().includes('priority')) && (
-                                <span className="bg-amber-100 text-amber-700 text-[9px] font-black px-2 py-0.5 rounded-full uppercase flex items-center gap-1 border border-amber-200">
+                                <div className="bg-amber-500 text-white text-[10px] font-black px-3 py-1 rounded-full uppercase shadow-sm flex items-center gap-1.5">
                                   Priority
-                                </span>
+                                </div>
                               )}
                             </div>
+
+                            {status === 'arrived' && (
+                              <div className="absolute top-0 right-0 p-3">
+                                <div className="w-2.5 h-2.5 rounded-full bg-emerald-500 animate-pulse" />
+                              </div>
+                            )}
                           </motion.div>
                         ))}
                       </div>
@@ -381,24 +337,24 @@ export default function QueueDisplay() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white">
+      <div className="flex flex-col sm:flex-row items-center justify-between px-6 py-4 border-t border-gray-200 bg-white gap-4">
         <div className="flex items-center gap-4">
           <img
             src="/images/logo/9Yards-Food-White-Logo-colored.png"
             alt="9Yards Food"
-            className="h-8 object-contain"
+            className="h-6 md:h-8 object-contain"
           />
-          <div className="h-4 w-px bg-gray-200" />
-          <span className="text-gray-500 text-xs font-medium uppercase tracking-wider">
+          <div className="hidden sm:block h-4 w-px bg-gray-200" />
+          <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest hidden sm:inline">
             {QUEUE_STATUSES.reduce((sum, status) => sum + ordersByStatus[status].length, 0)} {t('queue.ordersInQueue')}
           </span>
         </div>
-        <div className="flex items-center gap-8">
-          <span className="text-gray-400 text-xs flex items-center gap-1">
+        <div className="flex items-center gap-6 md:gap-8">
+          <span className="text-gray-400 text-[10px] font-black uppercase tracking-widest flex items-center gap-1.5">
             <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
-            {t('queue.autoRefreshing')}
+            {t('queue.live')}
           </span>
-          <p className="text-gray-600 text-sm font-medium">
+          <p className="text-gray-900 text-sm font-black tabular-nums">
             {currentTime.toLocaleTimeString("en-UG", {
               hour: "2-digit",
               minute: "2-digit",
