@@ -1,5 +1,5 @@
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { useCallback, useState, useEffect } from 'react';
 import { Globe, Accessibility, ListOrdered } from 'lucide-react';
 import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
@@ -7,6 +7,14 @@ import { Button } from '@shared/components/ui/button';
 import { cn } from '@shared/lib/utils';
 import AccessibilityPanel from '../components/AccessibilityPanel';
 import { useAccessibility } from '../context/AccessibilityContext';
+
+const BACKGROUND_IMAGES = [
+  '/images/welcome/1.webp',
+  '/images/welcome/2.webp',
+  '/images/welcome/3.webp',
+  '/images/welcome/4.webp',
+  '/images/welcome/5.webp',
+];
 
 export default function Welcome() {
   const navigate = useNavigate();
@@ -16,14 +24,7 @@ export default function Welcome() {
   const [currentTime, setCurrentTime] = useState(new Date());
   const [showAccessibility, setShowAccessibility] = useState(false);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const BACKGROUND_IMAGES = [
-    '/images/welcome/1.webp',
-    '/images/welcome/2.webp',
-    '/images/welcome/3.webp',
-    '/images/welcome/4.webp',
-    '/images/welcome/5.webp',
-  ];
+  const shouldReduceMotion = useReducedMotion();
 
   useEffect(() => {
     // Preload images
@@ -34,7 +35,7 @@ export default function Welcome() {
 
     const timer = setInterval(() => {
       setCurrentImageIndex((prev) => (prev + 1) % BACKGROUND_IMAGES.length);
-    }, 6000); // Change image every 6 seconds
+    }, 10000); // Change image every 10 seconds
     return () => clearInterval(timer);
   }, []);
 
@@ -82,23 +83,20 @@ export default function Welcome() {
   };
 
   return (
-    <div 
-      className="kiosk-screen flex flex-col relative overflow-hidden cursor-pointer"
-      onClick={handleStartOrder}
-      role="button"
-      tabIndex={0}
-      aria-label={t('welcome.tapToBegin')}
-    >
+    <div className="kiosk-screen flex flex-col relative overflow-hidden">
       {/* Animated gradient background - Apple-style color shift */}
       {/* Dynamic Background Slideshow */}
       <div className="absolute inset-0 bg-black">
         <AnimatePresence mode="popLayout">
           <motion.div
             key={currentImageIndex}
-            initial={{ opacity: 0, scale: 1.1 }}
-            animate={{ opacity: 0.6, scale: 1 }}
+            initial={{ opacity: 0, scale: 1.0 }}
+            animate={{ opacity: 0.6, scale: shouldReduceMotion ? 1.0 : 1.15 }}
             exit={{ opacity: 0 }}
-            transition={{ duration: 1.5, ease: "easeOut" }}
+            transition={{ 
+              opacity: { duration: 1, ease: "easeInOut" },
+              scale: { duration: 10, ease: "linear" }
+            }}
             className="absolute inset-0 bg-cover bg-center"
             style={{
               backgroundImage: `url(${BACKGROUND_IMAGES[currentImageIndex]})`,
@@ -106,7 +104,7 @@ export default function Welcome() {
           />
         </AnimatePresence>
         {/* Dark overlay gradient */}
-        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/40 to-black/10" />
+        <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/40 to-black/10" />
       </div>
 
       {/* Top bar */}
@@ -117,10 +115,7 @@ export default function Welcome() {
         </div>
         <div className="flex items-center gap-[clamp(0.125rem,0.5vw,0.375rem)]">
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              setShowAccessibility(true);
-            }}
+            onClick={() => setShowAccessibility(true)}
             aria-label="Accessibility settings"
             className={cn(
               "flex items-center justify-center rounded-xl transition-colors",
@@ -132,10 +127,7 @@ export default function Welcome() {
             <Accessibility className="w-[clamp(1.125rem,2.2vmin,1.375rem)] h-[clamp(1.125rem,2.2vmin,1.375rem)]" />
           </button>
           <button
-            onClick={(e) => {
-              e.stopPropagation();
-              toggleLanguage();
-            }}
+            onClick={toggleLanguage}
             aria-label={`Switch to ${language === 'en' ? 'Luganda' : 'English'}`}
             className="flex items-center gap-[clamp(0.25rem,0.6vw,0.5rem)] rounded-xl px-[clamp(0.625rem,1.5vw,1rem)] h-[clamp(2.5rem,5vmin,3rem)] text-white/60 hover:bg-white/10 hover:text-white active:bg-white/15 transition-colors"
           >
@@ -217,10 +209,7 @@ export default function Welcome() {
           <Button
             variant="outline"
             size="touch"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleTrackOrder();
-            }}
+            onClick={handleTrackOrder}
             className={cn(
               'w-full backdrop-blur-md bg-white/10 hover:bg-white/20 active:bg-white/25',
               'text-white/90 hover:text-white border border-white/25 hover:border-white/50',
@@ -240,10 +229,7 @@ export default function Welcome() {
           <Button
             variant="ghost"
             size="sm"
-            onClick={(e) => {
-              e.stopPropagation();
-              handleViewQueue();
-            }}
+            onClick={handleViewQueue}
             className={cn(
               'text-white/40 hover:text-white/80 hover:bg-white/5',
               'text-sm font-medium rounded-full px-4 py-2',
