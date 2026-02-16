@@ -12,6 +12,8 @@ export interface TranslationKeys {
   'common.loading': string;
   'common.error': string;
   'common.retry': string;
+  'language.en': string;
+  'language.lg': string;
   'common.cancel': string;
   'common.confirm': string;
   'common.back': string;
@@ -238,6 +240,8 @@ const translations: Record<Language, TranslationKeys> = {
     'common.loading': 'Loading...',
     'common.error': 'Something went wrong',
     'common.retry': 'Try Again',
+    'language.en': 'English',
+    'language.lg': 'Luganda',
     'common.cancel': 'Cancel',
     'common.confirm': 'Confirm',
     'common.back': 'Back',
@@ -463,6 +467,8 @@ const translations: Record<Language, TranslationKeys> = {
     'common.loading': 'Lindako...',
     'common.error': 'Waliwo ekikyamu',
     'common.retry': 'Gezaako nate',
+    'language.en': 'Olungereza',
+    'language.lg': 'Oluganda',
     'common.cancel': 'Sazaamu',
     'common.confirm': 'Kakasa',
     'common.back': 'Emabega',
