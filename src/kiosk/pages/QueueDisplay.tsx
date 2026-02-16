@@ -303,10 +303,10 @@ export default function QueueDisplay() {
                               initial={{ opacity: 0, y: 10 }}
                               animate={{ opacity: 1, y: 0 }}
                               exit={{ opacity: 0, scale: 0.95 }}
-                               className="bg-white rounded-xl p-5 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100/50 relative group hover:shadow-md transition-shadow duration-300"
+                              className="bg-white rounded-xl p-3 shadow-[0_2px_8px_rgba(0,0,0,0.04)] border border-gray-100/50 relative group hover:shadow-md transition-shadow duration-300"
                             >
                               {/* Top Row: Tags / Priority */}
-                              <div className="flex items-center justify-between mb-3 min-h-[24px]">
+                              <div className="flex items-center justify-between mb-1 min-h-[20px]">
                                 {isPriority ? (
                                   <div className="bg-rose-50 text-rose-600 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-wider inline-flex items-center gap-1">
                                     <div className="w-1.5 h-1.5 rounded-full bg-rose-500 animate-pulse" />
@@ -319,7 +319,7 @@ export default function QueueDisplay() {
                               </div>
 
                               {/* Middle Row: Content */}
-                              <div className="mb-5">
+                              <div className="mb-2">
                                 <h3 className="text-xl font-black text-gray-900 leading-tight mb-1">
                                   Order #{order.order_order_number || order.order_number}
                                 </h3>
@@ -329,7 +329,7 @@ export default function QueueDisplay() {
                               </div>
 
                               {/* Bottom Row: Meta */}
-                              <div className="flex items-center gap-3 pt-4 border-t border-gray-100 text-xs text-gray-400 font-bold uppercase tracking-wide">
+                              <div className="flex items-center gap-3 pt-2 border-t border-gray-100 text-xs text-gray-400 font-bold uppercase tracking-wide">
                                 <div className="flex items-center gap-1.5">
                                   <Clock className="w-3.5 h-3.5" />
                                   <span>{getTimeSince(order.created_at)}</span>
