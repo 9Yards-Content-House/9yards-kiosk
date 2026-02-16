@@ -25,22 +25,11 @@ const READY_BANNER_DURATION = 8000; // 8 seconds
 // Auto-refresh interval as backup to realtime (in ms)
 const AUTO_REFRESH_INTERVAL = 15000; // 15 seconds
 
-// Simplified status colors - professional blue/purple theme
-const STATUS_HEADER_COLORS: Record<OrderStatus, string> = {
-  new: "bg-blue-600",
-  preparing: "bg-indigo-600",
-  out_for_delivery: "bg-violet-600",
-  arrived: "bg-emerald-600",
-  cancelled: "bg-gray-600",
-};
+// Single professional header color - matches app theme
+const STATUS_HEADER_BG = "bg-[#212282]";
 
-const STATUS_TEXT_COLORS: Record<OrderStatus, string> = {
-  new: "text-blue-600",
-  preparing: "text-indigo-600",
-  out_for_delivery: "text-violet-600",
-  arrived: "text-emerald-600",
-  cancelled: "text-gray-600",
-};
+// Text color for order numbers
+const ORDER_NUMBER_COLOR = "text-[#212282]";
 
 export default function QueueDisplay() {
   const navigate = useNavigate();
@@ -231,17 +220,17 @@ export default function QueueDisplay() {
 
   if (isLoading) {
     return (
-      <div className="kiosk-screen flex flex-col items-center justify-center bg-gradient-to-b from-[#212282] to-[#1a1a6c]">
-        <RefreshCw className="w-12 h-12 text-white animate-spin" />
-        <p className="text-white text-xl mt-4">{t('queue.loading')}</p>
+      <div className="kiosk-screen flex flex-col items-center justify-center bg-[#f5f5f0]">
+        <RefreshCw className="w-12 h-12 text-[#212282] animate-spin" />
+        <p className="text-[#212282] text-xl mt-4">{t('queue.loading')}</p>
       </div>
     );
   }
 
   return (
-    <div className="kiosk-screen flex flex-col bg-gradient-to-b from-[#212282] to-[#1a1a6c]">
+    <div className="kiosk-screen flex flex-col bg-[#f5f5f0]">
       {/* Header */}
-      <div className="flex items-center justify-between px-6 py-4 border-b border-white/10">
+      <div className="flex items-center justify-between px-6 py-4 bg-[#212282]">
         <Button
           variant="ghost"
           className="text-white hover:bg-white/10"
@@ -328,11 +317,11 @@ export default function QueueDisplay() {
 
             return (
               <div key={status} className="flex flex-col min-h-0">
-                {/* Status Header - Clean, no icons */}
+                {/* Status Header - Single color, professional */}
                 <div
                   className={cn(
                     "flex items-center justify-center py-3 rounded-t-xl",
-                    STATUS_HEADER_COLORS[status]
+                    STATUS_HEADER_BG
                   )}
                 >
                   <div className="text-center">
@@ -345,11 +334,11 @@ export default function QueueDisplay() {
                   </div>
                 </div>
 
-                {/* Orders List - Fixed scrolling */}
-                <div className="flex-1 bg-slate-800/50 rounded-b-xl p-3 overflow-y-auto min-h-0">
+                {/* Orders List - Light theme */}
+                <div className="flex-1 bg-white rounded-b-xl p-3 overflow-y-auto min-h-0 border border-gray-200 border-t-0">
                   <AnimatePresence mode="popLayout">
                     {orders.length === 0 ? (
-                      <div className="flex items-center justify-center h-full text-white/40">
+                      <div className="flex items-center justify-center h-full text-gray-400">
                         <p className="text-sm">{t('queue.noOrders')}</p>
                       </div>
                     ) : (
@@ -361,15 +350,10 @@ export default function QueueDisplay() {
                             animate={{ opacity: 1, y: 0 }}
                             exit={{ opacity: 0, scale: 0.95 }}
                             transition={{ delay: index * 0.03 }}
-                            className="bg-white rounded-lg p-3 shadow-sm"
+                            className="bg-gray-50 rounded-lg p-3 border border-gray-100"
                           >
                             <div className="flex items-center justify-between">
-                              <span
-                                className={cn(
-                                  "text-xl font-bold",
-                                  STATUS_TEXT_COLORS[status]
-                                )}
-                              >
+                              <span className={cn("text-xl font-bold", ORDER_NUMBER_COLOR)}>
                                 #{order.order_number}
                               </span>
                               <span className="text-xs text-gray-400">
@@ -392,23 +376,23 @@ export default function QueueDisplay() {
       </div>
 
       {/* Footer */}
-      <div className="flex items-center justify-between px-6 py-3 border-t border-white/10 bg-black/20">
+      <div className="flex items-center justify-between px-6 py-3 border-t border-gray-200 bg-white">
         <div className="flex items-center gap-4">
           <img
-            src="/images/logo/9Yards-Food-White-Logo-colored.png"
+            src="/images/logo/9Yards-Food-colored-Logo.png"
             alt="9Yards"
             className="h-6"
           />
-          <span className="text-white/50 text-sm">
+          <span className="text-gray-500 text-sm">
             {QUEUE_STATUSES.reduce((sum, status) => sum + ordersByStatus[status].length, 0)} orders in queue
           </span>
         </div>
         <div className="flex items-center gap-4">
-          <span className="text-white/40 text-xs flex items-center gap-1">
+          <span className="text-gray-400 text-xs flex items-center gap-1">
             <RefreshCw className="w-3 h-3 animate-spin" style={{ animationDuration: '3s' }} />
             Auto-refreshing
           </span>
-          <p className="text-white/60 text-sm font-medium">
+          <p className="text-gray-600 text-sm font-medium">
             {currentTime.toLocaleTimeString("en-UG", {
               hour: "2-digit",
               minute: "2-digit",
