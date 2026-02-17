@@ -558,7 +558,7 @@ export default function ComboBuilder({
       {/* Modal Container */}
       <div
         className={cn(
-          'relative w-full max-w-md md:max-w-2xl lg:max-w-3xl h-[95vh] md:h-[90vh] md:max-h-[800px]',
+          'relative w-full max-w-md md:max-w-2xl lg:max-w-4xl xl:max-w-5xl h-[95vh] md:h-[90vh] md:max-h-[800px] xl:max-h-[900px]',
           'md:rounded-3xl rounded-t-3xl shadow-2xl overflow-hidden flex flex-col',
           'transition-colors duration-500',
           step === 1 ? 'bg-white' : 'bg-[#FAFAFA]'
@@ -568,9 +568,9 @@ export default function ComboBuilder({
         aria-labelledby="combo-builder-title"
       >
         {/* Header */}
-        <header className="flex-none bg-white px-4 pt-4 pb-3 shadow-sm z-20 border-b border-gray-100">
+        <header className="flex-none bg-white px-4 pt-4 pb-3 md:px-6 md:pt-6 md:pb-4 shadow-sm z-20 border-b border-gray-100">
           {/* Step Labels - Desktop/Tablet */}
-          <div className="hidden sm:flex justify-center gap-1 mb-3">
+          <div className="hidden sm:flex justify-center gap-1 mb-3 lg:mb-4">
             {STEPS.map((s, idx) => (
               <div key={s.num} className="flex items-center">
                 <button
@@ -584,7 +584,7 @@ export default function ComboBuilder({
                   aria-current={s.num === step ? 'step' : undefined}
                   aria-label={`Step ${s.num} of ${STEPS.length}: ${t(s.labelKey as any)}${s.num < step ? ' (completed)' : s.num === step ? ' (current)' : ''}`}
                   className={cn(
-                    'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all',
+                    'flex items-center gap-1.5 px-3 py-1.5 lg:px-4 lg:py-2 rounded-full text-xs lg:text-sm font-bold transition-all',
                     s.num === step
                       ? 'bg-[#E6411C] text-white'
                       : s.num < step
@@ -625,19 +625,13 @@ export default function ComboBuilder({
                   vibrate();
                   setStep(step - 1);
                 }}
-                className="flex size-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-[#212282]"
+                className="flex size-10 md:size-12 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-[#212282]"
                 aria-label="Go back"
               >
-                <ArrowLeft className="w-5 h-5" />
+                <ArrowLeft className="w-5 h-5 md:w-6 md:h-6" />
               </button>
             ) : (
-              <button
-                onClick={handleClose}
-                className="flex size-10 items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 transition-colors text-[#212282]"
-                aria-label="Close combo builder"
-              >
-                <X className="w-5 h-5" />
-              </button>
+              <div className="size-10 md:size-12" />
             )}
 
             {/* Mobile Step Indicator */}
@@ -655,7 +649,6 @@ export default function ComboBuilder({
                 {STEPS.map((s) => (
                   <button
                     key={s.num}
-
                     onClick={() => {
                       if (s.num < step) {
                         vibrate();
@@ -694,17 +687,17 @@ export default function ComboBuilder({
               {hasSelections && (
                 <button
                   onClick={() => setShowResetModal(true)}
-                  className="flex h-10 items-center justify-center rounded-full px-2 hover:bg-gray-100 transition-colors text-gray-500 mr-1"
+                  className="flex h-10 md:h-12 items-center justify-center rounded-full px-2 hover:bg-gray-100 transition-colors text-gray-500 mr-1"
                   title="Start Fresh"
                 >
-                  <RotateCcw className="w-4 h-4" />
+                  <RotateCcw className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               )}
               <button
                 onClick={handleClose}
-                className="flex h-10 items-center justify-center rounded-full px-2 hover:bg-red-50 transition-colors"
+                className="flex h-10 md:h-12 items-center justify-center rounded-full px-2 hover:bg-red-50 transition-colors"
               >
-                <span className="text-[#E6411C] text-sm font-bold">Cancel</span>
+                <span className="text-[#E6411C] text-sm md:text-base font-bold">Cancel</span>
               </button>
             </div>
           </div>
@@ -714,7 +707,7 @@ export default function ComboBuilder({
         <main
           ref={mainContentRef}
           className={cn(
-            'flex-1 overflow-y-auto pb-52 sm:pb-48 transition-colors duration-500',
+            'flex-1 overflow-y-auto pb-44 md:pb-52 transition-colors duration-500',
             step === 1 ? 'bg-white' : 'bg-[#FAFAFA]'
           )}
         >
@@ -811,26 +804,26 @@ export default function ComboBuilder({
           {/* Step 1: Choose Your Food */}
           {step === 1 && (
             <div className="animate-in fade-in duration-300">
-              <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3">
+              <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-3 md:px-6 md:pt-6 md:pb-4">
                 <div className="flex items-center justify-between gap-2 mb-2">
                   <h1
                     id="combo-builder-title"
-                    className="text-xl sm:text-[28px] font-extrabold leading-tight tracking-tight text-[#212282]"
+                    className="text-xl sm:text-[28px] md:text-3xl lg:text-4xl font-extrabold leading-tight tracking-tight text-[#212282]"
                   >
                     {t('combo.step1Title')}
                   </h1>
                   {combo.mainDishes.length > 0 && (
-                    <span className="shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-[#E6411C] text-white text-xs sm:text-sm font-bold whitespace-nowrap">
+                    <span className="shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-[#E6411C] text-white text-xs sm:text-sm md:text-base font-bold whitespace-nowrap">
                       {combo.mainDishes.length} {t('menu.itemsInCategory')}
                     </span>
                   )}
                 </div>
-                <p className="text-sm sm:text-base text-gray-500 font-medium">
+                <p className="text-sm sm:text-base md:text-lg text-gray-500 font-medium">
                   {t('combo.step1Desc')}
                 </p>
               </div>
 
-              <div className="grid grid-cols-2 gap-3 sm:gap-4 px-4 py-4 md:grid-cols-3 lg:grid-cols-4">
+              <div className="grid grid-cols-2 gap-3 sm:gap-4 px-4 py-4 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 md:px-6 md:py-6">
                 {mainDishes.map((dish) => {
                   const isSelected = combo.mainDishes.includes(dish.name);
                   return (
@@ -876,7 +869,7 @@ export default function ComboBuilder({
                           </div>
                         </div>
                         <div className="flex flex-col p-3">
-                          <span className="text-sm font-bold text-[#212282]">{dish.name}</span>
+                          <span className="text-sm sm:text-base font-bold text-[#212282]">{dish.name}</span>
                         </div>
                       </div>
                     </label>
@@ -889,21 +882,21 @@ export default function ComboBuilder({
           {/* Step 2: Choose Your Sauce */}
           {step === 2 && (
             <div className="animate-in fade-in duration-300">
-              <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
+              <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2 md:px-6 md:pt-6 md:pb-4">
                 <div className="flex items-center justify-between gap-2 mb-1">
-                  <h1 className="text-xl sm:text-2xl font-bold text-[#212282] tracking-tight">
+                  <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-bold text-[#212282] tracking-tight">
                     {t('combo.step2Title')}
                   </h1>
-                  <span className="shrink-0 px-1.5 sm:px-2 py-0.5 rounded-full bg-[#E6411C]/10 text-[#E6411C] text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border border-[#E6411C]/20">
+                  <span className="shrink-0 px-1.5 sm:px-2 py-0.5 rounded-full bg-[#E6411C]/10 text-[#E6411C] text-[9px] sm:text-[10px] md:text-xs font-bold uppercase tracking-wider border border-[#E6411C]/20">
                     {t('common.required')}
                   </span>
                 </div>
-                <p className="text-xs sm:text-sm text-gray-500">
+                <p className="text-xs sm:text-sm md:text-lg text-gray-500">
                   {t('combo.step2Desc')}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 p-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 p-4 md:p-6">
                 {sauces.map((sauce) => {
                   const isSelected = combo.sauce?.id === sauce.id;
                   const basePrice = sauce.sizes?.[0]?.price || sauce.price;
@@ -925,24 +918,24 @@ export default function ComboBuilder({
                         decoding="async"
                         width={64}
                         height={64}
-                        className="w-16 h-16 rounded-xl object-cover flex-shrink-0"
+                        className="w-16 h-16 md:w-20 md:h-20 rounded-xl object-cover flex-shrink-0"
                       />
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <h3 className="text-[#212282] font-bold text-lg">{sauce.name}</h3>
+                          <h3 className="text-[#212282] font-bold text-lg md:text-xl">{sauce.name}</h3>
                           {sauce.is_popular && <Flame className="w-4 h-4 text-[#E6411C]" />}
                         </div>
-                        <p className="text-[#E6411C] text-sm font-semibold mt-0.5">
+                        <p className="text-[#E6411C] text-sm md:text-base font-semibold mt-0.5">
                           {formatPrice(basePrice)}
                         </p>
                       </div>
-                      <div className="relative flex items-center justify-center w-6 h-6">
+                      <div className="relative flex items-center justify-center w-6 h-6 md:w-8 md:h-8">
                         <input
                           type="radio"
                           name="sauce"
                           checked={isSelected}
                           onChange={() => selectSauce(sauce)}
-                          className="peer appearance-none w-6 h-6 border-2 border-gray-300 rounded-full checked:border-[#E6411C] checked:border-[6px] transition-all bg-white"
+                          className="peer appearance-none w-6 h-6 md:w-8 md:h-8 border-2 border-gray-300 rounded-full checked:border-[#E6411C] checked:border-[6px] transition-all bg-white"
                           disabled={!sauce.available}
                         />
                       </div>
@@ -956,16 +949,16 @@ export default function ComboBuilder({
           {/* Step 3: Choose Your Side Dish */}
           {step === 3 && (
             <div className="animate-in fade-in duration-300">
-              <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2 sm:pb-3">
-                <h1 className="text-xl sm:text-[28px] font-extrabold leading-[1.1] text-[#212282] mb-1 sm:mb-2">
+              <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2 sm:pb-3 md:px-6 md:pt-6 md:pb-4">
+                <h1 className="text-xl sm:text-[28px] md:text-3xl lg:text-4xl font-extrabold leading-[1.1] text-[#212282] mb-1 sm:mb-2">
                   {t('combo.step3Title')}
                 </h1>
-                <p className="text-xs sm:text-base text-gray-600 leading-relaxed">
+                <p className="text-xs sm:text-base md:text-lg text-gray-600 leading-relaxed">
                   {t('combo.step3Desc')}
                 </p>
               </div>
 
-              <div className="flex flex-col gap-3 px-4 pb-4">
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3 px-4 pb-4 md:px-6 md:pb-6">
                 {sideDishes.map((side) => {
                   const isSelected = combo.sideDish === side.name;
                   return (
@@ -986,7 +979,7 @@ export default function ComboBuilder({
                       />
                       <div
                         className={cn(
-                          'flex items-center gap-4 bg-white p-3 rounded-2xl border-2 transition-all duration-200',
+                          'flex items-center gap-4 bg-white p-3 rounded-2xl border-2 transition-all duration-200 h-full',
                           isSelected
                             ? 'border-[#E6411C] bg-[#FFF8F6]'
                             : 'border-transparent hover:border-gray-200'
@@ -1000,27 +993,27 @@ export default function ComboBuilder({
                             decoding="async"
                             width={80}
                             height={80}
-                            className="w-20 h-20 rounded-xl object-cover shadow-inner"
+                            className="w-20 h-20 md:w-24 md:h-24 rounded-xl object-cover shadow-inner"
                           />
                         </div>
                         <div className="flex flex-col flex-1 min-w-0 py-1">
-                          <p className="text-[#212282] text-lg font-bold leading-tight truncate pr-2">
+                          <p className="text-[#212282] text-lg md:text-xl font-bold leading-tight truncate pr-2">
                             {side.name}
                           </p>
-                          <p className="text-gray-500 text-xs font-medium mt-1.5 uppercase tracking-wide">
+                          <p className="text-gray-500 text-xs md:text-sm font-medium mt-1.5 uppercase tracking-wide">
                             {t('combo.includedFree')}
                           </p>
                         </div>
                         <div className="flex-shrink-0 pr-2">
                           <div
                             className={cn(
-                              'w-6 h-6 rounded-full border-2 relative transition-colors',
+                              'w-6 h-6 md:w-8 md:h-8 rounded-full border-2 relative transition-colors',
                               isSelected ? 'border-[#E6411C] bg-[#E6411C]' : 'border-gray-300'
                             )}
                           >
                             {isSelected && (
                               <div className="absolute inset-0 flex items-center justify-center">
-                                <div className="w-2 h-2 rounded-full bg-white" />
+                                <div className="w-2 h-2 md:w-3 md:h-3 rounded-full bg-white" />
                               </div>
                             )}
                           </div>
@@ -1036,13 +1029,13 @@ export default function ComboBuilder({
           {/* Step 4: Add Extras */}
           {step === 4 && (
             <div className="animate-in fade-in duration-300">
-              <div className="px-4 pt-5 pb-3">
+              <div className="px-4 pt-5 pb-3 md:px-6 md:pt-6 md:pb-4">
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h1 className="text-[#212282] tracking-tight text-2xl sm:text-[28px] font-extrabold leading-tight">
+                    <h1 className="text-[#212282] tracking-tight text-2xl sm:text-[28px] md:text-3xl lg:text-4xl font-extrabold leading-tight">
                       {t('combo.step4Title')}
                     </h1>
-                    <p className="text-gray-500 text-sm mt-1">
+                    <p className="text-gray-500 text-sm md:text-lg mt-1">
                       {t('combo.step4Desc')}
                     </p>
                   </div>
@@ -1051,7 +1044,7 @@ export default function ComboBuilder({
                       vibrate();
                       setStep(5);
                     }}
-                    className="shrink-0 px-4 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-bold hover:border-[#212282] hover:text-[#212282] transition-all"
+                    className="shrink-0 px-4 py-2 md:px-6 md:py-3 rounded-xl border-2 border-gray-200 text-gray-600 text-sm md:text-base font-bold hover:border-[#212282] hover:text-[#212282] transition-all"
                   >
                     {t('common.skip')} →
                   </button>
@@ -1060,18 +1053,18 @@ export default function ComboBuilder({
 
               {/* Juices Section */}
               {juices.length > 0 && (
-                <section className="mb-4 sm:mb-6">
-                  <div className="px-4 mb-2 sm:mb-3 flex justify-between items-end">
+                <section className="mb-4 sm:mb-6 md:mb-8">
+                  <div className="px-4 mb-2 sm:mb-3 md:px-6 md:mb-4 flex justify-between items-end">
                     <div>
-                      <h3 className="text-[#212282] text-lg sm:text-xl font-bold leading-tight tracking-tight">
+                      <h3 className="text-[#212282] text-lg sm:text-xl md:text-2xl font-bold leading-tight tracking-tight">
                         {t('category.juices')}
                       </h3>
-                      <p className="text-gray-500 text-xs sm:text-sm font-medium mt-0.5 sm:mt-1">
+                      <p className="text-gray-500 text-xs sm:text-sm md:text-base font-medium mt-0.5 sm:mt-1">
                         Freshly squeezed • 100% Natural
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 px-4 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 px-4 md:px-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                     {juices.map((juice) => {
                       const extra = combo.extras.find((e) => e.item.id === juice.id);
                       const qty = extra?.quantity || 0;
@@ -1095,10 +1088,10 @@ export default function ComboBuilder({
                           </div>
                           <div className="p-3 flex flex-col flex-1 justify-between">
                             <div className="mb-2">
-                              <p className="text-[#212282] text-base font-bold leading-tight">
+                              <p className="text-[#212282] text-base md:text-lg font-bold leading-tight">
                                 {juice.name}
                               </p>
-                              <p className="text-gray-500 text-xs mt-0.5">
+                              <p className="text-gray-500 text-xs md:text-sm mt-0.5">
                                 {formatPrice(juice.price)}
                               </p>
                             </div>
@@ -1106,26 +1099,26 @@ export default function ComboBuilder({
                               <div className="flex items-center justify-between bg-[#E6411C]/10 rounded-lg p-1">
                                 <button
                                   onClick={() => updateExtra(juice, -1)}
-                                  className="size-8 flex items-center justify-center rounded-md bg-white text-[#E6411C] shadow-sm hover:scale-105 transition-transform"
+                                  className="size-8 md:size-10 flex items-center justify-center rounded-md bg-white text-[#E6411C] shadow-sm hover:scale-105 transition-transform"
                                   aria-label={`Decrease ${juice.name} quantity`}
                                 >
-                                  <Minus className="w-4 h-4" />
+                                  <Minus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
-                                <span className="text-[#E6411C] font-bold text-sm w-6 text-center">
+                                <span className="text-[#E6411C] font-bold text-sm md:text-base w-6 text-center">
                                   {qty}
                                 </span>
                                 <button
                                   onClick={() => updateExtra(juice, 1)}
-                                  className="size-8 flex items-center justify-center rounded-md bg-[#E6411C] text-white shadow-sm hover:scale-105 transition-transform"
+                                  className="size-8 md:size-10 flex items-center justify-center rounded-md bg-[#E6411C] text-white shadow-sm hover:scale-105 transition-transform"
                                   aria-label={`Increase ${juice.name} quantity`}
                                 >
-                                  <Plus className="w-4 h-4" />
+                                  <Plus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => updateExtra(juice, 1)}
-                                className="w-full h-9 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm font-bold hover:bg-gray-50 transition-colors"
+                                className="w-full h-9 md:h-11 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm md:text-base font-bold hover:bg-gray-50 transition-colors"
                               >
                                 {t('common.add')} +
                               </button>
@@ -1147,18 +1140,18 @@ export default function ComboBuilder({
 
               {/* Desserts Section */}
               {desserts.length > 0 && (
-                <section className="mb-4 sm:mb-6">
-                  <div className="px-4 mb-2 sm:mb-3 flex justify-between items-end">
+                <section className="mb-4 sm:mb-6 md:mb-8">
+                  <div className="px-4 mb-2 sm:mb-3 md:px-6 md:mb-4 flex justify-between items-end">
                     <div>
-                      <h3 className="text-[#212282] text-lg sm:text-xl font-bold leading-tight tracking-tight">
+                      <h3 className="text-[#212282] text-lg sm:text-xl md:text-2xl font-bold leading-tight tracking-tight">
                         {t('category.desserts')}
                       </h3>
-                      <p className="text-gray-500 text-xs sm:text-sm font-medium mt-0.5 sm:mt-1">
+                      <p className="text-gray-500 text-xs sm:text-sm md:text-base font-medium mt-0.5 sm:mt-1">
                         Sweet treats to finish your meal
                       </p>
                     </div>
                   </div>
-                  <div className="grid grid-cols-2 gap-3 px-4 md:grid-cols-3 lg:grid-cols-4">
+                  <div className="grid grid-cols-2 gap-3 px-4 md:px-6 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6">
                     {desserts.map((dessert) => {
                       const extra = combo.extras.find((e) => e.item.id === dessert.id);
                       const qty = extra?.quantity || 0;
@@ -1182,10 +1175,10 @@ export default function ComboBuilder({
                           </div>
                           <div className="p-3 flex flex-col flex-1 justify-between">
                             <div className="mb-2">
-                              <p className="text-[#212282] text-base font-bold leading-tight">
+                              <p className="text-[#212282] text-base md:text-lg font-bold leading-tight">
                                 {dessert.name}
                               </p>
-                              <p className="text-gray-500 text-xs mt-0.5">
+                              <p className="text-gray-500 text-xs md:text-sm mt-0.5">
                                 {formatPrice(dessert.price)}
                               </p>
                             </div>
@@ -1193,26 +1186,26 @@ export default function ComboBuilder({
                               <div className="flex items-center justify-between bg-[#E6411C]/10 rounded-lg p-1">
                                 <button
                                   onClick={() => updateExtra(dessert, -1)}
-                                  className="size-8 flex items-center justify-center rounded-md bg-white text-[#E6411C] shadow-sm hover:scale-105 transition-transform"
+                                  className="size-8 md:size-10 flex items-center justify-center rounded-md bg-white text-[#E6411C] shadow-sm hover:scale-105 transition-transform"
                                   aria-label={`Decrease ${dessert.name} quantity`}
                                 >
-                                  <Minus className="w-4 h-4" />
+                                  <Minus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
-                                <span className="text-[#E6411C] font-bold text-sm w-6 text-center">
+                                <span className="text-[#E6411C] font-bold text-sm md:text-base w-6 text-center">
                                   {qty}
                                 </span>
                                 <button
                                   onClick={() => updateExtra(dessert, 1)}
-                                  className="size-8 flex items-center justify-center rounded-md bg-[#E6411C] text-white shadow-sm hover:scale-105 transition-transform"
+                                  className="size-8 md:size-10 flex items-center justify-center rounded-md bg-[#E6411C] text-white shadow-sm hover:scale-105 transition-transform"
                                   aria-label={`Increase ${dessert.name} quantity`}
                                 >
-                                  <Plus className="w-4 h-4" />
+                                  <Plus className="w-4 h-4 md:w-5 md:h-5" />
                                 </button>
                               </div>
                             ) : (
                               <button
                                 onClick={() => updateExtra(dessert, 1)}
-                                className="w-full h-9 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm font-bold hover:bg-gray-50 transition-colors"
+                                className="w-full h-9 md:h-11 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm md:text-base font-bold hover:bg-gray-50 transition-colors"
                               >
                                 {t('common.add')} +
                               </button>
@@ -1230,27 +1223,27 @@ export default function ComboBuilder({
           {/* Step 5: Review Your Combo */}
           {step === 5 && (
             <div className="animate-in fade-in zoom-in-95 duration-300">
-              <div className="px-4 sm:px-5 pt-5 sm:pt-6 pb-2">
-                <h1 className="text-xl sm:text-2xl font-black text-[#212282] tracking-tight mb-1">
+              <div className="px-4 sm:px-5 pt-5 sm:pt-6 pb-2 md:px-6 md:pt-8 md:pb-4">
+                <h1 className="text-xl sm:text-2xl md:text-3xl lg:text-4xl font-black text-[#212282] tracking-tight mb-1">
                   {t('combo.step5Title')}
                 </h1>
-                <p className="text-xs sm:text-sm text-gray-500 font-medium">
+                <p className="text-xs sm:text-sm md:text-lg text-gray-500 font-medium">
                   {t('combo.step5Desc')}
                 </p>
               </div>
 
-              <div className="p-4 sm:p-5 space-y-3 sm:space-y-4">
+              <div className="p-4 sm:p-5 md:p-6 space-y-3 sm:space-y-4 md:space-y-6">
                 {/* Quantity Selector */}
-                <div className="bg-gradient-to-r from-[#212282] to-[#2d2da8] rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-lg">
+                <div className="bg-gradient-to-r from-[#212282] to-[#2d2da8] rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-lg">
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
-                      <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1">
+                      <p className="text-white/70 text-[10px] sm:text-xs md:text-sm font-bold uppercase tracking-wider mb-0.5 sm:mb-1">
                         {t('combo.quantityLabel')}
                       </p>
-                      <p className="text-white text-base sm:text-lg font-bold">{t('combo.selectSize')}</p>
+                      <p className="text-white text-base sm:text-lg md:text-2xl font-bold">{t('combo.selectSize')}</p>
                     </div>
                     <div
-                      className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg sm:rounded-xl p-0.5 sm:p-1 shrink-0"
+                      className="flex items-center gap-2 sm:gap-3 md:gap-4 bg-white/10 rounded-lg sm:rounded-xl p-0.5 sm:p-1 shrink-0"
                       role="group"
                       aria-label="Combo quantity"
                     >
@@ -1258,12 +1251,12 @@ export default function ComboBuilder({
                         onClick={() => updateQuantity(-1)}
                         disabled={combo.quantity <= 1}
                         aria-label="Decrease combo quantity"
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md sm:rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
+                        className="w-9 h-9 sm:w-10 sm:h-10 md:w-14 md:h-14 flex items-center justify-center rounded-md sm:rounded-lg bg-white/20 text-white hover:bg-white/30 transition-colors disabled:opacity-30 disabled:cursor-not-allowed"
                       >
-                        <Minus className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                        <Minus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" aria-hidden="true" />
                       </button>
                       <span
-                        className="w-6 sm:w-8 text-center text-white text-lg sm:text-xl font-bold"
+                        className="w-6 sm:w-8 md:w-12 text-center text-white text-lg sm:text-xl md:text-3xl font-bold"
                         aria-live="polite"
                       >
                         {combo.quantity}
@@ -1271,21 +1264,21 @@ export default function ComboBuilder({
                       <button
                         onClick={() => updateQuantity(1)}
                         aria-label="Increase combo quantity"
-                        className="w-9 h-9 sm:w-10 sm:h-10 flex items-center justify-center rounded-md sm:rounded-lg bg-[#E6411C] text-white hover:bg-[#d13a18] transition-colors"
+                        className="w-9 h-9 sm:w-10 sm:h-10 md:w-14 md:h-14 flex items-center justify-center rounded-md sm:rounded-lg bg-[#E6411C] text-white hover:bg-[#d13a18] transition-colors"
                       >
-                        <Plus className="w-4 h-4 sm:w-5 sm:h-5" aria-hidden="true" />
+                        <Plus className="w-4 h-4 sm:w-5 sm:h-5 md:w-6 md:h-6" aria-hidden="true" />
                       </button>
                     </div>
                   </div>
                 </div>
 
                 {/* Main Dishes */}
-                <ReviewSection title={t('category.mainDishes')} onEdit={() => setStep(1)}>
-                  <div className="flex flex-wrap gap-1.5 sm:gap-2">
+                <ReviewSection title={t('category.mainDishes')} editLabel={t('common.edit')} onEdit={() => setStep(1)}>
+                  <div className="flex flex-wrap gap-1.5 sm:gap-2 md:gap-3">
                     {combo.mainDishes.map((name) => (
                       <span
                         key={name}
-                        className="px-2 sm:px-3 py-1 sm:py-1.5 bg-gray-50 rounded-md sm:rounded-lg text-xs sm:text-sm font-semibold text-[#212282]"
+                        className="px-2 sm:px-3 py-1 sm:py-1.5 md:px-4 md:py-2 bg-gray-50 rounded-md sm:rounded-lg text-xs sm:text-sm md:text-base font-semibold text-[#212282]"
                       >
                         {name}
                       </span>
@@ -1294,23 +1287,23 @@ export default function ComboBuilder({
                 </ReviewSection>
 
                 {/* Sauce */}
-                <ReviewSection title={t('category.sauces')} onEdit={() => setStep(2)}>
-                  <div className="flex items-center gap-3 sm:gap-4">
+                <ReviewSection title={t('category.sauces')} editLabel="Edit" onEdit={() => setStep(2)}>
+                  <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
                     {combo.sauce && (
                       <img
                         src={combo.sauce.image_url}
                         alt={combo.sauce.name}
-                        className="size-10 sm:size-12 rounded-lg sm:rounded-xl object-cover"
+                        className="size-10 sm:size-12 md:size-16 rounded-lg sm:rounded-xl object-cover"
                       />
                     )}
                     <div>
-                      <p className="text-sm sm:text-base font-bold text-[#212282]">
+                      <p className="text-sm sm:text-base md:text-xl font-bold text-[#212282]">
                         {combo.sauce?.name || 'None'}
                         {combo.saucePreparation &&
                           combo.saucePreparation !== 'Default' &&
                           ` (${combo.saucePreparation})`}
                       </p>
-                      <p className="text-[11px] sm:text-xs text-[#E6411C] font-semibold">
+                      <p className="text-[11px] sm:text-xs md:text-sm text-[#E6411C] font-semibold">
                         {formatPrice(
                           combo.sauceSize?.price ||
                             combo.sauce?.sizes?.[0]?.price ||
@@ -1323,20 +1316,20 @@ export default function ComboBuilder({
                 </ReviewSection>
 
                 {/* Side Dish */}
-                <ReviewSection title={t('category.sideDishes')} onEdit={() => setStep(3)}>
-                  <div className="flex items-center gap-3 sm:gap-4">
+                <ReviewSection title={t('category.sideDishes')} editLabel="Edit" onEdit={() => setStep(3)}>
+                  <div className="flex items-center gap-3 sm:gap-4 md:gap-5">
                     {combo.sideDish && (
                       <img
                         src={sideDishes.find((s) => s.name === combo.sideDish)?.image_url || ''}
                         alt={combo.sideDish}
-                        className="size-10 sm:size-12 rounded-lg sm:rounded-xl object-cover"
+                        className="size-10 sm:size-12 md:size-16 rounded-lg sm:rounded-xl object-cover"
                       />
                     )}
                     <div>
-                      <p className="text-sm sm:text-base font-bold text-[#212282]">
+                      <p className="text-sm sm:text-base md:text-xl font-bold text-[#212282]">
                         {combo.sideDish || 'None selected'}
                       </p>
-                      <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider">
+                      <p className="text-[10px] sm:text-xs md:text-sm text-gray-500 font-medium uppercase tracking-wider">
                         {t('combo.includedFree')}
                       </p>
                     </div>
@@ -1345,10 +1338,10 @@ export default function ComboBuilder({
 
                 {/* Extras */}
                 {combo.extras.length > 0 && (
-                  <ReviewSection title={t('combo.step4Title')} onEdit={() => setStep(4)}>
-                    <div className="space-y-1.5 sm:space-y-2">
+                  <ReviewSection title={t('combo.step4Title')} editLabel="Edit" onEdit={() => setStep(4)}>
+                    <div className="space-y-1.5 sm:space-y-2 md:space-y-3">
                       {combo.extras.map((e) => (
-                        <div key={e.item.id} className="flex justify-between items-center text-xs sm:text-sm">
+                        <div key={e.item.id} className="flex justify-between items-center text-xs sm:text-sm md:text-base">
                           <span className="font-medium text-gray-700">
                             {e.quantity}x {e.item.name}
                           </span>
@@ -1369,17 +1362,17 @@ export default function ComboBuilder({
         <footer className="absolute bottom-0 left-0 right-0 z-30">
           <div
             className={cn(
-              'p-4 pb-8 sm:p-5 sm:pb-6 md:p-6 md:pb-5',
+              'p-4 pb-8 sm:p-5 sm:pb-6 md:p-6 md:pb-8 lg:p-8 lg:pb-10',
               step >= 2 ? 'bg-[#212282]' : 'bg-white border-t border-gray-100'
             )}
           >
-            <div className="flex flex-col gap-3 sm:gap-4 max-w-xl mx-auto">
+            <div className="flex flex-col gap-3 sm:gap-4 max-w-xl mx-auto md:max-w-3xl lg:max-w-4xl">
               {/* Order Summary */}
               <div className="flex justify-between items-start gap-4">
                 <div className="flex-1 min-w-0">
                   <p
                     className={cn(
-                      'text-[10px] sm:text-xs font-medium uppercase tracking-wider mb-0.5 sm:mb-1',
+                      'text-[10px] sm:text-xs md:text-sm font-medium uppercase tracking-wider mb-0.5 sm:mb-1',
                       step >= 2 ? 'text-white/60' : 'text-gray-500'
                     )}
                   >
@@ -1387,7 +1380,7 @@ export default function ComboBuilder({
                   </p>
                   <p
                     className={cn(
-                      'text-sm font-medium leading-relaxed truncate',
+                      'text-sm font-medium leading-relaxed truncate md:text-lg md:font-bold',
                       step >= 2 ? 'text-white/80' : 'text-[#212282]'
                     )}
                   >
@@ -1397,7 +1390,7 @@ export default function ComboBuilder({
                 <div className="text-right flex-shrink-0">
                   <p
                     className={cn(
-                      'text-[10px] sm:text-xs font-medium uppercase tracking-wider mb-0.5 sm:mb-1',
+                      'text-[10px] sm:text-xs md:text-sm font-medium uppercase tracking-wider mb-0.5 sm:mb-1',
                       step >= 2 ? 'text-white/60' : 'text-gray-500'
                     )}
                   >
@@ -1405,14 +1398,14 @@ export default function ComboBuilder({
                   </p>
                   <p
                     className={cn(
-                      'text-lg sm:text-xl md:text-2xl font-extrabold tracking-tight',
+                      'text-lg sm:text-xl md:text-3xl font-extrabold tracking-tight',
                       step >= 2 ? 'text-white' : 'text-[#212282]'
                     )}
                   >
                     {formatPrice(totalPrice)}
                   </p>
                   {step === 5 && combo.quantity > 1 && (
-                    <p className={cn('text-[10px] font-medium', step >= 2 ? 'text-white/50' : 'text-gray-400')}>
+                    <p className={cn('text-[10px] md:text-xs font-medium', step >= 2 ? 'text-white/50' : 'text-gray-400')}>
                       {formatPrice(unitPrice)} each
                     </p>
                   )}
@@ -1431,13 +1424,13 @@ export default function ComboBuilder({
                 }}
                 disabled={!canProceed}
                 className={cn(
-                  'w-full flex items-center justify-center gap-2 rounded-xl h-12 sm:h-13 md:h-14 text-white text-base sm:text-lg font-bold shadow-md transition-all duration-300',
+                  'w-full flex items-center justify-center gap-2 rounded-xl h-12 sm:h-13 md:h-16 lg:h-20 text-white text-base sm:text-lg md:text-2xl font-bold shadow-md transition-all duration-300',
                   'disabled:opacity-50 disabled:cursor-not-allowed active:scale-[0.98] hover:shadow-lg',
                   'bg-[#E6411C] hover:bg-[#d13a18]'
                 )}
               >
                 <span>{getNextButtonText()}</span>
-                {step < 5 && <ChevronRight className="w-5 h-5" />}
+                {step < 5 && <ChevronRight className="w-5 h-5 md:w-6 md:h-6" />}
               </button>
             </div>
           </div>
@@ -1596,30 +1589,29 @@ export default function ComboBuilder({
 // Review Section Component
 function ReviewSection({
   title,
+  editLabel,
   onEdit,
   children,
 }: {
   title: string;
+  editLabel: string;
   onEdit: () => void;
   children: React.ReactNode;
 }) {
   return (
-    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 shadow-sm border border-gray-100">
-      <div className="flex justify-between items-start mb-2 sm:mb-3">
-        <div className="flex items-center gap-2">
-          <div className="size-6 sm:size-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-            <Check className="w-3 h-3 sm:w-4 sm:h-4" />
+    <div className="bg-white rounded-xl sm:rounded-2xl p-3 sm:p-4 md:p-6 shadow-sm border border-gray-100">
+      <div className="flex justify-between items-start mb-2 sm:mb-3 md:mb-4">
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className="size-6 sm:size-8 md:size-10 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+            <Check className="w-3 h-3 sm:w-4 sm:h-4 md:w-5 md:h-5" />
           </div>
-          <h3 className="text-sm sm:text-base font-bold text-[#212282]">{title}</h3>
+          <h3 className="text-sm sm:text-base md:text-xl font-bold text-[#212282]">{title}</h3>
         </div>
         <button
-          onClick={() => {
-            vibrate();
-            onEdit();
-          }}
-          className="text-[#E6411C] text-xs font-bold hover:underline"
+          onClick={onEdit}
+          className="text-[#E6411C] text-xs sm:text-sm md:text-base font-bold hover:underline px-2 py-1"
         >
-          Edit
+          {editLabel}
         </button>
       </div>
       {children}
