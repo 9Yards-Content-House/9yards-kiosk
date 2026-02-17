@@ -187,7 +187,7 @@ export default function Details() {
       <KioskHeader title="Almost Done!" showBack onBack={() => navigate("/cart")} />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-2xl 2xl:max-w-3xl mx-auto w-full">
+        <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto w-full">
           {/* Progress indicator */}
           <div className="flex items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
             <div className="flex items-center gap-1.5 sm:gap-2">
@@ -343,7 +343,7 @@ export default function Details() {
 
       {/* Footer */}
       <div className="border-t bg-white p-3 sm:p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="max-w-2xl 2xl:max-w-3xl mx-auto">
+        <div className="max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto">
           {/* Order Summary */}
           <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
             <div className="flex justify-between items-center">

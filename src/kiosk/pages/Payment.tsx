@@ -6,6 +6,7 @@ import { useKioskCart } from "../context/KioskCartContext";
 import { useCreateOrder } from "@shared/hooks/useOrders";
 import { useAllMenuItems } from "@shared/hooks/useMenu";
 import { cn, formatPrice } from "@shared/lib/utils";
+import { formatPhoneDisplay } from "@shared/lib/validation";
 import { KIOSK } from "@shared/lib/constants";
 import KioskHeader from "../components/KioskHeader";
 import { Button } from "@shared/components/ui/button";
@@ -161,7 +162,7 @@ export default function Payment() {
     <div className="kiosk-screen flex flex-col bg-[#FAFAFA]">
       <KioskHeader title="Confirm Order" showBack onBack={() => navigate("/details")} />
 
-      <div className="flex-1 overflow-y-auto px-4 py-6 max-w-2xl mx-auto w-full">
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-6 sm:py-8 max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto w-full">
         {/* Order Summary */}
         <div className="bg-white rounded-2xl p-5 shadow-sm border border-gray-100 mb-4">
           <h3 className="font-bold text-lg text-[#212282] mb-4">Order Summary</h3>
@@ -258,7 +259,7 @@ export default function Payment() {
             {details.customer_phone && (
               <div className="flex justify-between">
                 <span className="text-gray-500">Phone</span>
-                <span className="font-medium text-[#212282]">{details.customer_phone}</span>
+                <span className="font-medium text-[#212282]">{formatPhoneDisplay(details.customer_phone)}</span>
               </div>
             )}
             {details.customer_location && (
@@ -276,7 +277,7 @@ export default function Payment() {
       </div>
 
       <div className="border-t bg-white p-4 space-y-3">
-        <div className="max-w-2xl mx-auto flex gap-3">
+        <div className="max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto flex gap-3">
           <Button
             variant="outline"
             size="touch"

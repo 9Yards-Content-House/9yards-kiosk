@@ -82,21 +82,37 @@ export const pinSchema = z
 // Helper to format phone for display
 export function formatPhoneDisplay(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
-  if (cleaned.startsWith('256')) {
+  
+  // Handle 256 format
+  if (cleaned.startsWith('256') && cleaned.length === 12) {
     return `+${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
   }
-  if (cleaned.startsWith('0')) {
-    return `${cleaned.slice(0, 4)} ${cleaned.slice(4, 7)} ${cleaned.slice(7)}`;
+  
+  // Handle 07... format
+  if (cleaned.startsWith('0') && cleaned.length === 10) {
+    return `${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6, 9)} ${cleaned.slice(9)}`;
   }
+  
+  // Handle 7... format (assuming Uganda 256)
+  if (cleaned.length === 9) {
+    return `+256 ${cleaned.slice(0, 3)} ${cleaned.slice(3, 6)} ${cleaned.slice(6)}`;
+  }
+  
   return phone;
 }
 
 // Helper to normalize phone to 256 format for API
 export function normalizePhone(phone: string): string {
   const cleaned = phone.replace(/\D/g, '');
+  
   if (cleaned.startsWith('0')) {
     return `256${cleaned.slice(1)}`;
   }
+  
+  if (cleaned.length === 9 && !cleaned.startsWith('256')) {
+    return `256${cleaned}`;
+  }
+  
   return cleaned;
 }
 
