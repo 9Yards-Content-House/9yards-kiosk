@@ -1127,7 +1127,7 @@ export default function ComboBuilder({
                                 onClick={() => updateExtra(juice, 1)}
                                 className="w-full h-9 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm font-bold hover:bg-gray-50 transition-colors"
                               >
-                                {t('common.next')} +
+                                {t('common.add')} +
                               </button>
                             )}
                           </div>
@@ -1214,7 +1214,7 @@ export default function ComboBuilder({
                                 onClick={() => updateExtra(dessert, 1)}
                                 className="w-full h-9 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm font-bold hover:bg-gray-50 transition-colors"
                               >
-                                {t('common.next')} +
+                                {t('common.add')} +
                               </button>
                             )}
                           </div>
@@ -1245,7 +1245,7 @@ export default function ComboBuilder({
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1">
-                        {t('combo.selectSize')}?
+                        {t('combo.quantityLabel')}
                       </p>
                       <p className="text-white text-base sm:text-lg font-bold">{t('combo.selectSize')}</p>
                     </div>
