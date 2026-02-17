@@ -50,7 +50,11 @@ export default function Sidebar() {
   const { profile, role, signOut } = useAuth();
   const [collapsed, setCollapsed] = useState(() => {
     const saved = localStorage.getItem(SIDEBAR_COLLAPSED_KEY);
-    return saved === "true";
+    if (saved !== null) {
+      return saved === "true";
+    }
+    // Default to collapsed on tablet screens (less than 1280px but larger than mobile)
+    return window.innerWidth < 1280; 
   });
 
   useEffect(() => {
@@ -82,7 +86,7 @@ export default function Sidebar() {
           />
           {!collapsed && (
             <>
-              <span className="font-bold text-sm text-primary">{dashboardTitle}</span>
+              <span className="font-bold text-sm text-primary whitespace-nowrap overflow-hidden">{dashboardTitle}</span>
               <div className="ml-auto">
                 <NotificationBell sidebarCollapsed={collapsed} />
               </div>
@@ -115,7 +119,7 @@ export default function Sidebar() {
                         cn(
                           "flex items-center justify-center w-10 h-10 rounded-lg transition-all duration-200",
                           isActive
-                            ? "bg-primary text-white shadow-sm"
+                            ? "bg-primary/10 text-primary"
                             : "text-muted-foreground hover:bg-muted hover:text-foreground hover:scale-105"
                         )
                       }
@@ -136,9 +140,9 @@ export default function Sidebar() {
                 to={link.to}
                 className={({ isActive }) =>
                   cn(
-                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                    "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors whitespace-nowrap overflow-hidden",
                     isActive
-                      ? "bg-primary text-white"
+                      ? "bg-primary/10 text-primary border border-primary/20"
                       : "text-muted-foreground hover:bg-muted hover:text-foreground"
                   )
                 }
