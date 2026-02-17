@@ -45,7 +45,7 @@ export default function MobileNav() {
               className={({ isActive }) =>
                 cn(
                   "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-xs font-medium transition-colors rounded-lg",
-                  isActive ? "text-secondary bg-secondary/10" : "text-muted-foreground active:bg-muted"
+                  isActive ? "text-primary bg-primary/10" : "text-muted-foreground active:bg-muted"
                 )
               }
             >
@@ -61,7 +61,7 @@ export default function MobileNav() {
               <button
                 className={cn(
                   "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-xs font-medium transition-colors rounded-lg",
-                  isMoreActive ? "text-secondary bg-secondary/10" : "text-muted-foreground active:bg-muted"
+                  isMoreActive ? "text-primary bg-primary/10" : "text-muted-foreground active:bg-muted"
                 )}
               >
                 <MoreHorizontal className="w-5 h-5" />
