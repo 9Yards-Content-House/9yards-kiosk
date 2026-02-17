@@ -339,7 +339,7 @@ export default function MenuNew() {
   return (
     <div className="kiosk-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Compact Header - Back button and logo */}
-      <div className="bg-white border-b px-4 py-3 flex items-center justify-between shrink-0">
+      <div className="bg-white border-b px-4 md:px-6 py-4 md:py-5 flex items-center justify-between shrink-0">
         <button
           onClick={() => navigate('/')}
           aria-label={t('common.back')}
@@ -367,7 +367,7 @@ export default function MenuNew() {
         )}
       >
         {/* Search Bar */}
-        <div className="px-4 py-3" role="search">
+        <div className="px-4 md:px-6 py-4" role="search">
           <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" aria-hidden="true" />
             <input
@@ -384,7 +384,7 @@ export default function MenuNew() {
               }}
               placeholder="Find your favorite dish..."
               aria-label="Search menu items"
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-background text-sm focus:border-secondary focus:ring-1 focus:ring-secondary/20 focus:outline-none transition-all"
+              className="w-full pl-10 pr-10 py-3 md:py-3.5 rounded-xl border border-border bg-background text-sm md:text-base focus:border-secondary focus:ring-1 focus:ring-secondary/20 focus:outline-none transition-all"
               inputMode="search"
               enterKeyHint="search"
               autoComplete="off"
@@ -406,7 +406,7 @@ export default function MenuNew() {
 
         {/* Category Tabs */}
         <div 
-          className="flex items-center gap-2 overflow-x-auto scrollbar-hide pb-3 px-4"
+          className="flex items-center gap-2 md:gap-3 overflow-x-auto scrollbar-hide pb-4 px-4 md:px-6"
           role="tablist"
           aria-label="Menu categories"
         >
@@ -426,7 +426,7 @@ export default function MenuNew() {
                 aria-selected={isActive}
                 aria-controls="menu-grid"
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border min-h-[40px] flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2',
+                  'flex items-center gap-1.5 px-4 md:px-5 py-2 md:py-2.5 rounded-full text-sm md:text-base font-medium whitespace-nowrap transition-all border min-h-[44px] md:min-h-[48px] flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2',
                   isActive
                     ? 'bg-secondary text-secondary-foreground border-secondary shadow-md'
                     : 'bg-card text-muted-foreground border-border hover:border-secondary/50 hover:bg-secondary/5'
@@ -480,7 +480,7 @@ export default function MenuNew() {
             id="menu-grid"
             role="tabpanel"
             aria-label={`${categoryConfig[activeCategory]?.label || 'All Items'} menu items`}
-            className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 p-4"
+            className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 sm:gap-5 md:gap-6 lg:gap-8 p-4 md:p-6 lg:p-8"
           >
             <AnimatePresence mode="popLayout">
               {filteredItems.map((item, index) => (
@@ -644,9 +644,9 @@ function MenuItemCard({
       </div>
 
       {/* Content */}
-      <div className="p-3 md:p-4 flex flex-col flex-1">
+      <div className="p-3 sm:p-4 md:p-5 lg:p-6 flex flex-col flex-1">
         {/* Category tag */}
-        <span className="text-[10px] uppercase tracking-wider text-muted-foreground font-medium mb-1">
+        <span className="text-[10px] md:text-[11px] uppercase tracking-wider text-muted-foreground font-medium mb-1 md:mb-1.5">
           {getCategoryLabel(item)}
         </span>
 
@@ -656,12 +656,12 @@ function MenuItemCard({
         </h3>
 
         {/* Description */}
-        <p className="text-gray-600 text-xs md:text-sm line-clamp-1 mb-2">
+        <p className="text-gray-600 text-xs md:text-sm line-clamp-1 mb-2 md:mb-3">
           {item.description || 'Delicious and fresh'}
         </p>
 
         {/* Price Row */}
-        <div className="flex items-center justify-between mt-auto pt-2 border-t border-border/50">
+        <div className="flex items-center justify-between mt-auto pt-2 md:pt-3 border-t border-border/50">
           {getPriceDisplay(item)}
 
           {/* Add to Cart button / Quantity Stepper for Individual items */}
