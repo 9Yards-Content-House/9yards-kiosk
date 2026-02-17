@@ -57,8 +57,7 @@ export default function MenuNew() {
   const { data: categories = [] } = useCategories();
   const { data: allItems = [] } = useAllMenuItems();
   const { addItem, itemCount, subtotal, items: cartItems, removeItem, updateQuantity } = useKioskCart();
-  // const { play } = useSound();
-  const play = (type: string) => console.log('Sound disabled:', type);
+  const { play } = useSound();
 
   // Get quantity in cart for a given item name
   const getCartQuantity = useCallback((itemName: string) => {

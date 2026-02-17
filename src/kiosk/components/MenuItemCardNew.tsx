@@ -82,11 +82,10 @@ export default function MenuItemCardNew({
 
   return (
     <motion.div
-      whileHover={{ y: -4 }}
       whileTap={{ scale: 0.98 }}
       className={cn(
         'relative rounded-2xl overflow-hidden bg-white border shadow-sm transition-shadow',
-        'hover:shadow-lg hover:border-secondary/30'
+        'active:shadow-lg active:border-secondary/30'
       )}
     >
       {/* Image */}
