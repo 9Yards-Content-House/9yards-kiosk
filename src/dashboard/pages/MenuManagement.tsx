@@ -151,18 +151,59 @@ export default function MenuManagement() {
           )}
         </div>
 
-        {/* Filters */}
-        <div className="flex flex-col gap-3 mb-6">
-          <div className="relative flex-1">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              placeholder="Search menu items..."
-              className="pl-10"
-            />
+        {/* Filters & Actions */}
+        <div className="flex flex-col gap-4 mb-6">
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search menu items..."
+                className="pl-10"
+              />
+            </div>
+            {/* Mobile Filter Toggle */}
+            <Button
+              variant="outline"
+              size="icon"
+              className="md:hidden shrink-0"
+              onClick={() => {
+                const el = document.getElementById('mobile-filters');
+                if (el) el.classList.toggle('hidden');
+              }}
+            >
+              <Filter className="w-4 h-4" />
+            </Button>
+            {/* View Toggle */}
+            <div className="flex items-center border rounded-lg overflow-hidden shrink-0">
+              <button
+                onClick={() => setViewMode("list")}
+                className={`p-2.5 transition-colors ${
+                  viewMode === "list" 
+                    ? "bg-secondary text-white" 
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                }`}
+                title="List view"
+              >
+                <List className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode("grid")}
+                className={`p-2.5 transition-colors ${
+                  viewMode === "grid" 
+                    ? "bg-secondary text-white" 
+                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
+                }`}
+                title="Grid view"
+              >
+                <LayoutGrid className="w-4 h-4" />
+              </button>
+            </div>
           </div>
-          <div className="flex flex-wrap gap-2">
+
+          {/* Filter Validations - Hidden on mobile by default */}
+          <div id="mobile-filters" className="hidden md:flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-200">
             <Select value={filterCategory} onValueChange={setFilterCategory}>
               <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="Category" />
@@ -176,6 +217,7 @@ export default function MenuManagement() {
                 ))}
               </SelectContent>
             </Select>
+
             <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
               <SelectTrigger className="w-full sm:w-[140px]">
                 <Filter className="w-4 h-4 mr-2" />
@@ -190,6 +232,7 @@ export default function MenuManagement() {
                 <SelectItem value="scheduled">Scheduled</SelectItem>
               </SelectContent>
             </Select>
+
             <Select value={filterItemType} onValueChange={(v) => setFilterItemType(v as ItemTypeFilter)}>
               <SelectTrigger className="w-full sm:w-[160px]">
                 <SelectValue placeholder="Item Type" />
@@ -201,8 +244,9 @@ export default function MenuManagement() {
                 <SelectItem value="combo_driver">Combo Driver</SelectItem>
               </SelectContent>
             </Select>
+
             <Select value={sortBy} onValueChange={(v) => { setSortBy(v as SortBy); setSortOrder("asc"); }}>
-              <SelectTrigger className="w-full sm:w-[130px]">
+              <SelectTrigger className="w-full sm:w-[130px] ml-auto">
                 <ArrowUpDown className="w-4 h-4 mr-2" />
                 <SelectValue placeholder="Sort" />
               </SelectTrigger>
@@ -213,34 +257,6 @@ export default function MenuManagement() {
                 <SelectItem value="category">Category</SelectItem>
               </SelectContent>
             </Select>
-            <div className="flex items-center border rounded-lg overflow-hidden ml-auto">
-              <button
-                onClick={() => setViewMode("list")}
-                className={`p-2.5 transition-colors ${
-                  viewMode === "list" 
-                    ? "bg-secondary text-white" 
-                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                }`}
-                title="List view"
-                aria-label="Switch to list view"
-                aria-pressed={viewMode === "list"}
-              >
-                <List className="w-4 h-4" aria-hidden="true" />
-              </button>
-              <button
-                onClick={() => setViewMode("grid")}
-                className={`p-2.5 transition-colors ${
-                  viewMode === "grid" 
-                    ? "bg-secondary text-white" 
-                    : "bg-muted hover:bg-muted/80 text-muted-foreground"
-                }`}
-                title="Grid view"
-                aria-label="Switch to grid view"
-                aria-pressed={viewMode === "grid"}
-              >
-                <LayoutGrid className="w-4 h-4" aria-hidden="true" />
-              </button>
-            </div>
           </div>
         </div>
 

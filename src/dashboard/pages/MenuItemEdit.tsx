@@ -21,6 +21,7 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@shared/components/ui/alert-dialog";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import { toast } from "sonner";
 import type { MenuItemType } from "@shared/types/menu";
 
@@ -322,223 +323,271 @@ export default function MenuItemEdit() {
         )}
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="bg-card rounded-xl border p-6 space-y-5">
-        {/* Image Upload */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Image</label>
-          <div
-            onDrop={handleDrop}
-            onDragOver={(e) => e.preventDefault()}
-            className="relative"
-          >
-            {watchedImageUrl ? (
-              <div className="relative w-full h-48 rounded-lg overflow-hidden border bg-muted">
-                <img
-                  src={watchedImageUrl}
-                  alt="Preview"
-                  className="w-full h-full object-cover"
-                  onError={() => form.setValue("image_url", "")}
-                />
-                <button
-                  type="button"
-                  onClick={removeImage}
-                  className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center"
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+        <Tabs defaultValue="general" className="w-full">
+          <TabsList className="grid w-full grid-cols-4">
+            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="media">Media</TabsTrigger>
+            <TabsTrigger value="variants">Variants</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
+          </TabsList>
+
+          {/* GENERAL TAB */}
+          <TabsContent value="general" className="space-y-4 py-4">
+             <div className="bg-card rounded-xl border p-6 space-y-4">
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Name</label>
+                  <Input {...form.register("name")} placeholder="Item name" />
+                  {form.formState.errors.name && (
+                    <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
+                  )}
+                </div>
+                
+                <div>
+                  <label className="block text-sm font-medium mb-1.5">Description</label>
+                  <textarea
+                    {...form.register("description")}
+                    placeholder="Short description"
+                    className="w-full h-24 p-3 border rounded-lg resize-none bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                   <div>
+                     <label className="block text-sm font-medium mb-1.5">Category</label>
+                     <select
+                       {...form.register("category_id")}
+                       onChange={(e) => handleCategoryChange(e.target.value)}
+                       className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                     >
+                       <option value="">Select category</option>
+                       {categories?.map((cat) => (
+                         <option key={cat.id} value={cat.id}>{cat.name}</option>
+                       ))}
+                     </select>
+                     {form.formState.errors.category_id && (
+                       <p className="text-red-500 text-xs mt-1">{form.formState.errors.category_id.message}</p>
+                     )}
+                   </div>
+                   
+                   <div>
+                     <label className="block text-sm font-medium mb-1.5">Item Type</label>
+                     <select
+                       {...form.register("item_type")}
+                       onChange={(e) => handleItemTypeChange(e.target.value as MenuItemType)}
+                       className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                     >
+                       <option value="standalone">Standalone</option>
+                       <option value="combo_component">Combo Component</option>
+                       <option value="combo_driver">Combo Driver (Sauce)</option>
+                     </select>
+                   </div>
+                </div>
+             </div>
+          </TabsContent>
+
+          {/* MEDIA TAB */}
+          <TabsContent value="media" className="py-4">
+             <div className="bg-card rounded-xl border p-6">
+                <label className="block text-sm font-medium mb-3">Item Image</label>
+                <div
+                  onDrop={handleDrop}
+                  onDragOver={(e) => e.preventDefault()}
+                  className="relative"
                 >
-                  <X className="w-4 h-4" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => fileInputRef.current?.click()}
-                  className="absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white text-sm flex items-center gap-2"
-                >
-                  <Upload className="w-4 h-4" />
-                  Change
-                </button>
-              </div>
-            ) : (
-              <div
-                onClick={() => fileInputRef.current?.click()}
-                className="w-full h-48 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center cursor-pointer bg-muted/30 transition-colors"
-              >
-                {uploading ? (
-                  <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
-                ) : (
+                  {watchedImageUrl ? (
+                    <div className="relative w-full h-64 rounded-lg overflow-hidden border bg-muted">
+                      <img
+                        src={watchedImageUrl}
+                        alt="Preview"
+                        className="w-full h-full object-cover"
+                        onError={() => form.setValue("image_url", "")}
+                      />
+                      <button
+                        type="button"
+                        onClick={removeImage}
+                        className="absolute top-2 right-2 w-8 h-8 rounded-full bg-black/50 hover:bg-black/70 text-white flex items-center justify-center"
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => fileInputRef.current?.click()}
+                        className="absolute bottom-2 right-2 px-3 py-1.5 rounded-lg bg-black/50 hover:bg-black/70 text-white text-sm flex items-center gap-2"
+                      >
+                        <Upload className="w-4 h-4" />
+                        Change
+                      </button>
+                    </div>
+                  ) : (
+                    <div
+                      onClick={() => fileInputRef.current?.click()}
+                      className="w-full h-64 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center cursor-pointer bg-muted/30 transition-colors"
+                    >
+                      {uploading ? (
+                        <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
+                      ) : (
+                        <>
+                          <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
+                          <p className="text-sm text-muted-foreground">Click or drag an image here</p>
+                          <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP up to 5MB</p>
+                        </>
+                      )}
+                    </div>
+                  )}
+                  <input
+                    ref={fileInputRef}
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    onChange={handleFileSelect}
+                    className="hidden"
+                  />
+                </div>
+                <div className="mt-4">
+                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 block">Or use URL</label>
+                   <Input
+                     {...form.register("image_url")}
+                     placeholder="https://example.com/image.jpg"
+                   />
+                </div>
+             </div>
+          </TabsContent>
+
+          {/* VARIANTS TAB */}
+          <TabsContent value="variants" className="py-4 space-y-4">
+             <div className="bg-card rounded-xl border p-6 space-y-6">
+                <div>
+                   <label className="block text-sm font-medium mb-1.5">Base Price (UGX)</label>
+                   <Input
+                     type="number"
+                     {...form.register("price")}
+                     disabled={watchedItemType === 'combo_component'}
+                     className={watchedItemType === 'combo_component' ? 'bg-muted' : ''}
+                   />
+                   {form.formState.errors.price && (
+                     <p className="text-red-500 text-xs mt-1">{form.formState.errors.price.message}</p>
+                   )}
+                   <p className="text-xs text-muted-foreground mt-1.5">
+                     {watchedItemType === 'combo_component' 
+                        ? 'Combo components are usually free (price 0).'
+                        : 'For items with sizes, this is usually the price of the smallest/default size.'}
+                   </p>
+                </div>
+
+                {showPreparationsAndSizes ? (
                   <>
-                    <ImageIcon className="w-10 h-10 text-muted-foreground mb-2" />
-                    <p className="text-sm text-muted-foreground">Click or drag an image here</p>
-                    <p className="text-xs text-muted-foreground mt-1">JPG, PNG, WebP up to 5MB</p>
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <label className="text-sm font-medium">Preparations</label>
+                          <p className="text-xs text-muted-foreground">Cooking methods (e.g. Fried, Boiled)</p>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendPrep({ name: "", priceModifier: 0 })}>
+                          <Plus className="w-4 h-4 mr-1" /> Add
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                         {preparationFields.map((field, index) => (
+                           <div key={field.id} className="flex gap-2">
+                             <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" />
+                             <Button type="button" variant="ghost" size="icon" onClick={() => removePrep(index)}>
+                               <X className="w-4 h-4" />
+                             </Button>
+                           </div>
+                         ))}
+                         {preparationFields.length === 0 && (
+                            <p className="text-sm text-muted-foreground italic">No preparations defined.</p>
+                         )}
+                      </div>
+                    </div>
+
+                    <div className="border-t pt-4">
+                      <div className="flex items-center justify-between mb-3">
+                        <div>
+                          <label className="text-sm font-medium">Sizes</label>
+                          <p className="text-xs text-muted-foreground">Portion sizes with specific prices</p>
+                        </div>
+                        <Button type="button" variant="outline" size="sm" onClick={() => appendSize({ name: "", price: 0 })}>
+                          <Plus className="w-4 h-4 mr-1" /> Add Size
+                        </Button>
+                      </div>
+                      <div className="space-y-2">
+                         {sizeFields.map((field, index) => (
+                           <div key={field.id} className="flex gap-2">
+                             <Input {...form.register(`sizes.${index}.name` as const)} placeholder="Size Name" className="flex-1" />
+                             <Input type="number" {...form.register(`sizes.${index}.price` as const)} placeholder="Price" className="w-32" />
+                             <Button type="button" variant="ghost" size="icon" onClick={() => removeSize(index)}>
+                               <X className="w-4 h-4" />
+                             </Button>
+                           </div>
+                         ))}
+                         {sizeFields.length === 0 && (
+                            <p className="text-sm text-muted-foreground italic">No sizes defined.</p>
+                         )}
+                      </div>
+                    </div>
                   </>
+                ) : (
+                  <div className="bg-muted/30 p-4 rounded-lg border border-dashed text-center">
+                    <p className="text-sm text-muted-foreground">
+                      Only "Combo Driver" items (like Sauces) support multiple sizes and preparation methods.
+                    </p>
+                  </div>
                 )}
-              </div>
-            )}
-            <input
-              ref={fileInputRef}
-              type="file"
-              accept="image/jpeg,image/png,image/webp,image/gif"
-              onChange={handleFileSelect}
-              className="hidden"
-            />
-          </div>
-          <div className="mt-2 text-sm text-muted-foreground">
-             <Input
-               {...form.register("image_url")}
-               placeholder="Or enter image URL manually"
-               className="mt-2"
-             />
-          </div>
-        </div>
-
-        {/* Basic Info */}
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Name</label>
-            <Input {...form.register("name")} placeholder="Item name" />
-            {form.formState.errors.name && (
-              <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
-            )}
-          </div>
-          
-          <div>
-            <label className="block text-sm font-medium mb-1.5">Description</label>
-            <textarea
-              {...form.register("description")}
-              placeholder="Short description"
-              className="w-full h-24 p-3 border rounded-lg resize-none bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-            />
-          </div>
-
-          <div className="grid grid-cols-2 gap-4">
-             <div>
-               <label className="block text-sm font-medium mb-1.5">Price (UGX)</label>
-               <Input
-                 type="number"
-                 {...form.register("price")}
-                 disabled={watchedItemType === 'combo_component'}
-                 className={watchedItemType === 'combo_component' ? 'bg-muted' : ''}
-               />
-               {form.formState.errors.price && (
-                 <p className="text-red-500 text-xs mt-1">{form.formState.errors.price.message}</p>
-               )}
              </div>
-             
-             <div>
-               <label className="block text-sm font-medium mb-1.5">Category</label>
-               <select
-                 {...form.register("category_id")}
-                 onChange={(e) => handleCategoryChange(e.target.value)}
-                 className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-               >
-                 <option value="">Select category</option>
-                 {categories?.map((cat) => (
-                   <option key={cat.id} value={cat.id}>{cat.name}</option>
-                 ))}
-               </select>
-               {form.formState.errors.category_id && (
-                 <p className="text-red-500 text-xs mt-1">{form.formState.errors.category_id.message}</p>
-               )}
-             </div>
-          </div>
-        </div>
+          </TabsContent>
 
-        {/* Item Type */}
-        <div>
-          <label className="block text-sm font-medium mb-1.5">Item Type</label>
-          <select
-            {...form.register("item_type")}
-            onChange={(e) => handleItemTypeChange(e.target.value as MenuItemType)}
-            className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
-          >
-            <option value="standalone">Standalone</option>
-            <option value="combo_component">Combo Component</option>
-            <option value="combo_driver">Combo Driver (Sauce)</option>
-          </select>
-        </div>
-
-        {/* Dynamic Fields */}
-        {showPreparationsAndSizes && (
-          <div className="space-y-6 border-t pt-4">
-            {/* Preparations */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium">Preparations</label>
-                <Button type="button" variant="outline" size="sm" onClick={() => appendPrep({ name: "", priceModifier: 0 })}>
-                  <Plus className="w-4 h-4 mr-1" /> Add
-                </Button>
-              </div>
-              <div className="space-y-2">
-                 {preparationFields.map((field, index) => (
-                   <div key={field.id} className="flex gap-2">
-                     <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" />
-                     <Button type="button" variant="ghost" size="icon" onClick={() => removePrep(index)}>
-                       <X className="w-4 h-4" />
-                     </Button>
+          {/* SETTINGS TAB */}
+          <TabsContent value="settings" className="py-4">
+            <div className="bg-card rounded-xl border p-6 space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                   <div>
+                     <label className="block text-sm font-medium mb-1.5">Sort Order</label>
+                     <Input type="number" {...form.register("sort_order")} />
+                     <p className="text-xs text-muted-foreground mt-1">Lower numbers appear first in the menu.</p>
                    </div>
-                 ))}
-                 {form.formState.errors.preparations && (
-                    <p className="text-red-500 text-xs">{form.formState.errors.preparations.message}</p>
-                 )}
-              </div>
-            </div>
+                </div>
 
-            {/* Sizes */}
-            <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-sm font-medium">Sizes</label>
-                <Button type="button" variant="outline" size="sm" onClick={() => appendSize({ name: "", price: 0 })}>
-                  <Plus className="w-4 h-4 mr-1" /> Add Size
-                </Button>
-              </div>
-              <div className="space-y-2">
-                 {sizeFields.map((field, index) => (
-                   <div key={field.id} className="flex gap-2">
-                     <Input {...form.register(`sizes.${index}.name` as const)} placeholder="Size Name" />
-                     <Input type="number" {...form.register(`sizes.${index}.price` as const)} placeholder="Price" />
-                     <Button type="button" variant="ghost" size="icon" onClick={() => removeSize(index)}>
-                       <X className="w-4 h-4" />
-                     </Button>
+                <div className="space-y-4 border-t pt-4">
+                   <div className="flex items-center justify-between">
+                     <div className="space-y-0.5">
+                       <label className="text-sm font-medium">Available</label>
+                       <p className="text-xs text-muted-foreground">Show this item on the menu</p>
+                     </div>
+                     <Switch
+                       checked={form.watch("available")}
+                       onCheckedChange={(v) => form.setValue("available", v)}
+                     />
                    </div>
-                 ))}
-                 {form.formState.errors.sizes && (
-                    <p className="text-red-500 text-xs">{form.formState.errors.sizes.message}</p>
-                 )}
-              </div>
+                   
+                   <div className="flex items-center justify-between">
+                     <div className="space-y-0.5">
+                       <label className="text-sm font-medium">Popular</label>
+                       <p className="text-xs text-muted-foreground">Highlight with a star badge</p>
+                     </div>
+                     <Switch
+                       checked={form.watch("is_popular")}
+                       onCheckedChange={(v) => form.setValue("is_popular", v)}
+                     />
+                   </div>
+
+                   <div className="flex items-center justify-between">
+                     <div className="space-y-0.5">
+                       <label className="text-sm font-medium">New Item</label>
+                       <p className="text-xs text-muted-foreground">Highlight with a "New" badge</p>
+                     </div>
+                     <Switch
+                       checked={form.watch("is_new")}
+                       onCheckedChange={(v) => form.setValue("is_new", v)}
+                     />
+                   </div>
+                </div>
             </div>
-          </div>
-        )}
+          </TabsContent>
+        </Tabs>
 
-        {/* Toggles */}
-        <div className="grid grid-cols-2 gap-4 pt-2">
-           <div>
-             <label className="block text-sm font-medium mb-1.5">Sort Order</label>
-             <Input type="number" {...form.register("sort_order")} />
-           </div>
-           <div className="space-y-3 pt-1">
-             <div className="flex items-center gap-3">
-               <Switch
-                 checked={form.watch("available")}
-                 onCheckedChange={(v) => form.setValue("available", v)}
-               />
-               <label className="text-sm font-medium">Available</label>
-             </div>
-             <div className="flex items-center gap-3">
-               <Switch
-                 checked={form.watch("is_popular")}
-                 onCheckedChange={(v) => form.setValue("is_popular", v)}
-               />
-               <label className="text-sm font-medium">Mark as Popular</label>
-             </div>
-             <div className="flex items-center gap-3">
-               <Switch
-                 checked={form.watch("is_new")}
-                 onCheckedChange={(v) => form.setValue("is_new", v)}
-               />
-               <label className="text-sm font-medium">Mark as New</label>
-             </div>
-           </div>
-        </div>
-
-        {/* Actions */}
-        <div className="flex gap-3 pt-4 border-t">
+        {/* Floating Footer Actions */}
+        <div className="sticky bottom-0 left-0 right-0 p-4 bg-background/80 backdrop-blur-md border-t flex gap-3 mt-6 z-10">
           <Button type="button" variant="outline" onClick={() => navigate("/menu")} className="flex-1">
             Cancel
           </Button>
