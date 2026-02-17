@@ -1,5 +1,7 @@
 import { useState, useCallback, useMemo } from "react";
 import { CheckCircle2, XCircle } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import { Badge } from "@shared/components/ui/badge";
 import {
   ORDER_STATUS_FLOW,
   ORDER_STATUS_LABELS,
@@ -178,120 +180,221 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
 
   return (
     <>
-    <div className="kanban-board">
-      {/* Active workflow columns */}
-      {WORKFLOW_STATUSES.map((status) => (
-        <div 
-          key={status} 
-          className="kanban-column"
-          onDragOver={(e) => handleDragOver(e, status)}
-          onDragLeave={handleDragLeave}
-          onDrop={(e) => handleDrop(e, status)}
-        >
-          <div className="flex items-center gap-2 mb-3 px-2">
-            <div
-              className={`w-3 h-3 rounded-full ${
-                status === "new"
-                  ? "bg-blue-500"
-                  : status === "preparing"
-                  ? "bg-yellow-500"
-                  : "bg-green-500"
+      {/* Mobile View: Tabs */}
+      <div className="md:hidden">
+        <Tabs defaultValue="new" className="w-full">
+          <TabsList className="w-full grid grid-cols-4 mb-4 h-auto bg-muted/50 p-1 gap-1">
+            {WORKFLOW_STATUSES.map((status) => (
+              <TabsTrigger 
+                key={status} 
+                value={status} 
+                className="relative text-[10px] xs:text-xs px-0 py-2 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm"
+              >
+                <div className="flex flex-col items-center gap-1">
+                  <span>
+                    {status === 'out_for_delivery' ? 'Delivery' : ORDER_STATUS_LABELS[status]}
+                  </span>
+                  {grouped[status]?.length > 0 && (
+                    <Badge 
+                      variant={status === 'new' ? "destructive" : "secondary"} 
+                      className="h-4 px-1.5 min-w-[16px] text-[10px] justify-center"
+                    >
+                      {grouped[status].length}
+                    </Badge>
+                  )}
+                </div>
+              </TabsTrigger>
+            ))}
+            <TabsTrigger value="completed" className="relative text-[10px] xs:text-xs px-0 py-2 h-auto data-[state=active]:bg-background data-[state=active]:shadow-sm">
+              <div className="flex flex-col items-center gap-1">
+                <span>Done</span>
+                {recentCompletedOrders.length > 0 && (
+                  <Badge variant="secondary" className="h-4 px-1.5 min-w-[16px] text-[10px] justify-center">
+                    {recentCompletedOrders.length}
+                  </Badge>
+                )}
+              </div>
+            </TabsTrigger>
+          </TabsList>
+
+          {WORKFLOW_STATUSES.map((status) => (
+            <TabsContent key={status} value={status} className="mt-0">
+              <div 
+                className="kanban-column-content space-y-3 min-h-[50vh] pb-24"
+                onDragOver={(e) => handleDragOver(e, status)}
+                onDragLeave={handleDragLeave}
+                onDrop={(e) => handleDrop(e, status)}
+              >
+                {grouped[status]?.map((order) => (
+                  <div key={order.id} className="relative">
+                     <OrderCard
+                        order={order}
+                        isNew={status === "new"}
+                        onAdvance={(order, nextStatus) => {
+                          if (nextStatus === "out_for_delivery") {
+                            setOrderToAssign(order);
+                            setAssignModalOpen(true);
+                          } else {
+                            updateStatus.mutate({
+                              orderId: order.id,
+                              status: nextStatus,
+                            });
+                            toast.success(`Order moved to ${ORDER_STATUS_LABELS[nextStatus]}`);
+                            onStatusChange?.();
+                          }
+                        }}
+                      />
+                  </div>
+                ))}
+                {(!grouped[status] || grouped[status].length === 0) && (
+                  <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
+                    No {ORDER_STATUS_LABELS[status].toLowerCase()} orders
+                  </div>
+                )}
+              </div>
+            </TabsContent>
+          ))}
+
+          <TabsContent value="completed" className="mt-0">
+            <div className="space-y-3 pb-24 min-h-[50vh]">
+              {recentCompletedOrders.map((order) => (
+                <div key={order.id} className="relative opacity-75">
+                   <div className={`absolute -top-1 -right-1 z-10 w-5 h-5 rounded-full flex items-center justify-center ${
+                      order.status === "arrived" ? "bg-green-500" : "bg-red-500"
+                    }`}>
+                      {order.status === "arrived" 
+                        ? <CheckCircle2 className="w-3 h-3 text-white" />
+                        : <XCircle className="w-3 h-3 text-white" />
+                      }
+                    </div>
+                    <OrderCard order={order} isNew={false} />
+                </div>
+              ))}
+              {recentCompletedOrders.length === 0 && (
+                <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
+                  No recent completed orders
+                </div>
+              )}
+            </div>
+          </TabsContent>
+        </Tabs>
+      </div>
+
+      {/* Desktop/Tablet View: Kanban Grid */}
+      <div className="hidden md:grid kanban-board">
+        {/* Active workflow columns */}
+        {WORKFLOW_STATUSES.map((status) => (
+          <div 
+            key={status} 
+            className="kanban-column"
+            onDragOver={(e) => handleDragOver(e, status)}
+            onDragLeave={handleDragLeave}
+            onDrop={(e) => handleDrop(e, status)}
+          >
+            <div className="flex items-center gap-2 mb-3 px-2">
+              <div
+                className={`w-3 h-3 rounded-full ${
+                  status === "new"
+                    ? "bg-blue-500"
+                    : status === "preparing"
+                    ? "bg-yellow-500"
+                    : "bg-green-500"
+                }`}
+              />
+              <h3 className="font-semibold">{ORDER_STATUS_LABELS[status]}</h3>
+              <span className="text-sm text-muted-foreground ml-auto">
+                {grouped[status]?.length || 0}
+              </span>
+            </div>
+
+            <div 
+              className={`kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 transition-colors ${
+                dragOverStatus === status 
+                  ? "bg-secondary/10 border-2 border-dashed border-secondary" 
+                  : "border-2 border-transparent"
               }`}
-            />
-            <h3 className="font-semibold">{ORDER_STATUS_LABELS[status]}</h3>
+            >
+              {grouped[status]?.map((order) => (
+                <div
+                  key={order.id}
+                  draggable
+                  onDragStart={handleDragStart}
+                  onDragEnd={handleDragEnd}
+                  data-order-id={order.id}
+                  className={`${draggedOrderId === order.id ? "opacity-50" : ""}`}
+                >
+                  <OrderCard
+                    order={order}
+                    isNew={status === "new"}
+                    onAdvance={(order, nextStatus) => {
+                      if (nextStatus === "out_for_delivery") {
+                        setOrderToAssign(order);
+                        setAssignModalOpen(true);
+                      } else {
+                        updateStatus.mutate({
+                          orderId: order.id,
+                          status: nextStatus,
+                        });
+                        toast.success(`Order moved to ${ORDER_STATUS_LABELS[nextStatus]}`);
+                        onStatusChange?.();
+                      }
+                    }}
+                  />
+                </div>
+              ))}
+              {(!grouped[status] || grouped[status].length === 0) && (
+                <div className={`text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed ${
+                  dragOverStatus === status ? "border-secondary bg-secondary/5" : ""
+                }`}>
+                  {dragOverStatus === status ? "Drop here" : "No orders"}
+                </div>
+              )}
+            </div>
+          </div>
+        ))}
+
+        {/* Completed/Cancelled column - shows recent orders only (last 2 hours) */}
+        <div className="kanban-column">
+          <div className="flex items-center gap-2 mb-3 px-2">
+            <div className="w-3 h-3 rounded-full bg-gray-400" />
+            <h3 className="font-semibold">Completed</h3>
             <span className="text-sm text-muted-foreground ml-auto">
-              {grouped[status]?.length || 0}
+              {recentCompletedOrders.length}
             </span>
           </div>
 
-          <div 
-            className={`kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 transition-colors ${
-              dragOverStatus === status 
-                ? "bg-secondary/10 border-2 border-dashed border-secondary" 
-                : "border-2 border-transparent"
-            }`}
-          >
-            {grouped[status]?.map((order) => (
-              <div
-                key={order.id}
-                draggable
-                onDragStart={handleDragStart}
-                onDragEnd={handleDragEnd}
-                data-order-id={order.id}
-                className={`${draggedOrderId === order.id ? "opacity-50" : ""}`}
-              >
-                <OrderCard
-                  order={order}
-                  isNew={status === "new"}
-                  onAdvance={(order, nextStatus) => {
-                    if (nextStatus === "out_for_delivery") {
-                      setOrderToAssign(order);
-                      setAssignModalOpen(true);
-                    } else {
-                      updateStatus.mutate({
-                        orderId: order.id,
-                        status: nextStatus,
-                      });
-                      toast.success(`Order moved to ${ORDER_STATUS_LABELS[nextStatus]}`);
-                      onStatusChange?.();
-                    }
-                  }}
-                />
+          <div className="kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 border-2 border-transparent">
+            {recentCompletedOrders.map((order) => (
+              <div key={order.id} className="relative">
+                {/* Status indicator overlay */}
+                <div className={`absolute -top-1 -right-1 z-10 w-5 h-5 rounded-full flex items-center justify-center ${
+                  order.status === "arrived" ? "bg-green-500" : "bg-red-500"
+                }`}>
+                  {order.status === "arrived" 
+                    ? <CheckCircle2 className="w-3 h-3 text-white" />
+                    : <XCircle className="w-3 h-3 text-white" />
+                  }
+                </div>
+                <OrderCard order={order} isNew={false} />
               </div>
             ))}
-            {(!grouped[status] || grouped[status].length === 0) && (
-              <div className={`text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed ${
-                dragOverStatus === status ? "border-secondary bg-secondary/5" : ""
-              }`}>
-                {dragOverStatus === status ? "Drop here" : "No orders"}
+            {recentCompletedOrders.length === 0 && (
+              <div className="text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed">
+                No recent orders
               </div>
             )}
           </div>
         </div>
-      ))}
-
-      {/* Completed/Cancelled column - shows recent orders only (last 2 hours) */}
-      <div className="kanban-column">
-        <div className="flex items-center gap-2 mb-3 px-2">
-          <div className="w-3 h-3 rounded-full bg-gray-400" />
-          <h3 className="font-semibold">Completed</h3>
-          <span className="text-sm text-muted-foreground ml-auto">
-            {recentCompletedOrders.length}
-          </span>
-        </div>
-
-        <div className="kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 border-2 border-transparent">
-          {recentCompletedOrders.map((order) => (
-            <div key={order.id} className="relative">
-              {/* Status indicator overlay */}
-              <div className={`absolute -top-1 -right-1 z-10 w-5 h-5 rounded-full flex items-center justify-center ${
-                order.status === "arrived" ? "bg-green-500" : "bg-red-500"
-              }`}>
-                {order.status === "arrived" 
-                  ? <CheckCircle2 className="w-3 h-3 text-white" />
-                  : <XCircle className="w-3 h-3 text-white" />
-                }
-              </div>
-              <OrderCard order={order} isNew={false} />
-            </div>
-          ))}
-          {recentCompletedOrders.length === 0 && (
-            <div className="text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed">
-              No recent orders
-            </div>
-          )}
-        </div>
       </div>
-    </div>
 
-    {/* Rider Assignment Modal */}
-    <AssignRiderModal
-      open={assignModalOpen}
-      onOpenChange={setAssignModalOpen}
-      order={orderToAssign}
-      onAssign={handleAssignRider}
-      isAssigning={isAssigning}
-    />
+      {/* Rider Assignment Modal */}
+      <AssignRiderModal
+        open={assignModalOpen}
+        onOpenChange={setAssignModalOpen}
+        order={orderToAssign}
+        onAssign={handleAssignRider}
+        isAssigning={isAssigning}
+      />
     </>
   );
 }

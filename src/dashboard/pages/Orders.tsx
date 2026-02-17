@@ -131,14 +131,19 @@ export default function Orders() {
   return (
     <div className="p-4 md:p-6 w-full max-w-[1400px] mx-auto">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Orders</h1>
-          <p className="text-muted-foreground">
-            {filteredOrders.length} orders{hasFilters && " (filtered)"}
-          </p>
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4 md:mb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-2xl font-bold md:block hidden">Orders</h1>
+            <p className="text-muted-foreground text-sm">
+              {filteredOrders.length} orders{hasFilters && " (filtered)"}
+            </p>
+          </div>
+          <Button variant="outline" size="sm" onClick={handleExport} className="md:hidden">
+            <Download className="w-4 h-4" />
+          </Button>
         </div>
-        <div className="flex items-center gap-2">
+        <div className="hidden md:flex items-center gap-2">
           <Button variant="outline" size="sm" onClick={handleExport}>
             <Download className="w-4 h-4 mr-2" />
             Export
@@ -152,7 +157,7 @@ export default function Orders() {
         <div className="relative flex-1 md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
-            placeholder="Search order # or customer..."
+            placeholder="Search..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="pl-9 w-full"
@@ -167,37 +172,39 @@ export default function Orders() {
           )}
         </div>
 
-        {/* Time filter */}
-        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)} className="w-full md:w-auto">
-          <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex">
-            <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="week">Week</TabsTrigger>
-            <TabsTrigger value="all">All</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <div className="flex gap-2">
+          {/* Time filter */}
+          <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)} className="flex-1">
+            <TabsList className="w-full grid grid-cols-3">
+              <TabsTrigger value="today" className="text-xs px-2">Today</TabsTrigger>
+              <TabsTrigger value="week" className="text-xs px-2">Week</TabsTrigger>
+              <TabsTrigger value="all" className="text-xs px-2">All</TabsTrigger>
+            </TabsList>
+          </Tabs>
 
-        {/* Status filter */}
-        <Select
-          value={statusFilter}
-          onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}
-        >
-          <SelectTrigger className="w-full md:w-[140px]">
-            <Filter className="w-4 h-4 mr-2" />
-            <SelectValue placeholder="Status" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Status</SelectItem>
-            {ORDER_STATUS_FLOW.map((status) => (
-              <SelectItem key={status} value={status}>
-                {ORDER_STATUS_LABELS[status]}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+          {/* Status filter */}
+          <Select
+            value={statusFilter}
+            onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}
+          >
+            <SelectTrigger className="w-[110px] md:w-[140px]">
+              <Filter className="w-4 h-4 mr-2 md:hidden" />
+              <SelectValue placeholder="Status" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All</SelectItem>
+              {ORDER_STATUS_FLOW.map((status) => (
+                <SelectItem key={status} value={status}>
+                  {ORDER_STATUS_LABELS[status]}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
 
         {/* Clear filters */}
         {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full md:w-auto">
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full md:w-auto h-9">
             <X className="w-4 h-4 mr-1" />
             Clear
           </Button>

@@ -72,33 +72,6 @@
   overflow-x: hidden;
 }
 
-/* Kanban board - responsive */
-.kanban-board {
-  display: grid;
-  grid-template-columns: repeat(4, minmax(280px, 1fr));
-  gap: 1rem;
-  padding: 1rem;
-}
-
-.kanban-board > * {
-  scroll-snap-align: start;
-}
-
-/* Kanban column with vertical scroll */
-.kanban-column {
-  display: flex;
-  flex-direction: column;
-  max-height: calc(100vh - 200px);
-}
-
-.kanban-column-content {
-  flex: 1;
-  overflow-y: auto;
-  overflow-x: hidden;
-  min-height: 200px;
-  max-height: calc(100vh - 280px);
-}
-
 /* Draggable order cards */
 [draggable="true"] {
   cursor: grab;
@@ -122,22 +95,34 @@
   .dashboard-main {
     padding-bottom: 5rem;
   }
-  /* Horizontal scroll for kanban on mobile */
+}
+
+/* Kanban board - desktop/tablet only */
+@media (min-width: 768px) {
   .kanban-board {
-    display: flex;
-    overflow-x: auto;
-    scroll-snap-type: x mandatory;
+    display: grid;
+    grid-template-columns: repeat(4, minmax(280px, 1fr));
     gap: 1rem;
     padding: 1rem;
-    padding-right: 2rem; /* space to show end */
   }
+
+  .kanban-board > * {
+    scroll-snap-align: start;
+  }
+
+  /* Kanban column with vertical scroll */
   .kanban-column {
-    min-width: 85vw;
-    scroll-snap-align: center;
+    display: flex;
+    flex-direction: column;
+    max-height: calc(100vh - 200px);
   }
+
   .kanban-column-content {
-    max-height: calc(100vh - 280px);
+    flex: 1;
     overflow-y: auto;
+    overflow-x: hidden;
+    min-height: 200px;
+    max-height: calc(100vh - 280px);
   }
 }
 
