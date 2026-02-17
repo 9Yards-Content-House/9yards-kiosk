@@ -97,7 +97,7 @@ export default function CartBar({ itemCount, total, onClick }: CartBarProps) {
                 exit={{ opacity: 0, x: 10 }}
                 className="text-lg font-bold"
               >
-                View Cart
+                Review & Place Order
               </motion.span>
             )}
           </AnimatePresence>
