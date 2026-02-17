@@ -112,7 +112,6 @@ export default function OrderDetail() {
   return (
     <div className="p-4 md:p-6 max-w-3xl pb-40 md:pb-6 relative min-h-screen md:min-h-0">
       {/* Header */}
-      {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
         <div className="flex items-start gap-3 md:gap-4 w-full">
           <button
