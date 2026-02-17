@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Star, Send, X, MessageSquare, ThumbsUp } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
-import { Button } from "@shared/components/ui/button";
+
 import { cn } from "@shared/lib/utils";
 
 interface FeedbackModalProps {
@@ -54,7 +54,7 @@ function StarRating({
             onClick={() => onChange(star)}
             onMouseEnter={() => setHovered(star)}
             onMouseLeave={() => setHovered(0)}
-            className="focus:outline-none"
+            className="focus:outline-none min-w-[44px] min-h-[44px] flex items-center justify-center"
           >
             <Star
               className={cn(
@@ -101,7 +101,13 @@ export default function FeedbackModal({
         comment: data.comment || null,
       });
 
-      if (error) throw error;
+      if (error) {
+        // Supabase unique constraint violation = duplicate feedback
+        if (error.code === '23505' || error.message?.toLowerCase().includes('duplicate') || error.message?.toLowerCase().includes('unique')) {
+          throw new Error('DUPLICATE_FEEDBACK');
+        }
+        throw error;
+      }
       return { success: true };
     },
     onSuccess: () => {
@@ -234,22 +240,32 @@ export default function FeedbackModal({
             </div>
           </div>
 
+          {/* Error message */}
+          {submitFeedback.isError && (
+            <div className="px-6 pb-4">
+              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl text-center">
+                {(submitFeedback.error as Error)?.message === 'DUPLICATE_FEEDBACK'
+                  ? "You've already submitted feedback for this order. Each order can only be reviewed once."
+                  : "Something went wrong. Please try again."}
+              </p>
+            </div>
+          )}
+
           {/* Footer */}
           <div className="px-6 pb-6 flex gap-3">
-            <Button
-              variant="outline"
+            <button
               onClick={onClose}
-              className="flex-1 rounded-xl h-12 text-sm font-medium border-gray-200 text-gray-600 hover:bg-gray-50"
+              className="flex-1 rounded-xl h-12 text-sm font-medium border border-gray-200 bg-gray-50 text-gray-700 active:bg-gray-100 transition-colors"
               disabled={submitFeedback.isPending}
             >
               Skip
-            </Button>
-            <Button
+            </button>
+            <button
               onClick={() => submitFeedback.mutate(feedback)}
               className={cn(
-                "flex-1 rounded-xl h-12 text-sm font-semibold transition-all",
+                "flex-1 rounded-xl h-12 text-sm font-semibold transition-all flex items-center justify-center",
                 canSubmit
-                  ? "bg-[#E6411C] hover:bg-[#d13a18] text-white shadow-md hover:shadow-lg"
+                  ? "bg-[#E6411C] active:bg-[#c23516] text-white shadow-md"
                   : "bg-gray-200 text-gray-400 cursor-not-allowed"
               )}
               disabled={!canSubmit || submitFeedback.isPending}
@@ -265,17 +281,9 @@ export default function FeedbackModal({
                   Submit Feedback
                 </div>
               )}
-            </Button>
+            </button>
           </div>
 
-          {/* Error message */}
-          {submitFeedback.isError && (
-            <div className="px-6 pb-4">
-              <p className="text-sm text-red-600 bg-red-50 p-3 rounded-xl text-center">
-                Something went wrong. Please try again.
-              </p>
-            </div>
-          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
