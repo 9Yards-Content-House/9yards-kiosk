@@ -34,14 +34,6 @@ function StarRating({
   const iconSize = size === "lg" ? "w-10 h-10" : "w-6 h-6";
   const gap = size === "lg" ? "gap-2" : "gap-1";
 
-  const ratingLabels: Record<number, string> = {
-    1: "Poor",
-    2: "Fair",
-    3: "Good",
-    4: "Great",
-    5: "Excellent",
-  };
-
   const activeValue = hovered || value;
 
   return (
@@ -182,7 +174,7 @@ export default function FeedbackModal({
           <div className="relative bg-gradient-to-r from-[#212282] to-[#2d2da0] rounded-t-3xl px-6 py-5 text-white">
             <button
               onClick={onClose}
-              className="absolute top-4 right-4 p-1.5 hover:bg-white/20 rounded-full transition-colors"
+              className="absolute top-4 right-4 w-8 h-8 flex items-center justify-center hover:bg-white/20 rounded-full transition-colors"
               aria-label="Close"
             >
               <X className="w-5 h-5" />

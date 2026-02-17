@@ -183,6 +183,7 @@ export interface TranslationKeys {
   'tracking.placeOrder': string;
   'tracking.cancelled': string;
   'tracking.emptyState': string;
+  'tracking.outForDelivery': string;
   
   // Order Board
   'board.title': string;
@@ -411,6 +412,7 @@ const translations: { en: TranslationKeys } = {
     'tracking.placeOrder': 'Place New Order',
     'tracking.cancelled': 'Cancelled',
     'tracking.emptyState': 'Enter your order number to see its status',
+    'tracking.outForDelivery': 'Out for Delivery',
     
     // Order Board
     'board.title': 'Order Board',

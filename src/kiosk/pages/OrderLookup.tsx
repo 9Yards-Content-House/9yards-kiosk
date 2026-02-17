@@ -20,6 +20,7 @@ import { Order, OrderItem } from "@shared/types";
 import { Button } from "@shared/components/ui/button";
 import { getMockOrdersStore, applyLocalOverlay } from "@shared/hooks/useOrders";
 import FeedbackModal from "../components/FeedbackModal";
+import { useSound } from "../hooks/useSound";
 
 export default function OrderLookup() {
   const navigate = useNavigate();
@@ -29,6 +30,7 @@ export default function OrderLookup() {
   const [orderNumber, setOrderNumber] = useState(urlOrderNumber || "");
   const [searchNumber, setSearchNumber] = useState(urlOrderNumber || "");
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const { play } = useSound();
 
   const {
     data: order,
@@ -103,6 +105,7 @@ export default function OrderLookup() {
 
   // Handle numpad input
   const handleNumpadPress = useCallback((digit: string) => {
+    play('tap');
     if (digit === "clear") {
       setOrderNumber("");
       setSearchNumber("");
@@ -115,7 +118,7 @@ export default function OrderLookup() {
         return prev + digit;
       });
     }
-  }, []);
+  }, [play]);
 
   // Manual search handler
   const handleSearch = useCallback(() => {
@@ -510,7 +513,7 @@ function OrderTimeline({ order }: { order: Order }) {
       icon: ChefHat,
     },
     {
-      label: "Out for Delivery",
+      label: t("tracking.outForDelivery"),
       time: order.ready_at,
       completed: !!order.ready_at,
       icon: Bike,
