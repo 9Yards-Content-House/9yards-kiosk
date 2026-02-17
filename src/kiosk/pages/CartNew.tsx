@@ -25,10 +25,10 @@ import {
 import SwipeableItem from '@shared/components/SwipeableItem';
 import KioskHeader from '../components/KioskHeader';
 import ComboBuilderNew from '../components/ComboBuilderNew';
-import UpsellModal from '../components/UpsellModal';
+
 import { saveOrderToHistory } from '../components/QuickReorder';
 import { useAllMenuItems, useCategories } from '@shared/hooks/useMenu';
-import { getUpsellSuggestions } from '@shared/lib/recommendations';
+
 import { useSound } from '../hooks/useSound';
 import type { MenuItem } from '@shared/types/menu';
 
@@ -49,42 +49,11 @@ export default function CartNew() {
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
-  const [showUpsell, setShowUpsell] = useState(false);
 
-  // Check if upsell has already been shown this session
-  const upsellShown = sessionStorage.getItem('kiosk_upsell_shown') === 'true';
 
-  // Check if user already has juice or dessert in cart
-  const hasJuiceOrDessert = useMemo(() => {
-    if (allMenuItems.length === 0 || categories.length === 0) return false;
-    
-    return items.some(item => {
-      const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
-      if (!menuItem) return false;
-      
-      const category = categories.find(c => c.id === menuItem.category_id);
-      return category?.slug === 'juices' || category?.slug === 'desserts';
-    });
-  }, [items, allMenuItems, categories]);
 
-  // Get upsell suggestions based on cart (only juices/desserts not already in cart)
-  const upsellSuggestions = useMemo(() => {
-    // Don't show upsells if user already has juice/dessert
-    if (hasJuiceOrDessert) return [];
-    if (items.length === 0 || allMenuItems.length === 0 || categories.length === 0) return [];
-    
-    // Get names of items already in cart
-    const cartItemNames = new Set(items.map(item => item.label || item.sauceName));
-    
-    // Convert cart items to MenuItem format for the recommendation engine
-    const cartMenuItems = items
-      .map(item => allMenuItems.find(m => m.name === item.sauceName || m.name === item.label))
-      .filter((item): item is MenuItem => item !== undefined);
-    
-    // Get suggestions and filter out items already in cart
-    return getUpsellSuggestions(allMenuItems, categories, cartMenuItems)
-      .filter(s => !cartItemNames.has(s.suggestedItem.name));
-  }, [items, allMenuItems, categories, hasJuiceOrDessert]);
+
+
 
   // Helper to get item image from menu items
   const getItemImage = useCallback((item: typeof items[0]) => {
@@ -136,27 +105,7 @@ export default function CartNew() {
   }, []);
 
   const handleCheckout = useCallback(() => {
-    // Show upsell only if we have suggestions and user hasn't seen it this session
-    if (upsellSuggestions.length > 0 && !upsellShown) {
-      setShowUpsell(true);
-    } else {
-      // Save order to history for quick reorder feature
-      const orderItems = items
-        .map(item => {
-          const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
-          return menuItem ? { menuItem, quantity: item.quantity } : null;
-        })
-        .filter((item): item is OrderHistoryItem => item !== null);
-      if (orderItems.length > 0) {
-        saveOrderToHistory(orderItems, subtotal);
-      }
-      navigate('/details');
-    }
-  }, [navigate, upsellSuggestions, upsellShown, items, allMenuItems, subtotal]);
-
-  const handleSkipUpsell = useCallback(() => {
-    setShowUpsell(false);
-    // Save order to history
+    // Save order to history for quick reorder feature
     const orderItems = items
       .map(item => {
         const menuItem = allMenuItems.find(m => m.name === item.sauceName || m.name === item.label);
@@ -167,25 +116,9 @@ export default function CartNew() {
       saveOrderToHistory(orderItems, subtotal);
     }
     navigate('/details');
-  }, [items, allMenuItems, subtotal, navigate]);
+  }, [navigate, items, allMenuItems, subtotal]);
 
-  const handleAddUpsellItem = useCallback((item: MenuItem) => {
-    vibrate([30, 30]);
-    play('add');
-    addItem({
-      id: crypto.randomUUID(),
-      type: 'single',
-      sauceName: item.name,
-      saucePreparation: '',
-      sauceSize: '',
-      mainDishes: [],
-      sideDish: '',
-      extras: [],
-      quantity: 1,
-      unitPrice: item.price,
-      label: item.name,
-    });
-  }, [addItem, play]);
+
 
   // Empty cart state
   if (items.length === 0) {
@@ -474,14 +407,7 @@ export default function CartNew() {
         editingItemId={editingItemId || undefined}
       />
 
-      {/* Upsell Modal - shown before checkout */}
-      <UpsellModal
-        isOpen={showUpsell}
-        onClose={() => setShowUpsell(false)}
-        suggestions={upsellSuggestions.map(s => ({ item: s.suggestedItem, promptText: s.promptText }))}
-        onAddItem={handleAddUpsellItem}
-        onSkip={handleSkipUpsell}
-      />
+
     </div>
   );
 }

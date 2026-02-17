@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
-import { ArrowRight, User, Phone, CheckCircle2, ChevronDown, MessageSquare } from "lucide-react";
+import { ArrowRight, User, Phone, CheckCircle2, ChevronDown } from "lucide-react";
 import { useKioskCart } from "../context/KioskCartContext";
 import { useTranslation } from "@shared/context/LanguageContext";
 import { formatPrice, vibrate, cn } from "@shared/lib/utils";
@@ -124,7 +124,8 @@ export default function Details() {
   // Auto-save details to sessionStorage as user types
   useEffect(() => {
     const details = {
-      customer_name: sanitizeText(name) || "Guest",
+      customer_name: sanitizeText(name),
+
       customer_phone: phone.trim() ? normalizePhone(phone.trim()) : null,
       customer_location: null,
       payment_method: paymentMethod,
@@ -136,19 +137,19 @@ export default function Details() {
     sessionStorage.setItem("kiosk_order_details", JSON.stringify(details));
   }, [name, phone, paymentMethod, specialInstructions]);
 
-  // Auto-focus phone input on mount (phone is the main required field)
+  // Auto-focus name input on mount (name is required)
   useEffect(() => {
-    if (!phone) {
-      // Focus phone input after a short delay
+    if (!name) {
       setTimeout(() => {
-        document.getElementById("phone-input")?.focus();
+        nameInputRef.current?.focus();
       }, 100);
     }
   }, []);
 
-  // Phone is always required for notifications - name is optional (defaults to "Guest")
-  const isPhoneValid = phone.trim().length >= 10;
-  const isValid = isPhoneValid;
+  // Both name and phone are required
+  const isNameValid = name.trim().length >= 2;
+  const isPhoneValid = phone.trim().replace(/^0/, '').length >= 9;
+  const isValid = isNameValid && isPhoneValid;
 
   // Detect network operator from phone number
   const networkOperator = useMemo(() => detectNetworkOperator(phone), [phone]);
@@ -157,10 +158,9 @@ export default function Details() {
     vibrate();
     if (!isValid) return;
 
-    // Use "Guest" if name is empty
-    const sanitizedName = sanitizeText(name) || "Guest";
+    const sanitizedName = sanitizeText(name);
     const sanitizedInstructions = sanitizeText(specialInstructions);
-    const formattedPhone = normalizePhone(phone.trim());
+    const formattedPhone = normalizePhone(phone.trim().replace(/^0/, ''));
 
     // Store details in sessionStorage for the next step
     sessionStorage.setItem(
@@ -185,37 +185,37 @@ export default function Details() {
       <KioskHeader title="Almost Done!" showBack onBack={() => navigate("/cart")} />
 
       <div className="flex-1 overflow-y-auto">
-        <div className="px-6 py-8 max-w-2xl mx-auto w-full">
+        <div className="px-4 sm:px-6 py-6 sm:py-8 max-w-2xl 2xl:max-w-3xl mx-auto w-full">
           {/* Progress indicator */}
-          <div className="flex items-center justify-center gap-2 mb-8">
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center">
-                <CheckCircle2 className="w-5 h-5" />
+          <div className="flex items-center justify-center gap-2 sm:gap-3 mb-6 sm:mb-8">
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-green-500 text-white flex items-center justify-center">
+                <CheckCircle2 className="w-4 h-4 sm:w-5 sm:h-5" />
               </div>
-              <span className="text-sm font-medium text-gray-500">Order</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-500">Order</span>
             </div>
-            <div className="w-8 h-px bg-gray-300" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-[#E6411C] text-white flex items-center justify-center text-sm font-bold">
+            <div className="w-6 sm:w-8 h-px bg-gray-300" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-[#E6411C] text-white flex items-center justify-center text-xs sm:text-sm font-bold">
                 2
               </div>
-              <span className="text-sm font-bold text-[#212282]">Details</span>
+              <span className="text-xs sm:text-sm font-bold text-[#212282]">Details</span>
             </div>
-            <div className="w-8 h-px bg-gray-300" />
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-sm font-bold">
+            <div className="w-6 sm:w-8 h-px bg-gray-300" />
+            <div className="flex items-center gap-1.5 sm:gap-2">
+              <div className="w-7 h-7 sm:w-8 sm:h-8 rounded-full bg-gray-200 text-gray-500 flex items-center justify-center text-xs sm:text-sm font-bold">
                 3
               </div>
-              <span className="text-sm font-medium text-gray-400">Confirm</span>
+              <span className="text-xs sm:text-sm font-medium text-gray-400">Confirm</span>
             </div>
           </div>
 
-          {/* Name Field - Optional */}
-          <div className="mb-6">
-            <label className="flex items-center gap-2 text-base font-bold text-[#212282] mb-3">
-              <User className="w-5 h-5" />
+          {/* Name Field - Required */}
+          <div className="mb-5 sm:mb-6">
+            <label className="flex items-center gap-2 text-sm sm:text-base font-bold text-[#212282] mb-2 sm:mb-3">
+              <User className="w-4 h-4 sm:w-5 sm:h-5" />
               What's your name?
-              <span className="text-sm font-normal text-gray-400">(optional)</span>
+              <span className="text-[#E6411C]">*</span>
             </label>
             <input
               ref={nameInputRef}
@@ -224,38 +224,43 @@ export default function Details() {
               value={name}
               onChange={(e) => setName(e.target.value)}
               onBlur={() => setNameTouched(true)}
-              placeholder="Guest"
+              placeholder="Enter your name"
               aria-label="Your name"
+              aria-required="true"
               className={cn(
-                "w-full h-16 px-5 text-xl font-medium rounded-2xl border-2 transition-all outline-none",
+                "w-full h-14 sm:h-16 px-4 sm:px-5 text-lg sm:text-xl font-medium rounded-xl sm:rounded-2xl border-2 transition-all outline-none",
                 "placeholder:text-gray-400",
                 name.trim().length >= 2
                   ? "border-green-400 bg-green-50/50 focus:border-green-500"
-                  : "border-gray-200 bg-gray-50 focus:border-[#212282] focus:bg-white"
+                  : _nameTouched && name.trim().length < 2
+                    ? "border-red-400 bg-red-50 focus:border-red-500"
+                    : "border-gray-200 bg-gray-50 focus:border-[#212282] focus:bg-white"
               )}
             />
-            <p className="text-sm text-gray-400 mt-2">Leave blank to order as "Guest"</p>
+            {_nameTouched && name.trim().length < 2 && (
+              <p className="text-sm text-red-500 mt-1.5">Please enter your name</p>
+            )}
           </div>
 
           {/* Phone Field */}
-          <div className="mb-6">
-            <label className="flex items-center gap-2 text-base font-bold text-[#212282] mb-3">
-              <Phone className="w-5 h-5" />
+          <div className="mb-5 sm:mb-6">
+            <label className="flex items-center gap-2 text-sm sm:text-base font-bold text-[#212282] mb-2 sm:mb-3">
+              <Phone className="w-4 h-4 sm:w-5 sm:h-5" />
               Phone Number
               <span className="text-[#E6411C]">*</span>
             </label>
             <div className={cn(
-              "flex items-center h-16 rounded-2xl border-2 transition-all overflow-hidden",
-              phoneTouched && phone.trim().length > 0 && phone.trim().length < 10
+              "flex items-center h-14 sm:h-16 rounded-xl sm:rounded-2xl border-2 transition-all overflow-hidden",
+              phoneTouched && phone.trim().length > 0 && !isPhoneValid
                 ? "border-red-400 bg-red-50"
-                : phone.trim().length >= 10
+                : isPhoneValid
                   ? "border-green-400 bg-green-50/50"
                   : "border-gray-200 bg-gray-50 focus-within:border-[#212282] focus-within:bg-white"
             )}>
               {/* Uganda Flag + Country Code */}
-              <div className="flex items-center gap-2 px-4 border-r border-gray-200 bg-gray-100 h-full shrink-0">
+              <div className="flex items-center gap-1.5 sm:gap-2 px-3 sm:px-4 border-r border-gray-200 bg-gray-100 h-full shrink-0">
                 <UgandaFlag />
-                <span className="text-base font-medium text-gray-600">+256</span>
+                <span className="text-sm sm:text-base font-medium text-gray-600">+256</span>
               </div>
               
               {/* Phone Input */}
@@ -268,11 +273,12 @@ export default function Details() {
                 onBlur={() => setPhoneTouched(true)}
                 placeholder="7XX XXX XXX"
                 aria-label="Phone number"
+                aria-required="true"
                 aria-describedby="phone-hint"
-                className="flex-1 h-full px-4 text-xl font-medium bg-transparent outline-none placeholder:text-gray-400"
+                className="flex-1 h-full px-3 sm:px-4 text-lg sm:text-xl font-medium bg-transparent outline-none placeholder:text-gray-400"
               />
             </div>
-            <p id="phone-hint" className="text-sm text-gray-500 mt-2 flex items-center gap-2">
+            <p id="phone-hint" className="text-sm text-gray-500 mt-1.5 sm:mt-2 flex items-center gap-2">
               Required for order notifications
               {networkOperator && (
                 <span 
@@ -283,35 +289,34 @@ export default function Details() {
                 </span>
               )}
             </p>
-            {phoneTouched && !isPhoneValid && (
+            {phoneTouched && !isPhoneValid && phone.trim().length > 0 && (
               <p className="text-sm text-red-500 mt-1">Please enter a valid Uganda phone number</p>
             )}
           </div>
 
-          {/* Payment Info - Pay on Delivery */}
-          <div className="mb-6 p-4 bg-[#212282]/5 rounded-2xl border border-[#212282]/10">
+          {/* Payment Info - Pay at Counter */}
+          <div className="mb-5 sm:mb-6 p-3 sm:p-4 bg-[#212282]/5 rounded-xl sm:rounded-2xl border border-[#212282]/10">
             <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-full bg-[#212282] text-white flex items-center justify-center">
-                <CheckCircle2 className="w-6 h-6" />
+              <div className="w-10 h-10 sm:w-12 sm:h-12 rounded-full bg-[#212282] text-white flex items-center justify-center">
+                <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <p className="font-bold text-[#212282]">Pay on Delivery</p>
-                <p className="text-sm text-gray-500">Pay when your order is delivered</p>
+                <p className="font-bold text-[#212282] text-sm sm:text-base">Pay at Counter</p>
+                <p className="text-xs sm:text-sm text-gray-500">Pay when you pick up your order</p>
               </div>
             </div>
           </div>
 
           {/* Special Instructions - Collapsible */}
-          <div className="mb-6">
+          <div className="mb-5 sm:mb-6">
             <button
               type="button"
               onClick={() => setShowSpecialInstructions(!showSpecialInstructions)}
-              className="flex items-center justify-between w-full p-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
+              className="flex items-center justify-between w-full p-3 sm:p-4 rounded-xl border-2 border-gray-200 bg-gray-50 hover:bg-gray-100 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
             >
-              <span className="flex items-center gap-2 text-base font-bold text-[#212282]">
-                <MessageSquare className="w-5 h-5" />
+              <span className="flex items-center gap-2 text-sm sm:text-base font-bold text-[#212282]">
                 Add Special Requests
-                <span className="text-sm font-normal text-gray-400">(optional)</span>
+                <span className="text-xs sm:text-sm font-normal text-gray-400">(optional)</span>
               </span>
               <ChevronDown className={cn(
                 "w-5 h-5 text-gray-400 transition-transform",
@@ -319,13 +324,13 @@ export default function Details() {
               )} />
             </button>
             {showSpecialInstructions && (
-              <div className="mt-3">
+              <div className="mt-2 sm:mt-3">
                 <textarea
                   value={specialInstructions}
                   onChange={(e) => setSpecialInstructions(e.target.value)}
                   placeholder="E.g., extra spicy, no onions, allergies..."
                   rows={2}
-                  className="w-full p-4 text-base border-2 border-gray-200 rounded-2xl resize-none bg-gray-50 focus:border-[#212282] focus:bg-white outline-none transition-all placeholder:text-gray-400"
+                  className="w-full p-3 sm:p-4 text-sm sm:text-base border-2 border-gray-200 rounded-xl sm:rounded-2xl resize-none bg-gray-50 focus:border-[#212282] focus:bg-white outline-none transition-all placeholder:text-gray-400"
                   autoFocus
                 />
               </div>
@@ -335,27 +340,27 @@ export default function Details() {
       </div>
 
       {/* Footer */}
-      <div className="border-t bg-white p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
-        <div className="max-w-2xl mx-auto">
+      <div className="border-t bg-white p-3 sm:p-4 shadow-[0_-4px_20px_rgba(0,0,0,0.05)]">
+        <div className="max-w-2xl 2xl:max-w-3xl mx-auto">
           {/* Order Summary */}
-          <div className="space-y-2 mb-4">
+          <div className="space-y-1.5 sm:space-y-2 mb-3 sm:mb-4">
             <div className="flex justify-between items-center">
-              <span className="text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
-              <span className="text-lg font-bold text-[#212282]">Total</span>
+              <span className="text-sm sm:text-base text-gray-500">{itemCount} {itemCount === 1 ? 'item' : 'items'}</span>
+              <span className="text-base sm:text-lg font-bold text-[#212282]">Total</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-sm text-gray-400">Pay on delivery</span>
-              <span className="text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
+              <span className="text-xs sm:text-sm text-gray-400">Pay at counter</span>
+              <span className="text-xl sm:text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
             </div>
           </div>
           <Button
             size="touch"
-            className="w-full bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold h-16 text-lg rounded-2xl"
+            className="w-full bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold h-14 sm:h-16 text-base sm:text-lg rounded-xl sm:rounded-2xl"
             disabled={!isValid}
             onClick={handleContinue}
           >
             Review & Place Order
-            <ArrowRight className="w-6 h-6 ml-2" />
+            <ArrowRight className="w-5 h-5 sm:w-6 sm:h-6 ml-2" />
           </Button>
         </div>
       </div>
