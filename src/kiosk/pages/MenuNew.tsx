@@ -72,6 +72,8 @@ export default function MenuNew() {
   const [searchQuery, setSearchQuery] = useState('');
   const [comboBuilderOpen, setComboBuilderOpen] = useState(false);
   const [selectedSauce, setSelectedSauce] = useState<MenuItem | null>(null);
+  const [selectedMainDishes, setSelectedMainDishes] = useState<string[]>([]);
+  const [selectedSideDish, setSelectedSideDish] = useState<string>('');
   const [isSticky, setIsSticky] = useState(false);
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
@@ -232,12 +234,39 @@ export default function MenuNew() {
       vibrate();
     }
     play('select');
-    setSelectedSauce(item?.originalItem || null);
+
+    // Reset all selections first
+    setSelectedSauce(null);
+    setSelectedMainDishes([]);
+    setSelectedSideDish('');
+
+    if (item?.originalItem) {
+      const menuItem = item.originalItem;
+      const category = categories.find((c) => c.id === menuItem.category_id);
+      const categorySlug = category?.slug;
+
+      // Pre-select based on item type and category
+      if (menuItem.item_type === 'combo_driver') {
+        // This is a sauce - pre-select it
+        setSelectedSauce(menuItem);
+      } else if (categorySlug === 'main-dishes') {
+        // This is a main dish - pre-select it
+        setSelectedMainDishes([menuItem.name]);
+      } else if (categorySlug === 'side-dishes') {
+        // This is a side dish - pre-select it
+        setSelectedSideDish(menuItem.name);
+      }
+    }
+
     setComboBuilderOpen(true);
-  }, [play, vibrationEnabled]);
+  }, [play, vibrationEnabled, categories]);
 
   const handleCloseComboBuilder = useCallback(() => {
     setComboBuilderOpen(false);
+    // Reset all selections when closing
+    setSelectedSauce(null);
+    setSelectedMainDishes([]);
+    setSelectedSideDish('');
   }, []);
 
   const handleCategoryChange = useCallback((category: Category) => {

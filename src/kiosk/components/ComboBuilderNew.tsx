@@ -21,6 +21,8 @@ interface ComboBuilderProps {
   open: boolean;
   onClose: () => void;
   initialSauce?: MenuItem;
+  initialMainDishes?: string[];
+  initialSideDish?: string;
   editingItemId?: string;
 }
 
@@ -83,6 +85,8 @@ export default function ComboBuilder({
   open,
   onClose,
   initialSauce,
+  initialMainDishes,
+  initialSideDish,
   editingItemId,
 }: ComboBuilderProps) {
   const navigate = useNavigate();
@@ -195,6 +199,27 @@ export default function ComboBuilder({
       }
     }
 
+    // Pre-select main dishes if provided
+    if (initialMainDishes && initialMainDishes.length > 0) {
+      setCombo((prev) => ({
+        ...prev,
+        mainDishes: initialMainDishes,
+      }));
+      setStep(2); // Skip to sauce selection since food is chosen
+      return;
+    }
+
+    // Pre-select side dish if provided
+    if (initialSideDish) {
+      setCombo((prev) => ({
+        ...prev,
+        sideDish: initialSideDish,
+      }));
+      setStep(1); // Start at step 1, user will build complete combo
+      return;
+    }
+
+    // Pre-select sauce if provided
     if (initialSauce) {
       const firstPrep = initialSauce.preparations?.[0];
       const prepName = typeof firstPrep === 'string' ? firstPrep : firstPrep?.name || '';
@@ -204,14 +229,14 @@ export default function ComboBuilder({
         saucePreparation: prepName,
         sauceSize: initialSauce.sizes?.[0] || null,
       }));
-      setStep(1);
+      setStep(1); // Start at step 1, user picks food first
       return;
     }
 
     // Check for saved draft
     if (!isDraftLoaded) {
       const draft = loadDraft();
-      if (draft && !editingItemId && !initialSauce) {
+      if (draft && !editingItemId && !initialSauce && !initialMainDishes && !initialSideDish) {
         const restoredCombo = {
           ...draft.combo,
           sauce: draft.combo.sauce ? sauces.find((s) => s.id === draft.combo.sauce?.id) || null : null,
@@ -228,7 +253,7 @@ export default function ComboBuilder({
       }
       setIsDraftLoaded(true);
     }
-  }, [open, editingItemId, initialSauce, items, sauces, extrasItems, isDraftLoaded]);
+  }, [open, editingItemId, initialSauce, initialMainDishes, initialSideDish, items, sauces, extrasItems, isDraftLoaded]);
 
   // Auto-close draft banner
   useEffect(() => {
