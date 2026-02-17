@@ -1,10 +1,11 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Plus, Search, Filter, LayoutGrid, List, ArrowUpDown, GripVertical } from "lucide-react";
 import { useAllMenuItems, useCategories, useMenuRealtime } from "@shared/hooks/useMenu";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
 import MenuItemRow from "../components/MenuItemRow";
+import MenuItemGridCard from "../components/MenuItemGridCard";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Badge } from "@shared/components/ui/badge";
@@ -34,7 +35,14 @@ export default function MenuManagement() {
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [filterItemType, setFilterItemType] = useState<ItemTypeFilter>("all");
-  const [viewMode, setViewMode] = useState<ViewMode>("list");
+  const [viewMode, setViewMode] = useState<ViewMode>(() => {
+    const saved = localStorage.getItem("menuViewMode");
+    return (saved === "list" || saved === "grid") ? saved : "list";
+  });
+
+  useEffect(() => {
+    localStorage.setItem("menuViewMode", viewMode);
+  }, [viewMode]);
   const [sortBy, setSortBy] = useState<SortBy>("sort_order");
   const [sortOrder, setSortOrder] = useState<SortOrder>("asc");
 
@@ -348,56 +356,13 @@ export default function MenuManagement() {
           /* Grid view */
           <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 gap-4">
             {sortedItems?.map((item) => (
-              <div
+              <MenuItemGridCard
                 key={item.id}
-                onClick={() => canEdit && navigate(`/menu/${item.id}`)}
-                className={`bg-card rounded-xl border overflow-hidden transition-all hover:shadow-lg ${
-                  canEdit ? "cursor-pointer hover:border-secondary/50" : ""
-                } ${!item.available ? "opacity-60" : ""}`}
-              >
-                <div className="aspect-square bg-muted relative">
-                  {item.image_url ? (
-                    <img
-                      src={item.image_url}
-                      alt={item.name}
-                      className="w-full h-full object-cover"
-                    />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center text-muted-foreground">
-                      No image
-                    </div>
-                  )}
-                  {/* Badges */}
-                  <div className="absolute top-2 left-2 flex flex-wrap gap-1">
-                    {item.item_type === 'combo_component' && (
-                      <Badge className="bg-blue-500 text-white text-[10px] px-1.5 py-0.5">Combo</Badge>
-                    )}
-                    {item.item_type === 'combo_driver' && (
-                      <Badge className="bg-purple-500 text-white text-[10px] px-1.5 py-0.5">Driver</Badge>
-                    )}
-                    {item.is_popular && (
-                      <Badge className="bg-amber-500 text-white text-[10px] px-1.5 py-0.5">Popular</Badge>
-                    )}
-                    {item.is_new && (
-                      <Badge className="bg-green-500 text-white text-[10px] px-1.5 py-0.5">New</Badge>
-                    )}
-                  </div>
-                  {!item.available && (
-                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center">
-                      <span className="text-white text-sm font-medium">Unavailable</span>
-                    </div>
-                  )}
-                </div>
-                <div className="p-3">
-                  <h3 className="font-medium text-sm truncate">{item.name}</h3>
-                  <p className="text-xs text-muted-foreground truncate mt-0.5">
-                    {categories?.find((c) => c.id === item.category_id)?.name}
-                  </p>
-                  <p className="text-sm font-semibold mt-1.5 text-secondary">
-                    {formatPrice(item.price)}
-                  </p>
-                </div>
-              </div>
+                item={item}
+                category={categories?.find((c) => c.id === item.category_id)}
+                canEdit={canEdit}
+                onEdit={() => navigate(`/menu/${item.id}`)}
+              />
             ))}
             {sortedItems?.length === 0 && (
               <div className="col-span-full p-8 text-center text-muted-foreground bg-card rounded-xl border">
