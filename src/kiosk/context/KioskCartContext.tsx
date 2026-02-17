@@ -35,6 +35,7 @@ type CartAction =
   | { type: "ADD_ITEM"; item: KioskCartItem }
   | { type: "REMOVE_ITEM"; id: string }
   | { type: "UPDATE_QUANTITY"; id: string; quantity: number }
+  | { type: "UPDATE_ITEM"; id: string; item: KioskCartItem }
   | { type: "CLEAR_CART" }
   | { type: "RESTORE_CART"; items: KioskCartItem[] };
 
@@ -86,6 +87,14 @@ function cartReducer(state: CartState, action: CartAction): CartState {
         };
       }
       break;
+      
+    case "UPDATE_ITEM":
+      newState = {
+        items: state.items.map((i) =>
+          i.id === action.id ? action.item : i
+        ),
+      };
+      break;
 
     case "CLEAR_CART":
       newState = { items: [] };
@@ -115,6 +124,7 @@ interface KioskCartContextValue {
   addItem: (item: KioskCartItem) => void;
   removeItem: (id: string) => void;
   updateQuantity: (id: string, quantity: number) => void;
+  updateItem: (id: string, item: KioskCartItem) => void;
   clearCart: () => void;
 }
 
@@ -144,6 +154,11 @@ export function KioskCartProvider({ children }: { children: ReactNode }) {
       dispatch({ type: "UPDATE_QUANTITY", id, quantity }),
     []
   );
+  const updateItem = useCallback(
+    (id: string, item: KioskCartItem) =>
+      dispatch({ type: "UPDATE_ITEM", id, item }),
+    []
+  );
   const clearCart = useCallback(() => {
     dispatch({ type: "CLEAR_CART" });
     localStorage.removeItem(CART_STORAGE_KEY);
@@ -164,6 +179,7 @@ export function KioskCartProvider({ children }: { children: ReactNode }) {
         addItem,
         removeItem,
         updateQuantity,
+        updateItem,
         clearCart,
       }}
     >

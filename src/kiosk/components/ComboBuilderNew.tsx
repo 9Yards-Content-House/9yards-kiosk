@@ -436,9 +436,10 @@ export default function ComboBuilder({
     };
 
     if (editingItemId) {
-      removeItem(editingItemId);
+      updateItem(editingItemId, cartItem);
+    } else {
+      addItem(cartItem);
     }
-    addItem(cartItem);
     clearDraft();
 
     setShowSuccessOverlay(true);

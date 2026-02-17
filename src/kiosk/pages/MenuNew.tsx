@@ -79,6 +79,7 @@ export default function MenuNew() {
   const [activeCategory, setActiveCategory] = useState<Category>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [comboBuilderOpen, setComboBuilderOpen] = useState(false);
+  const [selectedSauce, setSelectedSauce] = useState<MenuItem | null>(null);
   const [isSticky, setIsSticky] = useState(false);
   const [highlightedItemId, setHighlightedItemId] = useState<string | null>(null);
 
@@ -186,7 +187,7 @@ export default function MenuNew() {
     (item: typeof processedItems[0]) => {
       vibrate([30, 30]);
       play('add');
-      const existingCartItem = cartItems.find(ci => ci.sauceName === item.name || ci.label === item.name);
+      const existingCartItem = cartItems.find(ci => ci.type === 'single' && (ci.sauceName === item.name || ci.label === item.name));
       
       if (existingCartItem) {
         // Increment quantity
@@ -216,7 +217,7 @@ export default function MenuNew() {
     (item: typeof processedItems[0]) => {
       vibrate([30]);
       play('remove');
-      const existingCartItem = cartItems.find(ci => ci.sauceName === item.name || ci.label === item.name);
+      const existingCartItem = cartItems.find(ci => ci.type === 'single' && (ci.sauceName === item.name || ci.label === item.name));
       
       if (existingCartItem) {
         if (existingCartItem.quantity > 1) {
@@ -230,9 +231,10 @@ export default function MenuNew() {
   );
 
   // Handle starting combo builder
-  const handleStartCombo = useCallback(() => {
+  const handleStartCombo = useCallback((item?: typeof processedItems[0]) => {
     vibrate();
     play('select');
+    setSelectedSauce(item?.originalItem || null);
     setComboBuilderOpen(true);
   }, [play]);
 
@@ -251,7 +253,7 @@ export default function MenuNew() {
   // Get price display for an item
   const getPriceDisplay = useCallback((item: typeof processedItems[0]) => {
     // Main dishes and sides are part of combo - show "Included" text
-    if (item.isComboComponent) {
+    if (item.categoryType === 'main' || item.categoryType === 'side') {
       return (
         <span className="text-muted-foreground font-medium text-sm">
           Included
@@ -449,7 +451,7 @@ export default function MenuNew() {
                 >
                   <MenuItemCard
                     item={item}
-                    onAddToOrder={handleStartCombo}
+                    onAddToOrder={() => handleStartCombo(item)}
                     onAddToCart={() => handleAddToCart(item)}
                     onRemoveFromCart={() => handleRemoveFromCart(item)}
                     isHighlighted={highlightedItemId === item.id}
@@ -470,7 +472,11 @@ export default function MenuNew() {
       )}
 
       {/* Combo Builder Modal */}
-      <ComboBuilderNew open={comboBuilderOpen} onClose={handleCloseComboBuilder} />
+      <ComboBuilderNew 
+        open={comboBuilderOpen} 
+        onClose={handleCloseComboBuilder} 
+        initialSauce={selectedSauce || undefined}
+      />
     </div>
   );
 }
