@@ -16,7 +16,7 @@ import {
   SelectValue,
 } from "@shared/components/ui/select";
 import { TooltipProvider } from "@shared/components/ui/tooltip";
-import { formatPrice } from "@shared/lib/utils";
+import { formatPrice, cn } from "@shared/lib/utils";
 import type { MenuItemType } from "@shared/types/menu";
 
 type FilterType = "all" | "available" | "unavailable" | "popular" | "new" | "scheduled";
@@ -202,61 +202,99 @@ export default function MenuManagement() {
             </div>
           </div>
 
-          {/* Filter Validations - Hidden on mobile by default */}
-          <div id="mobile-filters" className="hidden md:flex flex-wrap gap-2 animate-in slide-in-from-top-2 duration-200">
-            <Select value={filterCategory} onValueChange={setFilterCategory}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Category" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Categories</SelectItem>
-                {categories?.map((cat) => (
-                  <SelectItem key={cat.id} value={cat.id}>
-                    {cat.name}
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+          {/* Mobile Category Chips (Horizontal Scroll) */}
+          <div className="flex md:hidden gap-2 overflow-x-auto pb-2 -mx-4 px-4 scrollbar-hide">
+            <button
+              onClick={() => setFilterCategory("all")}
+              className={cn(
+                "whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium border transition-colors",
+                filterCategory === "all"
+                  ? "bg-primary text-primary-foreground border-primary"
+                  : "bg-background border-input hover:bg-accent"
+              )}
+            >
+              All
+            </button>
+            {categories?.map((cat) => (
+              <button
+                key={cat.id}
+                onClick={() => setFilterCategory(cat.id)}
+                className={cn(
+                  "whitespace-nowrap px-4 py-1.5 rounded-full text-sm font-medium border transition-colors",
+                  filterCategory === cat.id
+                    ? "bg-primary text-primary-foreground border-primary"
+                    : "bg-background border-input hover:bg-accent"
+                )}
+              >
+                {cat.name}
+              </button>
+            ))}
+          </div>
 
-            <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
-              <SelectTrigger className="w-full sm:w-[140px]">
-                <Filter className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Filter" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Items</SelectItem>
-                <SelectItem value="available">Available</SelectItem>
-                <SelectItem value="unavailable">Unavailable</SelectItem>
-                <SelectItem value="popular">Popular</SelectItem>
-                <SelectItem value="new">New</SelectItem>
-                <SelectItem value="scheduled">Scheduled</SelectItem>
-              </SelectContent>
-            </Select>
+          {/* Filter Validations - 2-Col Grid on Mobile, Flex Row on Desktop */}
+          <div id="mobile-filters" className="hidden md:flex flex-col md:flex-row gap-2 animate-in slide-in-from-top-2 duration-200">
+            
+            {/* Mobile Grid Container for Advanced Filters */}
+            <div className="grid grid-cols-2 gap-2 md:contents">
+              
+              {/* Category Dropdown (Desktop Only) */}
+              <div className="hidden md:block">
+                <Select value={filterCategory} onValueChange={setFilterCategory}>
+                  <SelectTrigger className="w-full sm:w-[160px]">
+                    <SelectValue placeholder="Category" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">All Categories</SelectItem>
+                    {categories?.map((cat) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
 
-            <Select value={filterItemType} onValueChange={(v) => setFilterItemType(v as ItemTypeFilter)}>
-              <SelectTrigger className="w-full sm:w-[160px]">
-                <SelectValue placeholder="Item Type" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Types</SelectItem>
-                <SelectItem value="standalone">Standalone</SelectItem>
-                <SelectItem value="combo_component">Combo Component</SelectItem>
-                <SelectItem value="combo_driver">Combo Driver</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={filterType} onValueChange={(v) => setFilterType(v as FilterType)}>
+                <SelectTrigger className="w-full md:w-[140px]">
+                  <Filter className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Filter" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Items</SelectItem>
+                  <SelectItem value="available">Available</SelectItem>
+                  <SelectItem value="unavailable">Unavailable</SelectItem>
+                  <SelectItem value="popular">Popular</SelectItem>
+                  <SelectItem value="new">New</SelectItem>
+                  <SelectItem value="scheduled">Scheduled</SelectItem>
+                </SelectContent>
+              </Select>
 
-            <Select value={sortBy} onValueChange={(v) => { setSortBy(v as SortBy); setSortOrder("asc"); }}>
-              <SelectTrigger className="w-full sm:w-[130px] ml-auto">
-                <ArrowUpDown className="w-4 h-4 mr-2" />
-                <SelectValue placeholder="Sort" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="sort_order">Default</SelectItem>
-                <SelectItem value="name">Name</SelectItem>
-                <SelectItem value="price">Price</SelectItem>
-                <SelectItem value="category">Category</SelectItem>
-              </SelectContent>
-            </Select>
+              <Select value={filterItemType} onValueChange={(v) => setFilterItemType(v as ItemTypeFilter)}>
+                <SelectTrigger className="w-full md:w-[160px]">
+                  <SelectValue placeholder="Item Type" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All Types</SelectItem>
+                  <SelectItem value="standalone">Standalone</SelectItem>
+                  <SelectItem value="combo_component">Combo Component</SelectItem>
+                  <SelectItem value="combo_driver">Combo Driver</SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Select value={sortBy} onValueChange={(v) => { setSortBy(v as SortBy); setSortOrder("asc"); }}>
+                <SelectTrigger className="w-full md:w-[130px] md:ml-auto">
+                  <ArrowUpDown className="w-4 h-4 mr-2" />
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="sort_order">Default</SelectItem>
+                  <SelectItem value="name">Name</SelectItem>
+                  <SelectItem value="price">Price</SelectItem>
+                  <SelectItem value="category">Category</SelectItem>
+                </SelectContent>
+              </Select>
+
+            </div>
           </div>
         </div>
 
