@@ -28,9 +28,9 @@
     --muted: 30 20% 94%;
     --muted-foreground: 240 10% 45%;
 
-    /* Accent - Cyan tint */
-    --accent: 190 70% 45%;
-    --accent-foreground: 0 0% 100%;
+    /* Accent - Blue tint (matches brand #212282) */
+    --accent: 240 60% 95%;
+    --accent-foreground: 240 60% 32%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
@@ -42,9 +42,21 @@
     --radius: 1rem;
 
     /* Custom tokens */
-    --gradient-hero: linear-gradient(135deg, hsl(240, 60%, 32%) 0%, hsl(240, 50%, 25%) 100%);
-    --gradient-cta: linear-gradient(135deg, hsl(12, 82%, 55%) 0%, hsl(12, 82%, 45%) 100%);
-    --gradient-warm: linear-gradient(180deg, hsl(30, 40%, 96%) 0%, hsl(30, 30%, 98%) 100%);
+    --gradient-hero: linear-gradient(
+      135deg,
+      hsl(240, 60%, 32%) 0%,
+      hsl(240, 50%, 25%) 100%
+    );
+    --gradient-cta: linear-gradient(
+      135deg,
+      hsl(12, 82%, 55%) 0%,
+      hsl(12, 82%, 45%) 100%
+    );
+    --gradient-warm: linear-gradient(
+      180deg,
+      hsl(30, 40%, 96%) 0%,
+      hsl(30, 30%, 98%) 100%
+    );
     --shadow-soft: 0 4px 20px -4px hsl(240 60% 32% / 0.15);
     --shadow-cta: 0 8px 30px -8px hsl(12 82% 50% / 0.4);
     --shadow-card: 0 2px 12px -2px hsl(0 0% 0% / 0.08);
@@ -64,7 +76,7 @@
     --secondary-foreground: 0 0% 100%;
     --muted: 240 20% 18%;
     --muted-foreground: 30 15% 65%;
-    --accent: 190 60% 55%;
+    --accent: 240 50% 25%;
     --accent-foreground: 0 0% 100%;
     --destructive: 0 70% 50%;
     --destructive-foreground: 0 0% 100%;
@@ -89,7 +101,12 @@
     -webkit-tap-highlight-color: transparent;
   }
 
-  a, button, input, textarea, select, [role="button"] {
+  a,
+  button,
+  input,
+  textarea,
+  select,
+  [role="button"] {
     touch-action: manipulation;
   }
 
@@ -113,7 +130,9 @@
   }
 
   @media (prefers-reduced-motion: reduce) {
-    *, *::before, *::after {
+    *,
+    *::before,
+    *::after {
       animation-duration: 0.01ms !important;
       animation-iteration-count: 1 !important;
       transition-duration: 0.01ms !important;
@@ -195,7 +214,8 @@
   }
 
   @keyframes float {
-    0%, 100% {
+    0%,
+    100% {
       transform: translateY(0);
     }
     50% {
