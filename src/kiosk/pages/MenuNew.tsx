@@ -555,6 +555,8 @@ export default function MenuNew() {
         open={comboBuilderOpen} 
         onClose={handleCloseComboBuilder} 
         initialSauce={selectedSauce || undefined}
+        initialMainDishes={selectedMainDishes.length > 0 ? selectedMainDishes : undefined}
+        initialSideDish={selectedSideDish || undefined}
       />
     </div>
   );
