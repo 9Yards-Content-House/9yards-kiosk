@@ -148,27 +148,27 @@ export default function Reception() {
       isFullscreen && "fixed inset-0 z-50 bg-background"
     )}>
       {/* Header */}
-      <div className="flex items-center justify-between p-4 border-b bg-white">
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b bg-white">
         <div>
           <h1 className="text-2xl font-bold text-[#212282]">Reception Dashboard</h1>
           <p className="text-gray-500 text-sm">
             {arrivedOrders.length} order{arrivedOrders.length !== 1 ? "s" : ""} waiting for pickup
           </p>
         </div>
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-3 w-full md:w-auto">
           {/* Search */}
-          <div className="relative w-64">
+          <div className="relative flex-1 md:w-64">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
             <Input
               placeholder="Search order # or phone..."
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-9"
+              className="pl-9 w-full"
             />
           </div>
           
           {/* Fullscreen Toggle */}
-          <Button variant="outline" size="icon" onClick={toggleFullscreen}>
+          <Button variant="outline" size="icon" onClick={toggleFullscreen} className="flex-shrink-0">
             {isFullscreen ? (
               <Minimize2 className="w-4 h-4" />
             ) : (
@@ -179,11 +179,11 @@ export default function Reception() {
       </div>
 
       {/* Orders Grid */}
-      <div className="flex-1 p-4 overflow-y-auto">
+      <div className="flex-1 p-4 overflow-y-auto bg-slate-50/50">
         {arrivedOrders.length === 0 ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-400">
-            <Package className="w-16 h-16 mb-4" />
-            <p className="text-lg">No orders waiting for pickup</p>
+            <Package className="w-16 h-16 mb-4 opacity-20" />
+            <p className="text-lg font-medium">No orders waiting</p>
             <p className="text-sm">Orders will appear here when they arrive</p>
           </div>
         ) : (
@@ -192,28 +192,31 @@ export default function Reception() {
               <Card
                 key={order.id}
                 className={cn(
-                  "border-2 transition-all hover:shadow-lg",
+                  "border transition-all shadow-sm hover:shadow-md",
                   isWaitingLong(order)
-                    ? "border-red-300 bg-red-50"
+                    ? "border-red-200 bg-red-50/30"
                     : order.picked_up_at
                     ? "border-gray-200 bg-gray-50 opacity-60"
-                    : "border-green-300 bg-green-50"
+                    : "border-green-200 bg-white"
                 )}
               >
-                <CardHeader className="pb-2">
+                <CardHeader className="pb-3 border-b border-border/50">
                   <div className="flex items-center justify-between">
                     <CardTitle
                       className={cn(
-                        "text-3xl font-bold",
-                        isWaitingLong(order) ? "text-red-600" : "text-green-700"
+                        "text-2xl font-bold tracking-tight",
+                        isWaitingLong(order) ? "text-red-600" : "text-foreground"
                       )}
                     >
                       #{order.order_number}
                     </CardTitle>
                     <Badge
+                      variant="outline"
                       className={cn(
-                        "bg-green-100 text-green-800",
-                        "text-xs"
+                        "font-mono",
+                        isWaitingLong(order) 
+                          ? "bg-red-100 text-red-700 border-red-200" 
+                          : "bg-green-50 text-green-700 border-green-200"
                       )}
                     >
                       {getTimeSinceArrival(order)}
@@ -221,36 +224,45 @@ export default function Reception() {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-4">
+                <CardContent className="space-y-4 pt-4">
                   {/* Customer Info */}
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 text-gray-700">
-                      <User className="w-4 h-4" />
-                      <span className="font-bold text-lg">{order.customer_name}</span>
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="flex flex-col">
+                      <div className="flex items-center gap-2 text-foreground font-semibold">
+                        <User className="w-4 h-4 text-muted-foreground" />
+                        <span className="truncate max-w-[150px]">{order.customer_name}</span>
+                      </div>
+                      {order.customer_phone && (
+                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
+                          <Phone className="w-3.5 h-3.5" />
+                          <span className="font-mono">{formatPhoneDisplay(order.customer_phone)}</span>
+                        </div>
+                      )}
                     </div>
-                    <div className="text-xl font-bold text-[#E6411C]">
+                    <div className="text-lg font-bold text-primary whitespace-nowrap">
                       {formatPrice(order.total)}
                     </div>
                   </div>
-                  
-                  {order.customer_phone && (
-                    <div className="flex items-center gap-2 text-gray-600">
-                      <Phone className="w-4 h-4" />
-                      <span className="font-mono">{formatPhoneDisplay(order.customer_phone)}</span>
-                    </div>
-                  )}
 
                   {/* Order Items Summary */}
-                  <div className="bg-white/50 rounded-xl p-3 border border-gray-100 space-y-2">
-                    <p className="text-xs font-bold text-gray-400 uppercase tracking-wider">Order Items</p>
-                    <div className="space-y-1">
-                      {order.items?.map((item, idx) => (
-                        <div key={idx} className="text-sm text-gray-700 flex justify-between">
-                          <span className="line-clamp-1">
-                            {item.quantity}x {item.sauce_name || item.type}
-                          </span>
-                        </div>
-                      ))}
+                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Items</p>
+                    <div className="space-y-1.5">
+                      {order.items?.map((item, idx) => {
+                         // Smart Item Logic
+                         const hasMainDish = item.main_dishes && item.main_dishes.length > 0;
+                         let mainTitle = "Item";
+                         if (hasMainDish) mainTitle = item.main_dishes.join(" + ");
+                         else if (item.sauce_name) mainTitle = item.sauce_name;
+                         else if (item.side_dish) mainTitle = item.side_dish;
+
+                         return (
+                          <div key={idx} className="text-sm flex items-start gap-2">
+                            <span className="font-semibold text-foreground min-w-[20px]">{item.quantity}x</span>
+                            <span className="text-slate-700 leading-tight">{mainTitle}</span>
+                          </div>
+                        );
+                      })}
                     </div>
                   </div>
 
