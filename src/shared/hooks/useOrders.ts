@@ -379,6 +379,43 @@ export function useTodaysOrders() {
   });
 }
 
+/** Fetch active orders (new, preparing, out_for_delivery) for KDS */
+export function useActiveOrders() {
+  return useQuery<Order[]>({
+    queryKey: ["orders", "active"],
+    queryFn: async () => {
+      const activeStatuses = ["new", "preparing", "out_for_delivery"];
+
+      if (USE_MOCK_DATA) {
+        // console.log removed("📦 Mock mode: returning active mock orders");
+        return applyOverlayToList(mockOrdersStore)
+          .filter(o => activeStatuses.includes(o.status))
+          .sort((a, b) => 
+            new Date(a.created_at).getTime() - new Date(b.created_at).getTime() // Oldest first for kitchen
+          );
+      }
+      
+      try {
+        const { data, error } = await supabase
+          .from("orders")
+          .select("*, items:order_items(*)")
+          .in("status", activeStatuses)
+          .order("created_at", { ascending: true }); // Oldest first for kitchen
+        
+        if (error) throw error;
+        
+        return applyOverlayToList((data || []) as Order[]);
+      } catch (err) {
+        console.warn("Failed to fetch active orders, using mock data:", err);
+        return applyOverlayToList(mockOrdersStore)
+          .filter(o => activeStatuses.includes(o.status));
+      }
+    },
+    // Disable polling, rely on realtime subscription
+    refetchInterval: USE_MOCK_DATA ? 5_000 : 0,
+  });
+}
+
 /** Fetch all orders (for analytics and historical views) */
 export function useAllOrders() {
   return useQuery<Order[]>({

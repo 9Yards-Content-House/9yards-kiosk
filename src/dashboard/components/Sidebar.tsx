@@ -26,7 +26,7 @@ const SIDEBAR_COLLAPSED_KEY = "9yards_sidebar_collapsed";
 // All possible navigation links
 const ALL_NAV_LINKS = [
   { to: "/orders", label: "Orders", icon: LayoutDashboard, roles: ["admin"] },
-  { to: "/kitchen", label: "Kitchen Display", icon: ChefHat, roles: ["admin", "kitchen"] },
+
   { to: "/reception", label: "Reception", icon: Building2, roles: ["admin", "reception"] },
   { to: "/menu", label: "Menu", icon: UtensilsCrossed, roles: ["admin", "kitchen"] },
   { to: "/categories", label: "Categories", icon: FolderOpen, roles: ["admin"] },

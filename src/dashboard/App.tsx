@@ -19,7 +19,7 @@ const Staff = lazy(() => import("./pages/Staff"));
 const Analytics = lazy(() => import("./pages/Analytics"));
 const Settings = lazy(() => import("./pages/Settings"));
 const MyDeliveries = lazy(() => import("./pages/rider/MyDeliveries"));
-const KitchenDisplay = lazy(() => import("./pages/KitchenDisplay"));
+
 const Reception = lazy(() => import("./pages/Reception"));
 const Feedback = lazy(() => import("./pages/Feedback"));
 
@@ -215,15 +215,7 @@ export default function App() {
             }
           />
           
-          {/* Kitchen Display - orders:read permission */}
-          <Route
-            path="/kitchen"
-            element={
-              <RoleRoute permission="orders:read">
-                <KitchenDisplay />
-              </RoleRoute>
-            }
-          />
+
           
           {/* Reception Dashboard */}
           <Route

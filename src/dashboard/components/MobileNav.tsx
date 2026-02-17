@@ -16,13 +16,12 @@ export default function MobileNav() {
 
   const primaryLinks = [
     { to: "/orders", label: "Orders", icon: LayoutDashboard, permission: "orders:read" },
-    { to: "/kitchen", label: "Kitchen", icon: ChefHat, permission: "orders:read" },
     { to: "/menu", label: "Menu", icon: UtensilsCrossed, permission: "menu:read" },
+    { to: "/analytics", label: "Analytics", icon: BarChart3, permission: "analytics:read" },
   ];
 
   const moreLinks = [
     { to: "/staff", label: "Staff", icon: Users, permission: "staff:read" },
-    { to: "/analytics", label: "Analytics", icon: BarChart3, permission: "analytics:read" },
     { to: "/feedback", label: "Feedback", icon: MessageSquare, permission: "analytics:read" },
     { to: "/deliveries", label: "Deliveries", icon: Truck, permission: "deliveries:read" },
     { to: "/settings", label: "Settings", icon: Settings, permission: "settings:read" },
