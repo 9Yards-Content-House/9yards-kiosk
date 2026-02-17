@@ -45,7 +45,7 @@ export default function CartNew() {
   const { data: allMenuItems = [] } = useAllMenuItems();
   const { data: categories = [] } = useCategories();
   // const { play } = useSound();
-  const play = (type: string) => console.log('Sound disabled:', type);
+  const play = (_type: string) => {};
 
   const [editingItemId, setEditingItemId] = useState<string | null>(null);
   const [showClearDialog, setShowClearDialog] = useState(false);
@@ -257,7 +257,8 @@ export default function CartNew() {
             <h3 className="font-bold text-[#212282] text-lg">
               {itemCount} {itemCount === 1 ? t('cart.item') : t('cart.items')} in your order
             </h3>
-            <p className="text-sm text-gray-500">Swipe left on items to remove</p>
+            <p className="text-sm text-gray-500 lg:hidden">Swipe left on items to remove</p>
+            <p className="text-sm text-gray-500 hidden lg:block">Click ✕ to remove items</p>
           </div>
         </div>
       </div>
@@ -431,7 +432,7 @@ export default function CartNew() {
               onClick={handleCheckout}
               className="flex-1 bg-[#E6411C] hover:bg-[#d13a18] text-white font-bold"
             >
-              {t('cart.checkout')}
+              Continue to Details
             </Button>
           </div>
         </div>
