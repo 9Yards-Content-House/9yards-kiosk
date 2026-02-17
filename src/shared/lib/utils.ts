@@ -31,3 +31,9 @@ export function timeAgo(date: string | Date): string {
   const diffDays = Math.floor(diffHours / 24);
   return `${diffDays}d ago`;
 }
+
+/** Format payment method string for display */
+export function formatPaymentMethod(method: string): string {
+  if (method === "pay_at_counter") return "Pay on Delivery";
+  return method.replace(/_/g, " ");
+}

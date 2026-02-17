@@ -1,6 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { Clock, User, Package, ChevronRight, X, AlertTriangle, Printer, CreditCard, Smartphone, Banknote } from "lucide-react";
-import { cn, formatPrice, timeAgo } from "@shared/lib/utils";
+import { cn, formatPrice, timeAgo, formatPaymentMethod } from "@shared/lib/utils";
 import { useUpdateOrderStatus, useCancelOrder } from "@shared/hooks/useOrders";
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS } from "@shared/types/orders";
 import StatusBadge from "./StatusBadge";
@@ -132,9 +132,9 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
       )}
 
       <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5" title={order.payment_method.replace(/_/g, " ")}>
+        <div className="flex items-center gap-1.5" title={formatPaymentMethod(order.payment_method)}>
           <PaymentIcon method={order.payment_method} />
-          <span className="capitalize">{order.payment_method.replace(/_/g, " ")}</span>
+          <span className="capitalize">{formatPaymentMethod(order.payment_method)}</span>
         </div>
         <span className="capitalize">{order.payment_status}</span>
       </div>

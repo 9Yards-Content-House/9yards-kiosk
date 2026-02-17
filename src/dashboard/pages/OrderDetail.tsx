@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ArrowLeft, User, MapPin, CreditCard, Phone, FileEdit } from "lucide-react";
 import { useOrderByNumber } from "@shared/hooks/useOrders";
 import { useUpdateOrderStatus, useCancelOrder } from "@shared/hooks/useOrders";
-import { formatPrice, timeAgo } from "@shared/lib/utils";
+import { formatPrice, timeAgo, formatPaymentMethod } from "@shared/lib/utils";
 import {
   ORDER_STATUS_FLOW,
   ORDER_STATUS_LABELS,
@@ -161,7 +161,7 @@ export default function OrderDetail() {
           )}
           <div className="flex items-center gap-2 text-sm">
             <CreditCard className="w-4 h-4 text-muted-foreground" />
-            {order.payment_method.replace(/_/g, " ")}
+            <span className="capitalize">{formatPaymentMethod(order.payment_method)}</span>
             <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
               {order.payment_status}
             </Badge>
