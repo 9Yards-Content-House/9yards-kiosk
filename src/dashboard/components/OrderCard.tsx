@@ -1,11 +1,12 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, User, Package, ChevronRight, X } from "lucide-react";
+import { Clock, User, Package, ChevronRight, X, AlertTriangle, MessageSquare } from "lucide-react";
 import { cn, formatPrice, timeAgo } from "@shared/lib/utils";
 import { useUpdateOrderStatus, useCancelOrder } from "@shared/hooks/useOrders";
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS } from "@shared/types/orders";
 import StatusBadge from "./StatusBadge";
 import type { Order, OrderStatus } from "@shared/types/orders";
 import { toast } from "sonner";
+import { Badge } from "@shared/components/ui/badge";
 
 interface OrderCardProps {
   order: Order;
@@ -23,6 +24,11 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
     currentIdx >= 0 && currentIdx < ORDER_STATUS_FLOW.length - 1
       ? ORDER_STATUS_FLOW[currentIdx + 1]
       : null;
+
+  // Check for urgency (orders older than 15 mins in 'new' or 'preparing')
+  const isUrgent = 
+    (order.status === 'new' || order.status === 'preparing') && 
+    (Date.now() - new Date(order.created_at).getTime() > 15 * 60 * 1000);
 
   const handleAdvance = async (e: React.MouseEvent) => {
     e.stopPropagation();
@@ -63,15 +69,23 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
     <div
       onClick={() => navigate(`/orders/${order.order_number}`)}
       className={cn(
-        "bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow",
-        isNew && "border-secondary"
+        "bg-card rounded-xl border p-4 cursor-pointer hover:shadow-md transition-shadow relative overflow-hidden",
+        isNew && "border-secondary",
+        isUrgent && "border-red-400 bg-red-50/30 dark:bg-red-900/10"
       )}
       draggable={canModify}
       data-order-id={order.id}
       data-order-status={order.status}
     >
+      {isUrgent && (
+        <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-bl-full md:w-3 md:h-3" title="Urgent: Over 15 mins" />
+      )}
+      
       <div className="flex items-start justify-between mb-2">
-        <p className="font-bold">{order.order_number}</p>
+        <div className="flex items-center gap-2">
+          <p className="font-bold">{order.order_number}</p>
+          {isUrgent && <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Overdue</Badge>}
+        </div>
         <StatusBadge status={order.status} />
       </div>
 
@@ -84,11 +98,18 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
           <Package className="w-3.5 h-3.5" />
           {order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items • {formatPrice(order.total)}
         </div>
-        <div className="flex items-center gap-2 text-muted-foreground">
+        <div className={cn("flex items-center gap-2 text-muted-foreground transition-colors", isUrgent && "text-red-600 font-medium")}>
           <Clock className="w-3.5 h-3.5" />
           {timeAgo(order.created_at)}
         </div>
       </div>
+      
+      {order.special_instructions && (
+        <div className="mt-2 text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2 py-1.5 rounded-md flex items-start gap-1.5 border border-yellow-100 dark:border-yellow-900/30">
+          <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-0.5" />
+          <span className="line-clamp-2">{order.special_instructions}</span>
+        </div>
+      )}
 
       <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
         <span className="capitalize">{order.payment_method.replace("_", " ")}</span>

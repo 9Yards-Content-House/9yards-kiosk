@@ -213,7 +213,7 @@ function loadMockOrdersStore(): Order[] {
     const stored = localStorage.getItem(MOCK_ORDERS_STORAGE_KEY);
     if (stored) {
       const parsed = JSON.parse(stored) as Order[];
-      console.log("📦 Loaded", parsed.length, "orders from localStorage");
+      // console.log removed("📦 Loaded", parsed.length, "orders from localStorage");
       return parsed;
     }
   } catch (err) {
@@ -250,7 +250,7 @@ if (typeof BroadcastChannel !== "undefined") {
     const freshOrders = loadMockOrdersStore();
     mockOrdersStore.length = 0;
     mockOrdersStore.push(...freshOrders);
-    console.log("📦 Reloaded mock orders from another tab");
+    // console.log removed("📦 Reloaded mock orders from another tab");
   };
 }
 
@@ -312,7 +312,7 @@ export function useOrders(status?: OrderStatus) {
     queryKey: ["orders", status],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        console.log("📦 Mock mode: returning mock orders");
+        // console.log removed("📦 Mock mode: returning mock orders");
         const orders = applyOverlayToList(mockOrdersStore, status);
         return [...orders].sort((a, b) => 
           new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -350,7 +350,7 @@ export function useTodaysOrders() {
     queryKey: ["orders", "today"],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        console.log("📦 Mock mode: returning today's mock orders");
+        // console.log removed("📦 Mock mode: returning today's mock orders");
         const todayTime = today.getTime();
         return applyOverlayToList(mockOrdersStore)
           .filter(o => new Date(o.created_at).getTime() >= todayTime)
@@ -385,7 +385,7 @@ export function useAllOrders() {
     queryKey: ["orders", "all"],
     queryFn: async () => {
       if (USE_MOCK_DATA) {
-        console.log("📦 Mock mode: returning all mock orders");
+        // console.log removed("📦 Mock mode: returning all mock orders");
         return applyOverlayToList(mockOrdersStore)
           .sort((a, b) => 
             new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
@@ -473,7 +473,7 @@ export function useCreateOrder() {
         const newOrder = createMockOrder(orderData, items);
         mockOrdersStore.unshift(newOrder);
         saveMockOrdersStore(); // Persist to localStorage
-        console.log("📦 Mock order created:", newOrder.order_number);
+        // console.log removed("📦 Mock order created:", newOrder.order_number);
         return newOrder;
       }
 
@@ -517,7 +517,7 @@ export function useCreateOrder() {
           throw fetchError;
         }
         
-        console.log("✅ Order created in Supabase:", fullOrder.order_number);
+        // console.log removed("✅ Order created in Supabase:", fullOrder.order_number);
         return fullOrder as Order;
       } catch (err) {
         // Fallback to mock mode if Supabase fails
@@ -525,7 +525,7 @@ export function useCreateOrder() {
         const newOrder = createMockOrder(orderData, items);
         mockOrdersStore.unshift(newOrder);
         saveMockOrdersStore(); // Persist to localStorage
-        console.log("📦 Fallback mock order created:", newOrder.order_number);
+        // console.log removed("📦 Fallback mock order created:", newOrder.order_number);
         return newOrder;
       }
     },
@@ -573,7 +573,7 @@ export function useUpdateOrderStatus() {
         
         Object.assign(order, updates);
         saveMockOrdersStore(); // Persist to localStorage
-        console.log(`📦 Mock order ${order.order_number} status updated to: ${status}`);
+        // console.log removed(`📦 Mock order ${order.order_number} status updated to: ${status}`);
         return order;
       }
 
@@ -591,7 +591,7 @@ export function useUpdateOrderStatus() {
         // Clear any local overlay for this order since Supabase succeeded
         localOrderOverlay.delete(orderId);
         saveOverlayToStorage();
-        console.log(`✅ Order ${orderId} status updated to: ${status}`);
+        // console.log removed(`✅ Order ${orderId} status updated to: ${status}`);
         return data as Order;
       } catch (err) {
         // Supabase failed (likely RLS) - use local overlay instead
@@ -602,7 +602,7 @@ export function useUpdateOrderStatus() {
         localOrderOverlay.set(orderId, { ...existing, ...updates });
         saveOverlayToStorage();
         
-        console.log(`📦 Local overlay: Order ${orderId} status updated to: ${status}`);
+        // console.log removed(`📦 Local overlay: Order ${orderId} status updated to: ${status}`);
         
         // Return a simulated updated order
         return { id: orderId, ...updates } as Order;
@@ -632,7 +632,7 @@ export function useCancelOrder() {
         
         Object.assign(order, updates);
         saveMockOrdersStore(); // Persist to localStorage
-        console.log(`📦 Mock order ${order.order_number} cancelled`);
+        // console.log removed(`📦 Mock order ${order.order_number} cancelled`);
         return order;
       }
 
@@ -649,7 +649,7 @@ export function useCancelOrder() {
         // Clear local overlay since Supabase succeeded
         localOrderOverlay.delete(orderId);
         saveOverlayToStorage();
-        console.log(`✅ Order ${orderId} cancelled`);
+        // console.log removed(`✅ Order ${orderId} cancelled`);
         return data;
       } catch (err) {
         // Supabase failed - use local overlay
@@ -659,7 +659,7 @@ export function useCancelOrder() {
         localOrderOverlay.set(orderId, { ...existing, ...updates });
         saveOverlayToStorage();
         
-        console.log(`📦 Local overlay: Order ${orderId} cancelled`);
+        // console.log removed(`📦 Local overlay: Order ${orderId} cancelled`);
         return { id: orderId, ...updates } as Order;
       }
     },
@@ -689,11 +689,11 @@ export function useOrdersRealtime() {
     if (USE_MOCK_DATA) {
       if (typeof BroadcastChannel === "undefined") return;
       
-      console.log("📦 Mock mode: Setting up BroadcastChannel for order sync");
+      // console.log removed("📦 Mock mode: Setting up BroadcastChannel for order sync");
       const channel = new BroadcastChannel("9yards_mock_orders");
       
       channel.onmessage = () => {
-        console.log("📦 Mock orders updated from another tab, invalidating queries");
+        // console.log removed("📦 Mock orders updated from another tab, invalidating queries");
         // Reload mock orders store
         const freshOrders = loadMockOrdersStore();
         mockOrdersStore.length = 0;
@@ -713,7 +713,7 @@ export function useOrdersRealtime() {
     // Real Supabase mode
     if (!supabase) return;
 
-    console.log("🔌 Setting up orders realtime subscription...");
+    // console.log removed("🔌 Setting up orders realtime subscription...");
 
     const channel = supabase
       .channel('orders-changes')
@@ -725,7 +725,7 @@ export function useOrdersRealtime() {
           table: 'orders',
         },
         (payload) => {
-          console.log('🔄 Order change detected:', payload.eventType, payload.new);
+          // console.log removed('🔄 Order change detected:', payload.eventType, payload.new);
           queryClient.invalidateQueries({ queryKey: ['orders'] });
           queryClient.invalidateQueries({ queryKey: ['order'] });
           queryClient.invalidateQueries({ queryKey: ['order-lookup'] });
@@ -740,16 +740,16 @@ export function useOrdersRealtime() {
           table: 'order_items',
         },
         () => {
-          console.log('🔄 Order items updated');
+          // console.log removed('🔄 Order items updated');
           queryClient.invalidateQueries({ queryKey: ['orders'] });
         }
       )
       .subscribe((status) => {
-        console.log('📡 Orders subscription status:', status);
+        // console.log removed('📡 Orders subscription status:', status);
       });
 
     return () => {
-      console.log('🔌 Cleaning up orders realtime subscription');
+      // console.log removed('🔌 Cleaning up orders realtime subscription');
       if (supabase) supabase.removeChannel(channel);
     };
   }, [queryClient]);

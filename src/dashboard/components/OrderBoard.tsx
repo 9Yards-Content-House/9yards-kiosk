@@ -1,5 +1,5 @@
 import { useState, useCallback, useMemo } from "react";
-import { CheckCircle2, XCircle } from "lucide-react";
+import { CheckCircle2, XCircle, ClipboardList, ChefHat, Truck } from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import { Badge } from "@shared/components/ui/badge";
 import {
@@ -178,6 +178,15 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
     }
   }, [grouped, updateStatus, onStatusChange]);
 
+  const getEmptyStateIcon = (status: OrderStatus) => {
+    switch (status) {
+      case "new": return <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-20" />;
+      case "preparing": return <ChefHat className="w-10 h-10 mx-auto mb-2 opacity-20" />;
+      case "out_for_delivery": return <Truck className="w-10 h-10 mx-auto mb-2 opacity-20" />;
+      default: return <ClipboardList className="w-10 h-10 mx-auto mb-2 opacity-20" />;
+    }
+  };
+
   return (
     <>
       {/* Mobile View: Tabs */}
@@ -248,6 +257,7 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
                 ))}
                 {(!grouped[status] || grouped[status].length === 0) && (
                   <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
+                    {getEmptyStateIcon(status)}
                     No {ORDER_STATUS_LABELS[status].toLowerCase()} orders
                   </div>
                 )}
@@ -272,6 +282,7 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
               ))}
               {recentCompletedOrders.length === 0 && (
                 <div className="text-center py-12 text-muted-foreground border-2 border-dashed rounded-xl">
+                  <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-20" />
                   No recent completed orders
                 </div>
               )}
@@ -308,10 +319,10 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
             </div>
 
             <div 
-              className={`kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 transition-colors ${
+              className={`kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 transition-colors duration-200 ${
                 dragOverStatus === status 
-                  ? "bg-secondary/10 border-2 border-dashed border-secondary" 
-                  : "border-2 border-transparent"
+                  ? "bg-primary/5 border-2 border-dashed border-primary ring-1 ring-primary/20" 
+                  : "border-2 border-transparent bg-muted/20"
               }`}
             >
               {grouped[status]?.map((order) => (
@@ -321,7 +332,7 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
                   onDragStart={handleDragStart}
                   onDragEnd={handleDragEnd}
                   data-order-id={order.id}
-                  className={`${draggedOrderId === order.id ? "opacity-50" : ""}`}
+                  className={`${draggedOrderId === order.id ? "opacity-50 grayscale" : ""}`}
                 >
                   <OrderCard
                     order={order}
@@ -343,9 +354,10 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
                 </div>
               ))}
               {(!grouped[status] || grouped[status].length === 0) && (
-                <div className={`text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed ${
-                  dragOverStatus === status ? "border-secondary bg-secondary/5" : ""
+                <div className={`text-center py-12 text-sm text-muted-foreground rounded-xl flex flex-col items-center justify-center ${
+                  dragOverStatus === status ? "opacity-50" : ""
                 }`}>
+                  {getEmptyStateIcon(status)}
                   {dragOverStatus === status ? "Drop here" : "No orders"}
                 </div>
               )}
@@ -363,7 +375,7 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
             </span>
           </div>
 
-          <div className="kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 border-2 border-transparent">
+          <div className="kanban-column-content space-y-3 min-h-[200px] rounded-xl p-2 border-2 border-transparent bg-muted/10">
             {recentCompletedOrders.map((order) => (
               <div key={order.id} className="relative">
                 {/* Status indicator overlay */}
@@ -379,7 +391,8 @@ export default function OrderBoard({ grouped, onStatusChange }: OrderBoardProps)
               </div>
             ))}
             {recentCompletedOrders.length === 0 && (
-              <div className="text-center py-8 text-sm text-muted-foreground rounded-xl border border-dashed">
+              <div className="text-center py-12 text-sm text-muted-foreground rounded-xl">
+                <CheckCircle2 className="w-10 h-10 mx-auto mb-2 opacity-20" />
                 No recent orders
               </div>
             )}
