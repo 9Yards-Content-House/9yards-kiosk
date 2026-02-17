@@ -528,9 +528,30 @@ export default function Staff() {
             return (
               <div
                 key={member.id}
-                className="grid grid-cols-1 md:grid-cols-[1fr_140px_100px_100px_100px_140px] gap-2 md:gap-4 items-center px-4 py-3 border-b hover:bg-muted/30 transition-colors"
+                className="flex flex-col md:grid md:grid-cols-[1fr_140px_100px_100px_100px_140px] gap-3 md:gap-4 px-4 py-4 md:py-3 border-b hover:bg-muted/30 transition-colors relative"
               >
-                <div>
+                {/* Mobile Header: Name + Status */}
+                <div className="flex items-center justify-between md:hidden">
+                  <div>
+                    <p className="font-medium text-base">
+                      {member.full_name}
+                      {isCurrentUser && (
+                        <Badge variant="outline" className="ml-2 text-[10px] py-0">You</Badge>
+                      )}
+                    </p>
+                    <div className="flex items-center gap-2 mt-1">
+                      <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]} text-xs py-0 h-5`}>
+                        {member.role}
+                      </Badge>
+                    </div>
+                  </div>
+                  <Badge variant={member.active ? "default" : "destructive"} className="h-6">
+                    {member.active ? "Active" : "Inactive"}
+                  </Badge>
+                </div>
+
+                {/* Desktop Name */}
+                <div className="hidden md:block">
                   <p className="font-medium">
                     {member.full_name}
                     {isCurrentUser && (
@@ -538,41 +559,53 @@ export default function Staff() {
                     )}
                   </p>
                 </div>
-                <div className="space-y-0.5">
+
+                {/* Contact Info */}
+                <div className="space-y-1 md:space-y-0.5">
                   {memberEmail && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Mail className="w-3 h-3" />
+                    <div className="flex items-center gap-2 md:gap-1.5 text-sm md:text-xs text-muted-foreground">
+                      <Mail className="w-4 h-4 md:w-3 md:h-3" />
                       <span className="truncate">{memberEmail}</span>
                     </div>
                   )}
                   {member.phone && (
-                    <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                      <Phone className="w-3 h-3" />
+                    <div className="flex items-center gap-2 md:gap-1.5 text-sm md:text-xs text-muted-foreground">
+                      <Phone className="w-4 h-4 md:w-3 md:h-3" />
                       <span>{member.phone}</span>
                     </div>
                   )}
                 </div>
-                <div>
+
+                {/* Desktop Role */}
+                <div className="hidden md:block">
                   <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]}`}>
                     {member.role}
                   </Badge>
                 </div>
-                <div>
+
+                {/* Desktop Status */}
+                <div className="hidden md:block">
                   <Badge variant={member.active ? "default" : "destructive"}>
                     {member.active ? "Active" : "Inactive"}
                   </Badge>
                 </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
+
+                {/* Joined Date */}
+                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 md:mt-0">
                   <Calendar className="w-3 h-3" />
+                  <span className="md:hidden">Joined: </span>
                   <span>{formatRelativeTime(member.created_at)}</span>
                 </div>
-                <div className="flex items-center gap-1">
+
+                {/* Actions */}
+                <div className="flex items-center gap-1 justify-end md:justify-start absolute top-4 right-4 md:static">
                   <Button
                     variant="ghost"
                     size="sm"
                     onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
                     disabled={isCurrentUser}
                     title={member.active ? "Deactivate" : "Activate"}
+                    className="h-8 w-8 p-0 md:w-auto md:px-3 md:h-9"
                   >
                     {member.active ? (
                       <UserX className="w-4 h-4" />
@@ -585,6 +618,7 @@ export default function Staff() {
                     size="sm"
                     onClick={() => openEditDialog(member)}
                     title="Edit"
+                    className="h-8 w-8 p-0 md:w-auto md:px-3 md:h-9"
                   >
                     <Edit2 className="w-4 h-4" />
                   </Button>
@@ -594,7 +628,7 @@ export default function Staff() {
                         variant="ghost"
                         size="sm"
                         disabled={isCurrentUser}
-                        className="text-destructive hover:text-destructive"
+                        className="text-destructive hover:text-destructive h-8 w-8 p-0 md:w-auto md:px-3 md:h-9"
                         title="Delete"
                       >
                         <Trash2 className="w-4 h-4" />

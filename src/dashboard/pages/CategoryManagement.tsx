@@ -245,7 +245,7 @@ export default function CategoryManagement() {
           sortedCategories.map((category, index) => (
             <div
               key={category.id}
-              className="grid grid-cols-1 md:grid-cols-[40px_1fr_200px_120px_100px] gap-2 md:gap-4 items-center px-4 py-3 border-b hover:bg-muted/30 transition-colors"
+              className="flex items-center justify-between md:grid md:grid-cols-[40px_1fr_200px_120px_100px] gap-2 md:gap-4 px-4 py-3 border-b hover:bg-muted/30 transition-colors"
             >
               {/* Drag handle / Position */}
               <div className="hidden md:flex items-center gap-1 text-muted-foreground">

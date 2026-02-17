@@ -197,13 +197,13 @@ export default function Orders() {
       {/* Filters */}
       <div className="flex flex-col md:flex-row gap-3 mb-6">
         {/* Search */}
-        <div className="relative flex-1 max-w-sm">
+        <div className="relative flex-1 md:max-w-sm">
           <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
           <Input
             placeholder="Search order # or customer..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-9"
+            className="pl-9 w-full"
           />
           {searchQuery && (
             <button
@@ -216,11 +216,11 @@ export default function Orders() {
         </div>
 
         {/* Time filter */}
-        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)}>
-          <TabsList>
+        <Tabs value={timeFilter} onValueChange={(v) => setTimeFilter(v as TimeFilter)} className="w-full md:w-auto">
+          <TabsList className="w-full md:w-auto grid grid-cols-3 md:flex">
             <TabsTrigger value="today">Today</TabsTrigger>
-            <TabsTrigger value="week">This Week</TabsTrigger>
-            <TabsTrigger value="all">All Time</TabsTrigger>
+            <TabsTrigger value="week">Week</TabsTrigger>
+            <TabsTrigger value="all">All</TabsTrigger>
           </TabsList>
         </Tabs>
 
@@ -229,7 +229,7 @@ export default function Orders() {
           value={statusFilter}
           onValueChange={(v) => setStatusFilter(v as OrderStatus | "all")}
         >
-          <SelectTrigger className="w-[140px]">
+          <SelectTrigger className="w-full md:w-[140px]">
             <Filter className="w-4 h-4 mr-2" />
             <SelectValue placeholder="Status" />
           </SelectTrigger>
@@ -245,7 +245,7 @@ export default function Orders() {
 
         {/* Clear filters */}
         {hasFilters && (
-          <Button variant="ghost" size="sm" onClick={clearFilters}>
+          <Button variant="ghost" size="sm" onClick={clearFilters} className="w-full md:w-auto">
             <X className="w-4 h-4 mr-1" />
             Clear
           </Button>
