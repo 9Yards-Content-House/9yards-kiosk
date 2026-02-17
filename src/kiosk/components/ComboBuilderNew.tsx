@@ -12,6 +12,7 @@ import {
 } from 'lucide-react';
 import { useGroupedMenu } from '@shared/hooks/useMenu';
 import { useKioskCart } from '../context/KioskCartContext';
+import { useAccessibility } from '../context/AccessibilityContext';
 import { MenuItem, SauceSize } from '@shared/types';
 import { cn, formatPrice, vibrate } from '@shared/lib/utils';
 import { useSound } from '../hooks/useSound';
@@ -85,10 +86,10 @@ export default function ComboBuilder({
   editingItemId,
 }: ComboBuilderProps) {
   const navigate = useNavigate();
-  const { data: groupedMenu = [] } = useGroupedMenu();
-  const { addItem, removeItem, items } = useKioskCart();
-  // const { play } = useSound();
-  const play = (type: string) => console.log('Sound disabled:', type);
+  const { data: groupedMenu = [], isLoading: menuLoading, error: menuError } = useGroupedMenu();
+  const { addItem, removeItem, updateItem, items } = useKioskCart();
+  const { vibrationEnabled } = useAccessibility();
+  const { play } = useSound();
   const mainContentRef = useRef<HTMLElement>(null);
 
   const [step, setStep] = useState(1);
@@ -232,7 +233,7 @@ export default function ComboBuilder({
   // Auto-close draft banner
   useEffect(() => {
     if (showDraftBanner) {
-      const timer = setTimeout(() => setShowDraftBanner(false), 4000);
+      const timer = setTimeout(() => setShowDraftBanner(false), 7000);
       return () => clearTimeout(timer);
     }
   }, [showDraftBanner]);
@@ -347,7 +348,9 @@ export default function ComboBuilder({
 
   // Selection handlers
   const toggleMainDish = useCallback((name: string) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play('select');
     setCombo((prev) => ({
       ...prev,
@@ -355,10 +358,12 @@ export default function ComboBuilder({
         ? prev.mainDishes.filter((d) => d !== name)
         : [...prev.mainDishes, name],
     }));
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   const selectSauce = useCallback((sauce: MenuItem) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play('select');
     const firstPrep = sauce.preparations?.[0];
     const prepName = typeof firstPrep === 'string' ? firstPrep : firstPrep?.name || '';
@@ -368,16 +373,20 @@ export default function ComboBuilder({
       saucePreparation: prepName,
       sauceSize: sauce.sizes && sauce.sizes.length > 0 ? sauce.sizes[0] : null,
     }));
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   const selectSideDish = useCallback((name: string) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play('select');
     setCombo((prev) => ({ ...prev, sideDish: name }));
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   const updateExtra = useCallback((item: MenuItem, delta: number) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play(delta > 0 ? 'add' : 'remove');
     setCombo((prev) => {
       const existing = prev.extras.find((e) => e.item.id === item.id);
@@ -397,19 +406,23 @@ export default function ComboBuilder({
       }
       return prev;
     });
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   const updateQuantity = useCallback((delta: number) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play('tap');
     setCombo((prev) => ({ ...prev, quantity: Math.max(1, prev.quantity + delta) }));
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   // Handle add to cart
   const handleAddToCart = useCallback(() => {
     if (!combo.sauce) return;
 
-    vibrate([50, 50, 50]);
+    if (vibrationEnabled) {
+      vibrate([50, 50, 50]);
+    }
     play('success');
 
     let price = combo.sauceSize?.price || combo.sauce.sizes?.[0]?.price || combo.sauce.price || 0;
@@ -443,7 +456,52 @@ export default function ComboBuilder({
     clearDraft();
 
     setShowSuccessOverlay(true);
-  }, [combo, editingItemId, addItem, removeItem]);
+  }, [combo, editingItemId, addItem, updateItem, play, vibrationEnabled]);
+
+  // Auto-close success overlay and modal
+  useEffect(() => {
+    if (showSuccessOverlay) {
+      const timer = setTimeout(() => {
+        setShowSuccessOverlay(false);
+        onClose();
+        resetBuilder();
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showSuccessOverlay, onClose, resetBuilder]);
+
+  // Show loading state
+  if (menuLoading) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl p-8 flex flex-col items-center">
+          <div className="animate-spin w-12 h-12 border-4 border-secondary border-t-transparent rounded-full mb-4" />
+          <p className="text-gray-900 font-medium">Loading menu...</p>
+        </div>
+      </div>
+    );
+  }
+
+  // Show error state
+  if (menuError) {
+    return (
+      <div className="fixed inset-0 z-[60] flex items-center justify-center bg-black/60 backdrop-blur-sm">
+        <div className="bg-white rounded-3xl p-8 max-w-md text-center">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-600" />
+          </div>
+          <h3 className="text-xl font-bold text-gray-900 mb-2">Unable to Load Menu</h3>
+          <p className="text-gray-600 mb-6">Please try again later.</p>
+          <button
+            onClick={onClose}
+            className="px-6 py-3 bg-secondary text-white rounded-full font-bold"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   if (!open) return null;
 
