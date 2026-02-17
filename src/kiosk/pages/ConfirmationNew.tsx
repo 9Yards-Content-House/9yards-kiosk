@@ -11,7 +11,6 @@ import { useTranslation, useLanguage } from '@shared/context/LanguageContext';
 import { useCancelOrder, getMockOrdersStore } from '@shared/hooks/useOrders';
 import { cn, formatPrice } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
-import { QRCode } from '@shared/components/QRCode';
 import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import KioskHeader from '../components/KioskHeader';
 import { Confetti, SuccessCheckmark } from '../components/SuccessCelebration';
@@ -264,19 +263,21 @@ export default function ConfirmationNew() {
           transition={{ delay: 0.5 }}
           className="text-lg text-gray-500"
         >
-          {t('confirmation.orderPlaced')}
+          {orderDetails.customerName 
+            ? t('confirmation.thanks').replace('{name}', orderDetails.customerName)
+            : t('confirmation.orderPlaced')}
         </motion.p>
       </div>
 
       {/* Main content */}
-      <div className="flex-1 overflow-y-auto px-6 pb-6">
-        <div className="max-w-2xl mx-auto space-y-6">
+      <div className="flex-1 overflow-y-auto px-6 pb-10">
+        <div className="max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto space-y-8">
           {/* Order number card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.6 }}
-            className="bg-white rounded-3xl p-6 shadow-lg border-2 border-green-200 text-center relative overflow-hidden"
+            className="bg-white rounded-3xl p-10 shadow-lg border-2 border-green-200 text-center relative overflow-hidden"
           >
             {/* Subtle animated background */}
             <div className="absolute inset-0 bg-gradient-to-br from-green-50 to-transparent opacity-50" />
@@ -284,36 +285,62 @@ export default function ConfirmationNew() {
             <div className="relative z-10">
               <p className="text-gray-500 mb-2">{t('confirmation.orderNumber')}</p>
               <motion.div 
-                className="text-5xl md:text-6xl font-black text-[#212282] tracking-wider mb-4"
+                className="text-5xl md:text-6xl font-black text-[#212282] tracking-wider mb-2"
                 initial={{ scale: 0.8 }}
                 animate={{ scale: 1 }}
                 transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.8 }}
               >
                 {orderNumber}
               </motion.div>
-
-              <p className="text-sm text-gray-500">
-                {t('confirmation.scanQR')}
-              </p>
             </div>
           </motion.div>
 
-          {/* QR Code - Primary action for mobile tracking */}
+          {/* Pay on Delivery Reminder Card */}
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.7 }}
-            className="bg-white rounded-2xl p-6 shadow-sm border border-gray-100 text-center"
+            className="bg-[#212282]/5 rounded-3xl p-8 border border-[#212282]/10 text-center shadow-sm"
           >
-            <p className="text-base font-medium text-[#212282] mb-4">
-              {t('confirmation.scanPhone')}
+            <h3 className="text-xl font-bold text-[#212282] mb-3">{t('confirmation.payOnDelivery')}</h3>
+            <p className="text-[#212282]/80 text-lg leading-relaxed">
+              {t('confirmation.payRider').split('{total}').map((part, i) => (
+                <span key={i}>
+                  {part}
+                  {i === 0 && <span className="font-black text-[#E6411C] mx-1">{formatPrice(orderDetails.total)}</span>}
+                </span>
+              ))}
             </p>
-            <div className="flex justify-center">
-              <QRCode value={orderNumber} size={180} asTrackingLink />
+            <p className="text-sm text-[#212282]/60 mt-3 italic font-medium">
+              {t('confirmation.deliveryFeeNote')}
+            </p>
+          </motion.div>
+
+          {/* What's Next Section */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.8 }}
+            className="bg-white rounded-3xl p-8 shadow-sm border border-gray-100"
+          >
+            <h3 className="text-xl font-bold text-[#212282] mb-8 text-center italic">What's Next?</h3>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
+              {[
+                { title: t('confirmation.orderReceived'), desc: t('confirmation.orderReceivedDesc'), step: 1 },
+                { title: t('confirmation.riderDelivery'), desc: t('confirmation.riderDeliveryDesc'), step: 2 },
+                { title: t('confirmation.riderPayment'), desc: t('confirmation.riderPaymentDesc'), step: 3 }
+              ].map((item, i) => (
+                <div key={i} className="flex md:flex-col items-center gap-4 md:text-center">
+                  <div className="w-10 h-10 rounded-full bg-green-100 text-green-700 font-bold flex items-center justify-center shrink-0">
+                    {item.step}
+                  </div>
+                  <div>
+                    <h4 className="font-bold text-gray-900 mb-1">{item.title}</h4>
+                    <p className="text-sm text-gray-500 leading-relaxed">{item.desc}</p>
+                  </div>
+                </div>
+              ))}
             </div>
-            <p className="text-xs text-gray-400 mt-4">
-              {t('confirmation.receiveUpdates')}
-            </p>
           </motion.div>
 
           {/* Cancel Order Option - only shown when order is still 'new' */}
@@ -403,7 +430,13 @@ export default function ConfirmationNew() {
 
       {/* Footer with actions */}
       <div className="p-4 border-t bg-white">
-        <div className="max-w-2xl mx-auto space-y-3">
+        <div className="max-w-2xl lg:max-w-3xl 2xl:max-w-4xl mx-auto space-y-4">
+          {/* Support Info */}
+          <div className="text-center py-3 bg-gray-50 rounded-2xl border border-gray-100">
+            <p className="text-sm font-medium text-gray-500">{t('confirmation.needHelp')}</p>
+            <p className="text-lg text-[#212282] font-black mt-1">{t('confirmation.supportContact')}</p>
+          </div>
+
           {/* Auto-reset countdown */}
           <div className="text-center text-sm text-gray-500">
             {t('confirmation.autoReset')} <span className="font-bold text-[#212282]">{countdown}s</span>

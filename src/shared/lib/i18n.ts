@@ -157,6 +157,18 @@ export interface TranslationKeys {
   'confirmation.receiveUpdates': string;
   'confirmation.cancelOrder': string;
   'confirmation.cancelHint': string;
+  'confirmation.thanks': string;
+  'confirmation.payOnDelivery': string;
+  'confirmation.payRider': string;
+  'confirmation.deliveryFeeNote': string;
+  'confirmation.orderReceived': string;
+  'confirmation.orderReceivedDesc': string;
+  'confirmation.riderDelivery': string;
+  'confirmation.riderDeliveryDesc': string;
+  'confirmation.riderPayment': string;
+  'confirmation.riderPaymentDesc': string;
+  'confirmation.needHelp': string;
+  'confirmation.supportContact': string;
   
   // Order Tracking
   'tracking.title': string;
@@ -388,6 +400,18 @@ const translations: { en: TranslationKeys } = {
     'confirmation.receiveUpdates': "You'll receive updates when your order is ready",
     'confirmation.cancelOrder': 'Cancel Order',
     'confirmation.cancelHint': 'You can cancel before preparation begins',
+    'confirmation.thanks': 'Thanks, {name}!',
+    'confirmation.payOnDelivery': 'Pay on Delivery',
+    'confirmation.payRider': 'Please have {total} ready for the rider.',
+    'confirmation.deliveryFeeNote': '(Note: This does not include the delivery fee)',
+    'confirmation.orderReceived': 'Order Received',
+    'confirmation.orderReceivedDesc': 'Our kitchen has received your order and is starting to prepare it.',
+    'confirmation.riderDelivery': 'Rider Delivery',
+    'confirmation.riderDeliveryDesc': 'A professional rider will bring your fresh meal to you.',
+    'confirmation.riderPayment': 'Payment',
+    'confirmation.riderPaymentDesc': 'Simply pay the rider when your meal arrives.',
+    'confirmation.needHelp': 'Need help with your order?',
+    'confirmation.supportContact': 'Call or WhatsApp: +256 708 899597',
     
     // Order Tracking
     'tracking.title': 'Track Your Order',
