@@ -261,15 +261,15 @@ export default function OrderDetail() {
           className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur border-t shadow-lg z-20 md:static md:p-0 md:bg-transparent md:border-t-0 md:shadow-none md:z-auto"
           style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}
         >
-          <div className="flex gap-3 max-w-3xl mx-auto">
+          <div className="flex gap-3 max-w-3xl mx-auto md:justify-end">
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
                   variant="outline"
                   disabled={cancelOrder.isPending}
-                  className="flex-1 min-h-[48px] border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
+                  className="flex-1 md:flex-none md:w-auto md:min-w-[120px] min-h-[48px] border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
-                  Cancel
+                  Cancel Order
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -293,7 +293,7 @@ export default function OrderDetail() {
 
             {nextStatus && (
               <Button
-                className="flex-[2] bg-primary text-primary-foreground hover:bg-primary/90 min-h-[48px] text-base font-semibold shadow-md"
+                className="flex-[2] md:flex-none md:w-auto md:min-w-[200px] bg-primary text-primary-foreground hover:bg-primary/90 min-h-[48px] text-base font-semibold shadow-md"
                 onClick={handleAdvance}
                 disabled={updateStatus.isPending}
               >
