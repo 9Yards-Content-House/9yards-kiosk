@@ -6,6 +6,7 @@ export interface AccessibilitySettings {
   screenReader: boolean;
   touchTargetSize: "normal" | "large" | "extra-large";
   soundEnabled: boolean;
+  vibrationEnabled: boolean;
 }
 
 interface AccessibilityContextType {
@@ -17,9 +18,11 @@ interface AccessibilityContextType {
   toggleHighContrast: () => void;
   toggleLargeText: () => void;
   toggleSound: () => void;
+  toggleVibration: () => void;
   resetToDefaults: () => void;
   isAccessibilityMode: boolean;
   soundEnabled: boolean;
+  vibrationEnabled: boolean;
 }
 
 const defaultSettings: AccessibilitySettings = {
@@ -28,6 +31,7 @@ const defaultSettings: AccessibilitySettings = {
   screenReader: false,
   touchTargetSize: "normal",
   soundEnabled: true,
+  vibrationEnabled: true,
 };
 
 const AccessibilityContext = createContext<AccessibilityContextType | undefined>(undefined);
@@ -109,6 +113,10 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
     setSettings(prev => ({ ...prev, soundEnabled: !prev.soundEnabled }));
   };
 
+  const toggleVibration = () => {
+    setSettings(prev => ({ ...prev, vibrationEnabled: !prev.vibrationEnabled }));
+  };
+
   const resetToDefaults = () => {
     setSettings(defaultSettings);
   };
@@ -123,9 +131,11 @@ export function AccessibilityProvider({ children }: { children: ReactNode }) {
         toggleHighContrast,
         toggleLargeText,
         toggleSound,
+        toggleVibration,
         resetToDefaults,
         isAccessibilityMode,
         soundEnabled: settings.soundEnabled,
+        vibrationEnabled: settings.vibrationEnabled,
       }}
     >
       {children}

@@ -12,6 +12,7 @@ import {
 import { useTranslation } from '@shared/context/LanguageContext';
 import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
 import { useKioskCart } from '../context/KioskCartContext';
+import { useAccessibility } from '../context/AccessibilityContext';
 import { MenuItem } from '@shared/types';
 import { cn, formatPrice, vibrate } from '@shared/lib/utils';
 import { Button } from '@shared/components/ui/button';
@@ -34,12 +35,7 @@ const categoryConfig: Record<Category, { label: string }> = {
   side: { label: 'Sides' },
 };
 
-// Map item_type to display category for combo handling
-const itemTypeToCategory: Record<string, Category> = {
-  combo_component: 'main', // Will be further split by category slug
-  combo_driver: 'sauce',
-  standalone: 'lusaniya', // Will be further split by category slug
-};
+
 
 // Map category slugs to Category type (for standalone items that need sub-categorization)
 const slugToCategoryType: Record<string, Category> = {
@@ -54,8 +50,9 @@ const slugToCategoryType: Record<string, Category> = {
 export default function MenuNew() {
   const navigate = useNavigate();
   const { t } = useTranslation();
-  const { data: categories = [] } = useCategories();
-  const { data: allItems = [] } = useAllMenuItems();
+  const { vibrationEnabled } = useAccessibility();
+  const { data: categories = [], error: categoriesError, isLoading: categoriesLoading } = useCategories();
+  const { data: allItems = [], error: itemsError, isLoading: itemsLoading } = useAllMenuItems();
   const { addItem, itemCount, subtotal, items: cartItems, removeItem, updateQuantity } = useKioskCart();
   const { play } = useSound();
 
@@ -66,11 +63,7 @@ export default function MenuNew() {
     ).reduce((sum, ci) => sum + ci.quantity, 0);
   }, [cartItems]);
 
-  // Get cart item ID by name
-  const getCartItemId = useCallback((itemName: string) => {
-    const item = cartItems.find(ci => ci.sauceName === itemName || ci.label === itemName);
-    return item?.id || null;
-  }, [cartItems]);
+
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const searchInputRef = useRef<HTMLInputElement>(null);
   const stickyRef = useRef<HTMLDivElement>(null);
@@ -184,7 +177,9 @@ export default function MenuNew() {
   // Handle adding individual items to cart
   const handleAddToCart = useCallback(
     (item: typeof processedItems[0]) => {
-      vibrate([30, 30]);
+      if (vibrationEnabled) {
+        vibrate([30, 30]);
+      }
       play('add');
       const existingCartItem = cartItems.find(ci => ci.type === 'single' && (ci.sauceName === item.name || ci.label === item.name));
       
@@ -208,13 +203,15 @@ export default function MenuNew() {
         });
       }
     },
-    [addItem, updateQuantity, cartItems, play]
+    [addItem, updateQuantity, cartItems, play, vibrationEnabled]
   );
 
   // Handle removing individual items from cart
   const handleRemoveFromCart = useCallback(
     (item: typeof processedItems[0]) => {
-      vibrate([30]);
+      if (vibrationEnabled) {
+        vibrate([30]);
+      }
       play('remove');
       const existingCartItem = cartItems.find(ci => ci.type === 'single' && (ci.sauceName === item.name || ci.label === item.name));
       
@@ -226,28 +223,32 @@ export default function MenuNew() {
         }
       }
     },
-    [updateQuantity, removeItem, cartItems, play]
+    [updateQuantity, removeItem, cartItems, play, vibrationEnabled]
   );
 
   // Handle starting combo builder
   const handleStartCombo = useCallback((item?: typeof processedItems[0]) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play('select');
     setSelectedSauce(item?.originalItem || null);
     setComboBuilderOpen(true);
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   const handleCloseComboBuilder = useCallback(() => {
     setComboBuilderOpen(false);
   }, []);
 
   const handleCategoryChange = useCallback((category: Category) => {
-    vibrate();
+    if (vibrationEnabled) {
+      vibrate();
+    }
     play('tap');
     setActiveCategory(category);
     // Scroll to top of menu grid
     scrollContainerRef.current?.scrollTo({ top: 0, behavior: 'smooth' });
-  }, [play]);
+  }, [play, vibrationEnabled]);
 
   // Get price display for an item
   const getPriceDisplay = useCallback((item: typeof processedItems[0]) => {
@@ -307,6 +308,34 @@ export default function MenuNew() {
     }
   }, []);
 
+  // Show error state if data fetch failed
+  if (categoriesError || itemsError) {
+    return (
+      <div className="kiosk-screen flex flex-col items-center justify-center bg-gray-50 p-8">
+        <div className="text-center max-w-md">
+          <div className="w-16 h-16 bg-red-100 rounded-full flex items-center justify-center mx-auto mb-4">
+            <X className="w-8 h-8 text-red-600" />
+          </div>
+          <h2 className="text-2xl font-bold text-gray-900 mb-2">Unable to Load Menu</h2>
+          <p className="text-gray-600 mb-6">
+            We're having trouble connecting to the server. Please try again.
+          </p>
+          <Button
+            size="lg"
+            onClick={() => window.location.reload()}
+            className="bg-secondary hover:bg-secondary/90"
+          >
+            Retry
+          </Button>
+        </div>
+      </div>
+    );
+  }
+
+  // Show loading state
+  const isLoading = categoriesLoading || itemsLoading;
+
+
   return (
     <div className="kiosk-screen flex flex-col bg-gray-50 overflow-hidden">
       {/* Compact Header - Back button and logo */}
@@ -314,7 +343,7 @@ export default function MenuNew() {
         <button
           onClick={() => navigate('/')}
           aria-label={t('common.back')}
-          className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 hover:bg-gray-200 active:bg-gray-300 active:scale-95 transition-all"
+          className="w-10 h-10 flex items-center justify-center rounded-full bg-gray-100 active:bg-gray-200 active:scale-95 transition-all"
         >
           <ArrowLeft className="w-5 h-5 text-gray-700" />
         </button>
@@ -345,7 +374,14 @@ export default function MenuNew() {
               ref={searchInputRef}
               type="text"
               value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
+              onChange={(e) => {
+                const newValue = e.target.value;
+                // Play sound on first character typed
+                if (newValue && !searchQuery) {
+                  play('tap');
+                }
+                setSearchQuery(newValue);
+              }}
               placeholder="Find your favorite dish..."
               aria-label="Search menu items"
               className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-background text-sm focus:border-secondary focus:ring-1 focus:ring-secondary/20 focus:outline-none transition-all"
@@ -355,8 +391,11 @@ export default function MenuNew() {
             />
             {searchQuery && (
               <button
-                onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
+                onClick={() => {
+                  play('tap');
+                  setSearchQuery('');
+                }}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 active:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -413,7 +452,12 @@ export default function MenuNew() {
 
       {/* Menu Grid */}
       <div ref={scrollContainerRef} className="flex-1 overflow-y-auto pb-24">
-        {filteredItems.length === 0 ? (
+        {isLoading ? (
+          <div className="flex flex-col items-center justify-center py-16">
+            <div className="animate-spin w-12 h-12 border-4 border-secondary border-t-transparent rounded-full mb-4" />
+            <p className="text-muted-foreground text-base">Loading menu...</p>
+          </div>
+        ) : filteredItems.length === 0 ? (
           <div className="flex flex-col items-center justify-center py-16 text-center px-8">
             <Search className="w-16 h-16 text-muted-foreground mb-4" />
             <h3 className="text-lg font-semibold mb-2">{t('menu.noResults')}</h3>
@@ -467,7 +511,14 @@ export default function MenuNew() {
 
       {/* Cart Bar */}
       {itemCount > 0 && (
-        <CartBar itemCount={itemCount} total={subtotal} onClick={() => navigate('/cart')} />
+        <CartBar 
+          itemCount={itemCount} 
+          total={subtotal} 
+          onClick={() => {
+            play('select');
+            navigate('/cart');
+          }} 
+        />
       )}
 
       {/* Combo Builder Modal */}
@@ -606,7 +657,7 @@ function MenuItemCard({
 
         {/* Description */}
         <p className="text-gray-600 text-xs md:text-sm line-clamp-1 mb-2">
-          {item.description || item.category}
+          {item.description || 'Delicious and fresh'}
         </p>
 
         {/* Price Row */}

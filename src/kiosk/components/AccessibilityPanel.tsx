@@ -9,6 +9,7 @@ import {
   X,
   Check,
   Volume2,
+  Vibrate,
 } from "lucide-react";
 import { useAccessibility } from "../context/AccessibilityContext";
 import { useSound } from "../hooks/useSound";
@@ -24,13 +25,14 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
     toggleHighContrast,
     toggleLargeText,
     toggleSound,
+    toggleVibration,
     updateSetting,
     resetToDefaults
   } = useAccessibility();
 
   const { play } = useSound();
 
-  const hasChanges = settings.highContrast || settings.largeText || settings.touchTargetSize !== "normal" || !settings.soundEnabled;
+  const hasChanges = settings.highContrast || settings.largeText || settings.touchTargetSize !== "normal" || !settings.soundEnabled || !settings.vibrationEnabled;
 
   // Close on Escape key
   useEffect(() => {
@@ -125,6 +127,16 @@ export default function AccessibilityPanel({ isOpen, onClose }: AccessibilityPan
                 description="Play sounds on interactions"
                 enabled={settings.soundEnabled}
                 onToggle={() => handleToggle(toggleSound)}
+              />
+
+              {/* Vibration */}
+              <ToggleOption
+                id="vibration-toggle"
+                icon={<Vibrate />}
+                title="Haptic Feedback"
+                description="Feel vibrations on touch"
+                enabled={settings.vibrationEnabled}
+                onToggle={() => handleToggle(toggleVibration)}
               />
 
               {/* Touch Target Size */}
