@@ -161,7 +161,7 @@ export default function OrderDetail() {
           )}
           <div className="flex items-center gap-2 text-sm">
             <CreditCard className="w-4 h-4 text-muted-foreground" />
-            {order.payment_method.replace("_", " ")}
+            {order.payment_method.replace(/_/g, " ")}
             <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
               {order.payment_status}
             </Badge>

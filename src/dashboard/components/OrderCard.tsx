@@ -132,9 +132,9 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
       )}
 
       <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
-        <div className="flex items-center gap-1.5" title={order.payment_method.replace("_", " ")}>
+        <div className="flex items-center gap-1.5" title={order.payment_method.replace(/_/g, " ")}>
           <PaymentIcon method={order.payment_method} />
-          <span className="capitalize">{order.payment_method.replace("_", " ")}</span>
+          <span className="capitalize">{order.payment_method.replace(/_/g, " ")}</span>
         </div>
         <span className="capitalize">{order.payment_status}</span>
       </div>

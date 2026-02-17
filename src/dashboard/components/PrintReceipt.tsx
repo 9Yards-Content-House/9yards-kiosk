@@ -133,7 +133,7 @@ export default function PrintReceipt({ order, trigger }: PrintReceiptProps) {
           <div className="item" style={{ fontSize: "12px" }}>
             <span>Payment</span>
             <span style={{ textTransform: "capitalize" }}>
-              {order.payment_method.replace("_", " ")} ({order.payment_status})
+              {order.payment_method.replace(/_/g, " ")} ({order.payment_status})
             </span>
           </div>
 
