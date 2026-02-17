@@ -132,6 +132,24 @@ export default function OrderLookup() {
     }
   }, [urlOrderNumber]);
 
+  // Handle paste for order number
+  useEffect(() => {
+    const handlePaste = (e: ClipboardEvent) => {
+      e.preventDefault();
+      const pastedData = e.clipboardData?.getData("text");
+      if (pastedData) {
+        // Extract only digits and take first 6
+        const digits = pastedData.replace(/\D/g, "").slice(0, 6);
+        if (digits) {
+          setOrderNumber(digits);
+        }
+      }
+    };
+
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, []);
+
   const digits = orderNumber.replace(/\D/g, "");
   // Display as plain number (6 digits max)
   const displayNumber = digits.length > 0 ? digits.padEnd(6, "_") : "______";
@@ -159,8 +177,8 @@ export default function OrderLookup() {
       <div className="flex-1 flex overflow-hidden">
         {/* Left side - Numpad (always visible) */}
         <div className="w-[clamp(16rem,40%,22rem)] shrink-0 flex flex-col items-center justify-center px-[clamp(0.75rem,2vmin,1.25rem)] py-[clamp(0.75rem,2vmin,1.25rem)] bg-muted/30 border-r">
-          <h2 className="text-[clamp(0.75rem,1.8vmin,1rem)] font-semibold text-muted-foreground mb-[clamp(0.375rem,1vmin,0.625rem)]">
-            {t("tracking.enterNumber")}
+          <h2 className="text-[clamp(0.75rem,1.8vmin,1rem)] font-semibold text-muted-foreground mb-[clamp(0.375rem,1vmin,0.625rem)] text-center max-w-[80%]">
+            Enter your 6-digit order number
           </h2>
 
           {/* Order number display */}
@@ -219,7 +237,7 @@ export default function OrderLookup() {
             className={cn(
               "mt-[clamp(0.5rem,1.5vmin,1rem)] w-full max-w-[clamp(10rem,28vmin,16rem)]",
               "gap-[clamp(0.25rem,0.6vmin,0.375rem)]",
-              "bg-secondary hover:bg-secondary active:bg-secondary/80 text-white",
+              "bg-[#E6411C] hover:bg-[#d13a18] active:bg-[#d13a18]/90 text-white",
               "text-[clamp(0.75rem,1.6vmin,0.9375rem)] font-semibold",
               "py-[clamp(0.5rem,1.5vmin,0.875rem)] rounded-xl",
               "active:scale-[0.98] transition-all",
@@ -229,10 +247,6 @@ export default function OrderLookup() {
             <Search className="w-[clamp(0.75rem,1.6vmin,0.9375rem)] h-[clamp(0.75rem,1.6vmin,0.9375rem)]" />
             {t("tracking.lookup")}
           </Button>
-
-          <p className="text-[clamp(0.55rem,1.1vmin,0.7rem)] text-muted-foreground mt-[clamp(0.375rem,1vmin,0.625rem)] text-center">
-            {t("tracking.enterHint")}
-          </p>
         </div>
 
         {/* Right side - Results */}
@@ -381,7 +395,7 @@ export default function OrderLookup() {
                         </div>
                         <div className="flex justify-between items-center pt-[clamp(0.25rem,0.8vmin,0.5rem)] mt-[clamp(0.25rem,0.8vmin,0.5rem)] border-t font-bold text-[clamp(0.75rem,1.6vmin,0.9375rem)]">
                           <span>{t("cart.total")}</span>
-                          <span className="text-secondary">
+                          <span className="text-[#E6411C]">
                             {formatPrice(order.total)}
                           </span>
                         </div>
@@ -396,17 +410,16 @@ export default function OrderLookup() {
       </div>
 
       {/* Footer */}
-      <div className="shrink-0 px-[clamp(0.75rem,3vmin,1.5rem)] py-[clamp(0.5rem,1.5vmin,0.75rem)] border-t bg-background">
+      <div className="shrink-0 px-[clamp(1rem,4vmin,2rem)] py-[clamp(0.75rem,2vmin,1rem)] border-t bg-background flex justify-center">
         <Button
-          variant="outline"
           size="touch"
           onClick={() => navigate("/")}
           className={cn(
-            "w-full gap-[clamp(0.25rem,0.6vmin,0.375rem)]",
-            "text-[clamp(0.8rem,1.8vmin,1rem)]",
+             "w-full max-w-sm gap-[clamp(0.25rem,0.6vmin,0.375rem)]",
+            "text-[clamp(0.8rem,1.8vmin,1rem)] font-bold",
             "py-[clamp(0.625rem,2vmin,1rem)] rounded-xl",
-            "border-primary/30 text-primary",
-            "active:scale-[0.98] active:bg-primary/5 transition-all",
+            "bg-[#E6411C] hover:bg-[#d13a18] text-white",
+            "active:scale-[0.98] transition-all shadow-md",
           )}
         >
           <ArrowLeft className="w-[clamp(0.875rem,1.8vmin,1.125rem)] h-[clamp(0.875rem,1.8vmin,1.125rem)]" />
@@ -432,43 +445,36 @@ function OrderStatusBadge({ status }: { status: string }) {
 
   const config: Record<
     string,
-    { label: string; icon: typeof Clock; className: string }
+    { label: string; className: string }
   > = {
     new: {
       label: t("tracking.preparing"),
-      icon: Clock,
-      className: "bg-amber-50 text-amber-700 border-amber-300",
+      className: "bg-[#212282] text-white",
     },
     preparing: {
       label: t("tracking.preparing"),
-      icon: ChefHat,
-      className: "bg-amber-50 text-amber-700 border-amber-300",
+      className: "bg-[#212282] text-white",
     },
     out_for_delivery: {
       label: t("tracking.ready"),
-      icon: Package,
-      className: "bg-green-50 text-green-700 border-green-400",
+      className: "bg-[#212282] text-white",
     },
     arrived: {
       label: t("tracking.delivered"),
-      icon: Check,
-      className: "bg-primary/5 text-primary border-primary/30",
+      className: "bg-[#212282] text-white",
     },
     cancelled: {
       label: t("tracking.cancelled"),
-      icon: Clock,
-      className: "bg-red-50 text-red-700 border-red-300",
+      className: "bg-[#212282] text-white",
     },
   };
 
   const {
     label,
-    icon: Icon,
     className,
   } = config[status] || {
     label: status,
-    icon: Clock,
-    className: "bg-gray-100 text-gray-700 border-gray-300",
+    className: "bg-[#212282] text-white",
   };
 
   return (
@@ -476,12 +482,11 @@ function OrderStatusBadge({ status }: { status: string }) {
       className={cn(
         "flex items-center justify-center gap-[clamp(0.375rem,1vmin,0.625rem)]",
         "px-[clamp(1.25rem,4vmin,2rem)] py-[clamp(0.625rem,1.8vmin,1rem)]",
-        "rounded-full border-2 mx-auto",
-        "text-[clamp(0.875rem,2.2vmin,1.25rem)] font-semibold",
+        "rounded-full mx-auto shadow-sm",
+        "text-[clamp(0.875rem,2.2vmin,1.25rem)] font-bold",
         className,
       )}
     >
-      <Icon className="w-[clamp(1rem,2.2vmin,1.375rem)] h-[clamp(1rem,2.2vmin,1.375rem)]" />
       <span>{label}</span>
     </div>
   );
