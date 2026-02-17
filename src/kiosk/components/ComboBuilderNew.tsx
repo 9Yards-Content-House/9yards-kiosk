@@ -11,6 +11,7 @@ import {
   Flame,
 } from 'lucide-react';
 import { useGroupedMenu } from '@shared/hooks/useMenu';
+import { useTranslation } from '@shared/context/LanguageContext';
 import { useKioskCart } from '../context/KioskCartContext';
 import { useAccessibility } from '../context/AccessibilityContext';
 import { MenuItem, SauceSize } from '@shared/types';
@@ -37,11 +38,11 @@ interface ComboState {
 }
 
 const STEPS = [
-  { num: 1, label: 'Food' },
-  { num: 2, label: 'Sauce' },
-  { num: 3, label: 'Side' },
-  { num: 4, label: 'Extras' },
-  { num: 5, label: 'Review' },
+  { num: 1, labelKey: 'combo.step1Title' },
+  { num: 2, labelKey: 'combo.step2Title' },
+  { num: 3, labelKey: 'combo.step3Title' },
+  { num: 4, labelKey: 'combo.step4Title' },
+  { num: 5, labelKey: 'combo.step5Title' },
 ];
 
 const DRAFT_KEY = '9yards_combo_draft';
@@ -90,6 +91,7 @@ export default function ComboBuilder({
   editingItemId,
 }: ComboBuilderProps) {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const { data: groupedMenu = [], isLoading: menuLoading, error: menuError } = useGroupedMenu();
   const { addItem, removeItem, updateItem, items } = useKioskCart();
   const { vibrationEnabled } = useAccessibility();
@@ -110,7 +112,6 @@ export default function ComboBuilder({
   const [showResetModal, setShowResetModal] = useState(false);
   const [showSuccessOverlay, setShowSuccessOverlay] = useState(false);
   const [showDraftBanner, setShowDraftBanner] = useState(false);
-  const [isDraftLoaded, setIsDraftLoaded] = useState(false);
 
   // Get all available items flattened from grouped menu
   const allItems = useMemo(() => 
@@ -177,9 +178,19 @@ export default function ComboBuilder({
   }, [combo]);
 
   // Load draft or editing item on open
-  useEffect(() => {
-    if (!open) return;
+  // Initialize state when opening
+  const initializedRef = useRef(false);
 
+  useEffect(() => {
+    if (!open) {
+      initializedRef.current = false;
+      return;
+    }
+
+    if (initializedRef.current) return;
+    initializedRef.current = true;
+
+    // 1. Editing an existing cart item
     if (editingItemId) {
       const item = items.find((i) => i.id === editingItemId);
       if (item && item.type === 'combo') {
@@ -199,61 +210,67 @@ export default function ComboBuilder({
       }
     }
 
-    // Pre-select main dishes if provided
-    if (initialMainDishes && initialMainDishes.length > 0) {
-      setCombo((prev) => ({
-        ...prev,
-        mainDishes: initialMainDishes,
-      }));
-      setStep(2); // Skip to sauce selection since food is chosen
+    // 2. Starting fresh with pre-selected items (Override drafts)
+    if (initialMainDishes?.length || initialSauce || initialSideDish) {
+      const newCombo = {
+        mainDishes: initialMainDishes || [],
+        sauce: initialSauce || null,
+        saucePreparation: initialSauce?.preparations?.[0]
+          ? typeof initialSauce.preparations[0] === 'string'
+            ? initialSauce.preparations[0]
+            : initialSauce.preparations[0].name
+          : '',
+        sauceSize: initialSauce?.sizes?.[0] || null,
+        sideDish: initialSideDish || null,
+        extras: [],
+        quantity: 1,
+      };
+
+      setCombo(newCombo);
+
+      // Determine starting step based on what's missing
+      // User request: Always start from beginning even if items are pre-selected
+      setStep(1);
       return;
     }
 
-    // Pre-select side dish if provided
-    if (initialSideDish) {
-      setCombo((prev) => ({
-        ...prev,
-        sideDish: initialSideDish,
-      }));
-      setStep(1); // Start at step 1, user will build complete combo
+    // 3. Resuming a draft (Only if no specific overrides)
+    const draft = loadDraft();
+    if (draft) {
+      // Validate draft contents against current menu
+      const restoredSauce = draft.combo.sauce
+        ? sauces.find((s) => s.id === draft.combo.sauce?.id) || null
+        : null;
+
+      const restoredExtras = draft.combo.extras
+        .map((e) => {
+          const item = extrasItems.find((ei) => ei.id === e.item?.id);
+          return item ? { item, quantity: e.quantity } : null;
+        })
+        .filter(Boolean) as Array<{ item: MenuItem; quantity: number }>;
+
+      setCombo({
+        ...draft.combo,
+        sauce: restoredSauce,
+        extras: restoredExtras,
+      });
+      setStep(draft.step);
+      setShowDraftBanner(true);
       return;
     }
 
-    // Pre-select sauce if provided
-    if (initialSauce) {
-      const firstPrep = initialSauce.preparations?.[0];
-      const prepName = typeof firstPrep === 'string' ? firstPrep : firstPrep?.name || '';
-      setCombo((prev) => ({
-        ...prev,
-        sauce: initialSauce,
-        saucePreparation: prepName,
-        sauceSize: initialSauce.sizes?.[0] || null,
-      }));
-      setStep(1); // Start at step 1, user picks food first
-      return;
-    }
-
-    // Check for saved draft
-    if (!isDraftLoaded) {
-      const draft = loadDraft();
-      if (draft && !editingItemId && !initialSauce && !initialMainDishes && !initialSideDish) {
-        const restoredCombo = {
-          ...draft.combo,
-          sauce: draft.combo.sauce ? sauces.find((s) => s.id === draft.combo.sauce?.id) || null : null,
-          extras: draft.combo.extras
-            .map((e) => {
-              const item = extrasItems.find((ei) => ei.id === e.item?.id);
-              return item ? { item, quantity: e.quantity } : null;
-            })
-            .filter(Boolean) as Array<{ item: MenuItem; quantity: number }>,
-        };
-        setCombo(restoredCombo);
-        setStep(draft.step);
-        setShowDraftBanner(true);
-      }
-      setIsDraftLoaded(true);
-    }
-  }, [open, editingItemId, initialSauce, initialMainDishes, initialSideDish, items, sauces, extrasItems, isDraftLoaded]);
+    // 4. Default clean state
+    setCombo({
+      mainDishes: [],
+      sauce: null,
+      saucePreparation: '',
+      sauceSize: null,
+      sideDish: null,
+      extras: [],
+      quantity: 1,
+    });
+    setStep(1);
+  }, [open, editingItemId, initialMainDishes, initialSauce, initialSideDish, items, sauces, extrasItems]);
 
   // Auto-close draft banner
   useEffect(() => {
@@ -357,17 +374,17 @@ export default function ComboBuilder({
   const getNextButtonText = () => {
     switch (step) {
       case 1:
-        return 'Next: Choose Your Sauce';
+        return `${t('common.next')}: ${t('combo.step2Title')}`;
       case 2:
-        return 'Next: Choose Your Side Dish';
+        return `${t('common.next')}: ${t('combo.step3Title')}`;
       case 3:
-        return 'Next: Add Extras';
+        return `${t('common.next')}: ${t('combo.step4Title')}`;
       case 4:
-        return 'Review Your Combo';
+        return t('combo.step5Title');
       case 5:
-        return 'Add to Order';
+        return t('menu.addToOrder');
       default:
-        return 'Next';
+        return t('common.next');
     }
   };
 
@@ -565,7 +582,7 @@ export default function ComboBuilder({
                   }}
                   disabled={s.num > step}
                   aria-current={s.num === step ? 'step' : undefined}
-                  aria-label={`Step ${s.num} of ${STEPS.length}: ${s.label}${s.num < step ? ' (completed)' : s.num === step ? ' (current)' : ''}`}
+                  aria-label={`Step ${s.num} of ${STEPS.length}: ${t(s.labelKey as any)}${s.num < step ? ' (completed)' : s.num === step ? ' (current)' : ''}`}
                   className={cn(
                     'flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-bold transition-all',
                     s.num === step
@@ -587,7 +604,7 @@ export default function ComboBuilder({
                   >
                     {s.num < step ? <Check className="w-3 h-3" /> : s.num}
                   </span>
-                  <span className="hidden md:inline">{s.label}</span>
+                  <span className="hidden md:inline">{t(s.labelKey as any)}</span>
                 </button>
                 {idx < STEPS.length - 1 && (
                   <ChevronRight
@@ -626,12 +643,19 @@ export default function ComboBuilder({
             {/* Mobile Step Indicator */}
             <div className="flex flex-col items-center sm:hidden">
               <span className="text-xs font-bold uppercase tracking-widest text-[#E6411C]">
-                Step {step}: {['Choose Food', 'Choose Sauce', 'Choose Side', 'Add Extras', 'Review'][step - 1]}
+                {t('common.next')}: {[
+                  t('combo.step1Title'),
+                  t('combo.step2Title'),
+                  t('combo.step3Title'),
+                  t('combo.step4Title'),
+                  t('combo.step5Title')
+                ][step - 1]}
               </span>
               <div className="mt-1.5 flex gap-1">
                 {STEPS.map((s) => (
                   <button
                     key={s.num}
+
                     onClick={() => {
                       if (s.num < step) {
                         vibrate();
@@ -656,7 +680,13 @@ export default function ComboBuilder({
             {/* Desktop Step Text */}
             <div className="hidden sm:flex flex-col items-center">
               <span className="text-xs font-bold uppercase tracking-widest text-[#E6411C]">
-                Step {step}: {['Choose Food', 'Choose Sauce', 'Choose Side', 'Add Extras', 'Review'][step - 1]}
+                {t('common.next')}: {[
+                  t('combo.step1Title'),
+                  t('combo.step2Title'),
+                  t('combo.step3Title'),
+                  t('combo.step4Title'),
+                  t('combo.step5Title')
+                ][step - 1]}
               </span>
             </div>
 
@@ -787,16 +817,16 @@ export default function ComboBuilder({
                     id="combo-builder-title"
                     className="text-xl sm:text-[28px] font-extrabold leading-tight tracking-tight text-[#212282]"
                   >
-                    Choose Your Food
+                    {t('combo.step1Title')}
                   </h1>
                   {combo.mainDishes.length > 0 && (
                     <span className="shrink-0 px-2 sm:px-2.5 py-0.5 sm:py-1 rounded-full bg-[#E6411C] text-white text-xs sm:text-sm font-bold whitespace-nowrap">
-                      {combo.mainDishes.length} selected
+                      {combo.mainDishes.length} {t('menu.itemsInCategory')}
                     </span>
                   )}
                 </div>
                 <p className="text-sm sm:text-base text-gray-500 font-medium">
-                  Choose as many as you like. They're all included!
+                  {t('combo.step1Desc')}
                 </p>
               </div>
 
@@ -862,14 +892,14 @@ export default function ComboBuilder({
               <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2">
                 <div className="flex items-center justify-between gap-2 mb-1">
                   <h1 className="text-xl sm:text-2xl font-bold text-[#212282] tracking-tight">
-                    Choose Your Sauce
+                    {t('combo.step2Title')}
                   </h1>
                   <span className="shrink-0 px-1.5 sm:px-2 py-0.5 rounded-full bg-[#E6411C]/10 text-[#E6411C] text-[9px] sm:text-[10px] font-bold uppercase tracking-wider border border-[#E6411C]/20">
-                    Required
+                    {t('common.required')}
                   </span>
                 </div>
                 <p className="text-xs sm:text-sm text-gray-500">
-                  Select one sauce to accompany your meal.
+                  {t('combo.step2Desc')}
                 </p>
               </div>
 
@@ -928,10 +958,10 @@ export default function ComboBuilder({
             <div className="animate-in fade-in duration-300">
               <div className="px-4 sm:px-5 pt-4 sm:pt-5 pb-2 sm:pb-3">
                 <h1 className="text-xl sm:text-[28px] font-extrabold leading-[1.1] text-[#212282] mb-1 sm:mb-2">
-                  Choose Your Side Dish
+                  {t('combo.step3Title')}
                 </h1>
                 <p className="text-xs sm:text-base text-gray-600 leading-relaxed">
-                  Every combo includes a side dish of your choice!
+                  {t('combo.step3Desc')}
                 </p>
               </div>
 
@@ -978,7 +1008,7 @@ export default function ComboBuilder({
                             {side.name}
                           </p>
                           <p className="text-gray-500 text-xs font-medium mt-1.5 uppercase tracking-wide">
-                            Included
+                            {t('combo.includedFree')}
                           </p>
                         </div>
                         <div className="flex-shrink-0 pr-2">
@@ -1010,10 +1040,10 @@ export default function ComboBuilder({
                 <div className="flex items-start justify-between gap-4">
                   <div>
                     <h1 className="text-[#212282] tracking-tight text-2xl sm:text-[28px] font-extrabold leading-tight">
-                      Add Extras
+                      {t('combo.step4Title')}
                     </h1>
                     <p className="text-gray-500 text-sm mt-1">
-                      Optional add-ons to complete your meal
+                      {t('combo.step4Desc')}
                     </p>
                   </div>
                   <button
@@ -1023,7 +1053,7 @@ export default function ComboBuilder({
                     }}
                     className="shrink-0 px-4 py-2 rounded-xl border-2 border-gray-200 text-gray-600 text-sm font-bold hover:border-[#212282] hover:text-[#212282] transition-all"
                   >
-                    Skip →
+                    {t('common.skip')} →
                   </button>
                 </div>
               </div>
@@ -1034,7 +1064,7 @@ export default function ComboBuilder({
                   <div className="px-4 mb-2 sm:mb-3 flex justify-between items-end">
                     <div>
                       <h3 className="text-[#212282] text-lg sm:text-xl font-bold leading-tight tracking-tight">
-                        Natural Juice
+                        {t('category.juices')}
                       </h3>
                       <p className="text-gray-500 text-xs sm:text-sm font-medium mt-0.5 sm:mt-1">
                         Freshly squeezed • 100% Natural
@@ -1097,7 +1127,7 @@ export default function ComboBuilder({
                                 onClick={() => updateExtra(juice, 1)}
                                 className="w-full h-9 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm font-bold hover:bg-gray-50 transition-colors"
                               >
-                                Add +
+                                {t('common.next')} +
                               </button>
                             )}
                           </div>
@@ -1114,7 +1144,7 @@ export default function ComboBuilder({
                   <div className="px-4 mb-2 sm:mb-3 flex justify-between items-end">
                     <div>
                       <h3 className="text-[#212282] text-lg sm:text-xl font-bold leading-tight tracking-tight">
-                        Desserts
+                        {t('category.desserts')}
                       </h3>
                       <p className="text-gray-500 text-xs sm:text-sm font-medium mt-0.5 sm:mt-1">
                         Sweet treats to finish your meal
@@ -1177,7 +1207,7 @@ export default function ComboBuilder({
                                 onClick={() => updateExtra(dessert, 1)}
                                 className="w-full h-9 flex items-center justify-center rounded-xl border border-gray-200 text-[#212282] text-sm font-bold hover:bg-gray-50 transition-colors"
                               >
-                                Add +
+                                {t('common.next')} +
                               </button>
                             )}
                           </div>
@@ -1195,10 +1225,10 @@ export default function ComboBuilder({
             <div className="animate-in fade-in zoom-in-95 duration-300">
               <div className="px-4 sm:px-5 pt-5 sm:pt-6 pb-2">
                 <h1 className="text-xl sm:text-2xl font-black text-[#212282] tracking-tight mb-1">
-                  Review Your Combo
+                  {t('combo.step5Title')}
                 </h1>
                 <p className="text-xs sm:text-sm text-gray-500 font-medium">
-                  Almost there! Check your selections below.
+                  {t('combo.step5Desc')}
                 </p>
               </div>
 
@@ -1208,9 +1238,9 @@ export default function ComboBuilder({
                   <div className="flex items-center justify-between gap-4">
                     <div className="min-w-0">
                       <p className="text-white/70 text-[10px] sm:text-xs font-bold uppercase tracking-wider mb-0.5 sm:mb-1">
-                        How Many?
+                        {t('combo.selectSize')}?
                       </p>
-                      <p className="text-white text-base sm:text-lg font-bold">Combo Quantity</p>
+                      <p className="text-white text-base sm:text-lg font-bold">{t('combo.selectSize')}</p>
                     </div>
                     <div
                       className="flex items-center gap-2 sm:gap-3 bg-white/10 rounded-lg sm:rounded-xl p-0.5 sm:p-1 shrink-0"
@@ -1243,7 +1273,7 @@ export default function ComboBuilder({
                 </div>
 
                 {/* Main Dishes */}
-                <ReviewSection title="Main Dishes" onEdit={() => setStep(1)}>
+                <ReviewSection title={t('category.mainDishes')} onEdit={() => setStep(1)}>
                   <div className="flex flex-wrap gap-1.5 sm:gap-2">
                     {combo.mainDishes.map((name) => (
                       <span
@@ -1257,7 +1287,7 @@ export default function ComboBuilder({
                 </ReviewSection>
 
                 {/* Sauce */}
-                <ReviewSection title="Sauce Selection" onEdit={() => setStep(2)}>
+                <ReviewSection title={t('category.sauces')} onEdit={() => setStep(2)}>
                   <div className="flex items-center gap-3 sm:gap-4">
                     {combo.sauce && (
                       <img
@@ -1286,7 +1316,7 @@ export default function ComboBuilder({
                 </ReviewSection>
 
                 {/* Side Dish */}
-                <ReviewSection title="Side Dish" onEdit={() => setStep(3)}>
+                <ReviewSection title={t('category.sideDishes')} onEdit={() => setStep(3)}>
                   <div className="flex items-center gap-3 sm:gap-4">
                     {combo.sideDish && (
                       <img
@@ -1300,7 +1330,7 @@ export default function ComboBuilder({
                         {combo.sideDish || 'None selected'}
                       </p>
                       <p className="text-[10px] sm:text-xs text-gray-500 font-medium uppercase tracking-wider">
-                        Included
+                        {t('combo.includedFree')}
                       </p>
                     </div>
                   </div>
@@ -1308,7 +1338,7 @@ export default function ComboBuilder({
 
                 {/* Extras */}
                 {combo.extras.length > 0 && (
-                  <ReviewSection title="Extra Add-ons" onEdit={() => setStep(4)}>
+                  <ReviewSection title={t('combo.step4Title')} onEdit={() => setStep(4)}>
                     <div className="space-y-1.5 sm:space-y-2">
                       {combo.extras.map((e) => (
                         <div key={e.item.id} className="flex justify-between items-center text-xs sm:text-sm">
@@ -1364,7 +1394,7 @@ export default function ComboBuilder({
                       step >= 2 ? 'text-white/60' : 'text-gray-500'
                     )}
                   >
-                    Total
+                    {t('cart.total')}
                   </p>
                   <p
                     className={cn(
@@ -1410,7 +1440,7 @@ export default function ComboBuilder({
         {showCancelModal && (
           <div className="absolute inset-0 z-[100] flex items-center justify-center p-6 bg-black/40 backdrop-blur-sm animate-in fade-in duration-100">
             <div className="bg-white rounded-3xl p-6 w-full max-w-sm shadow-2xl animate-in zoom-in-95 duration-100">
-              <h3 className="text-xl font-extrabold text-[#212282] mb-2">Close Combo Builder?</h3>
+              <h3 className="text-xl font-extrabold text-[#212282] mb-2">{t('common.close')} Combo Builder?</h3>
               <p className="text-gray-500 text-sm font-medium mb-6">
                 Don't worry! Your progress will be saved automatically so you can finish your combo later.
               </p>
@@ -1428,7 +1458,7 @@ export default function ComboBuilder({
                   }}
                   className="w-full h-12 rounded-xl border-2 border-gray-100 text-gray-500 font-bold hover:bg-gray-50 transition-colors"
                 >
-                  Save & Close
+                  {t('common.save')} & {t('common.close')}
                 </button>
                 <button
                   onClick={() => {
@@ -1509,13 +1539,13 @@ export default function ComboBuilder({
                 <Check className="size-12 text-white" strokeWidth={4} />
               </div>
               <h2 className="text-4xl font-black mb-2 tracking-tight">
-                {combo.quantity > 1 ? `${combo.quantity} Combos` : 'Added to Cart!'}
+                {combo.quantity > 1 ? `${combo.quantity} Combos` : t('combo.addToCart')}!
               </h2>
               <p className="text-white/60 font-bold uppercase tracking-widest text-sm mb-4">
-                {combo.quantity > 1 ? 'Added to Cart!' : 'Great Selection'}
+                {combo.quantity > 1 ? t('combo.addToCart') + '!' : 'Great Selection'}
               </p>
               {combo.quantity > 1 && (
-                <p className="text-white/80 text-lg font-bold mb-8">Total: {formatPrice(totalPrice)}</p>
+                <p className="text-white/80 text-lg font-bold mb-8">{t('cart.total')}: {formatPrice(totalPrice)}</p>
               )}
 
               <div
@@ -1532,8 +1562,8 @@ export default function ComboBuilder({
                   }}
                   className="flex-1 h-11 sm:h-14 rounded-xl border-2 border-white/20 font-bold text-xs sm:text-base hover:bg-white/10 transition-colors flex items-center justify-center px-2 sm:px-6"
                 >
-                  <span className="sm:hidden">Add More</span>
-                  <span className="hidden sm:inline">Order More Items</span>
+                  <span className="sm:hidden">{t('cart.addMore')}</span>
+                  <span className="hidden sm:inline">{t('cart.addMore')}</span>
                 </button>
                 <button
                   onClick={() => {
@@ -1544,8 +1574,8 @@ export default function ComboBuilder({
                   }}
                   className="flex-1 h-11 sm:h-14 rounded-xl bg-[#E6411C] flex items-center justify-center font-bold text-xs sm:text-base hover:bg-[#d13a18] transition-colors shadow-lg px-2 sm:px-6"
                 >
-                  <span className="sm:hidden">Checkout</span>
-                  <span className="hidden sm:inline">Proceed to Checkout</span>
+                  <span className="sm:hidden">{t('cart.checkout')}</span>
+                  <span className="hidden sm:inline">{t('cart.checkout')}</span>
                 </button>
               </div>
             </div>

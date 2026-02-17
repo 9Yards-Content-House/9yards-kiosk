@@ -242,24 +242,23 @@ export default function MenuNew() {
 
     if (item?.originalItem) {
       const menuItem = item.originalItem;
-      const category = categories.find((c) => c.id === menuItem.category_id);
-      const categorySlug = category?.slug;
+      const categoryType = item.categoryType;
 
       // Pre-select based on item type and category
-      if (menuItem.item_type === 'combo_driver') {
+      if (categoryType === 'sauce') {
         // This is a sauce - pre-select it
         setSelectedSauce(menuItem);
-      } else if (categorySlug === 'main-dishes') {
+      } else if (categoryType === 'main') {
         // This is a main dish - pre-select it
         setSelectedMainDishes([menuItem.name]);
-      } else if (categorySlug === 'side-dishes') {
+      } else if (categoryType === 'side') {
         // This is a side dish - pre-select it
         setSelectedSideDish(menuItem.name);
       }
     }
 
     setComboBuilderOpen(true);
-  }, [play, vibrationEnabled, categories]);
+  }, [play, vibrationEnabled]);
 
   const handleCloseComboBuilder = useCallback(() => {
     setComboBuilderOpen(false);
