@@ -126,17 +126,27 @@
   }
 }
 
-/* Tablet: 2-column kanban with horizontal scroll */
-@media (min-width: 769px) and (max-width: 1024px) {
+/* Tablet/Small Desktop: Horizontal scrolling kanban */
+@media (min-width: 768px) and (max-width: 1280px) {
   .kanban-board {
-    grid-template-columns: repeat(2, minmax(280px, 1fr));
+    display: grid;
+    grid-template-columns: none; /* Override the default repeat(4) */
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(340px, 400px); /* Fixed width columns */
+    gap: 1.5rem;
     overflow-x: auto;
+    padding-bottom: 1.5rem; /* Space for scrollbar */
     scroll-snap-type: x mandatory;
+    justify-content: start; /* Align to start */
+  }
+  
+  .kanban-board > * {
+    scroll-snap-align: start;
   }
 }
 
-/* Large screens: show all 4 columns, no horizontal scroll */
-@media (min-width: 1280px) {
+/* Large screens: show all 4 columns */
+@media (min-width: 1281px) {
   .kanban-board {
     grid-template-columns: repeat(4, 1fr);
     max-width: 100%;
