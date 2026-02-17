@@ -141,9 +141,20 @@ export default function MenuNew() {
     return counts;
   }, [processedItems]);
 
+// Category sorting priority (Combo Flow)
+const CATEGORY_PRIORITY: Record<Category, number> = {
+  all: 0,
+  lusaniya: 1,
+  main: 2,
+  sauce: 3,
+  side: 4,
+  juice: 5,
+  dessert: 6,
+};
+
   // Filter items based on search and category
   const filteredItems = useMemo(() => {
-    let items = processedItems.filter((item) => item.available);
+    let items = [...processedItems].filter((item) => item.available);
 
     // Category filter
     if (activeCategory !== 'all') {
@@ -161,7 +172,26 @@ export default function MenuNew() {
       );
     }
 
-    return items;
+    // Apply logical sorting
+    return items.sort((a, b) => {
+      // 1. Category Priority (only relevant for 'all' view)
+      if (activeCategory === 'all') {
+        const priorityA = CATEGORY_PRIORITY[a.categoryType] || 99;
+        const priorityB = CATEGORY_PRIORITY[b.categoryType] || 99;
+        if (priorityA !== priorityB) return priorityA - priorityB;
+      }
+
+      // 2. Popular Items First
+      if (a.isPopular && !b.isPopular) return -1;
+      if (!a.isPopular && b.isPopular) return 1;
+
+      // 3. New Items Second
+      if (a.isNew && !b.isNew) return -1;
+      if (!a.isNew && b.isNew) return 1;
+
+      // 4. Alphabetical Order
+      return a.name.localeCompare(b.name);
+    });
   }, [processedItems, activeCategory, searchQuery]);
 
   // Scroll to item when highlighting
