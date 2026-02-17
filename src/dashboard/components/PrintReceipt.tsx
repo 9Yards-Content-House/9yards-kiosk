@@ -6,12 +6,14 @@ import type { Order } from "@shared/types/orders";
 
 interface PrintReceiptProps {
   order: Order;
+  trigger?: React.ReactNode;
 }
 
-export default function PrintReceipt({ order }: PrintReceiptProps) {
+export default function PrintReceipt({ order, trigger }: PrintReceiptProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
-  const handlePrint = () => {
+  const handlePrint = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Stop propagation for card clicks
     const printContent = printRef.current;
     if (!printContent) return;
 
@@ -64,10 +66,14 @@ export default function PrintReceipt({ order }: PrintReceiptProps) {
 
   return (
     <>
-      <Button variant="outline" onClick={handlePrint}>
-        <Printer className="w-4 h-4 mr-2" />
-        Print Receipt
-      </Button>
+      <div onClick={handlePrint} className="inline-block">
+        {trigger || (
+          <Button variant="outline">
+            <Printer className="w-4 h-4 mr-2" />
+            Print Receipt
+          </Button>
+        )}
+      </div>
 
       {/* Hidden receipt template */}
       <div style={{ display: "none" }}>

@@ -1,5 +1,5 @@
 import { useNavigate } from "react-router-dom";
-import { Clock, User, Package, ChevronRight, X, AlertTriangle, MessageSquare } from "lucide-react";
+import { Clock, User, Package, ChevronRight, X, AlertTriangle, Printer, CreditCard, Smartphone, Banknote } from "lucide-react";
 import { cn, formatPrice, timeAgo } from "@shared/lib/utils";
 import { useUpdateOrderStatus, useCancelOrder } from "@shared/hooks/useOrders";
 import { ORDER_STATUS_FLOW, ORDER_STATUS_LABELS } from "@shared/types/orders";
@@ -7,12 +7,33 @@ import StatusBadge from "./StatusBadge";
 import type { Order, OrderStatus } from "@shared/types/orders";
 import { toast } from "sonner";
 import { Badge } from "@shared/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@shared/components/ui/alert-dialog";
+import PrintReceipt from "./PrintReceipt";
 
 interface OrderCardProps {
   order: Order;
   isNew?: boolean;
   onAdvance?: (order: Order, nextStatus: OrderStatus) => void;
 }
+
+const PaymentIcon = ({ method }: { method: string }) => {
+  switch (method) {
+    case "mobile_money": return <Smartphone className="w-3.5 h-3.5" />;
+    case "cash": return <Banknote className="w-3.5 h-3.5" />;
+    case "card": return <CreditCard className="w-3.5 h-3.5" />;
+    default: return <CreditCard className="w-3.5 h-3.5" />;
+  }
+};
 
 export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
   const navigate = useNavigate();
@@ -52,8 +73,7 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
     }
   };
 
-  const handleCancel = async (e: React.MouseEvent) => {
-    e.stopPropagation();
+  const executeCancel = async () => {
     try {
       await cancelOrder.mutateAsync(order.id);
       toast.success("Order cancelled");
@@ -112,7 +132,10 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
       )}
 
       <div className="mt-2 pt-2 border-t flex items-center justify-between text-xs text-muted-foreground">
-        <span className="capitalize">{order.payment_method.replace("_", " ")}</span>
+        <div className="flex items-center gap-1.5" title={order.payment_method.replace("_", " ")}>
+          <PaymentIcon method={order.payment_method} />
+          <span className="capitalize">{order.payment_method.replace("_", " ")}</span>
+        </div>
         <span className="capitalize">{order.payment_status}</span>
       </div>
 
@@ -135,18 +158,55 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
               )}
             </button>
           )}
-          <button
-            onClick={handleCancel}
-            disabled={cancelOrder.isPending}
-            className="px-3 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 active:scale-[0.98] disabled:opacity-50 transition-all"
-            title="Cancel Order"
-          >
-            {cancelOrder.isPending ? (
-              <span className="animate-spin w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full" />
-            ) : (
-              <X className="w-4 h-4" />
-            )}
-          </button>
+
+          <PrintReceipt
+            order={order}
+            trigger={
+              <button
+                className="px-3 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-sm font-medium text-foreground bg-muted hover:bg-muted/80 rounded-lg active:scale-[0.98] transition-all"
+                title="Print Receipt"
+              >
+                <Printer className="w-4 h-4" />
+              </button>
+            }
+          />
+
+          <AlertDialog>
+            <AlertDialogTrigger asChild>
+              <button
+                onClick={(e) => e.stopPropagation()}
+                disabled={cancelOrder.isPending}
+                className="px-3 py-2.5 min-h-[44px] min-w-[44px] flex items-center justify-center text-sm font-medium text-red-600 bg-red-50 rounded-lg hover:bg-red-100 active:scale-[0.98] disabled:opacity-50 transition-all"
+                title="Cancel Order"
+              >
+                {cancelOrder.isPending ? (
+                  <span className="animate-spin w-4 h-4 border-2 border-red-600 border-t-transparent rounded-full" />
+                ) : (
+                  <X className="w-4 h-4" />
+                )}
+              </button>
+            </AlertDialogTrigger>
+            <AlertDialogContent onClick={(e) => e.stopPropagation()}>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Are you sure you want to cancel order #{order.order_number}? This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                <AlertDialogAction 
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    executeCancel();
+                  }} 
+                  className="bg-destructive hover:bg-destructive/90"
+                >
+                  Yes, Cancel
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
         </div>
       )}
     </div>

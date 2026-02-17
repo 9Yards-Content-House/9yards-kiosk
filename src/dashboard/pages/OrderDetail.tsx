@@ -11,6 +11,17 @@ import {
 import type { OrderStatus } from "@shared/types/orders";
 import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@shared/components/ui/alert-dialog";
 import StatusBadge from "../components/StatusBadge";
 import OrderTimeline from "../components/OrderTimeline";
 import PrintReceipt from "../components/PrintReceipt";
@@ -77,10 +88,8 @@ export default function OrderDetail() {
       await updateStatus.mutateAsync({
         orderId: order.id,
         status: "out_for_delivery",
-        riderId, // Note: the hook might need adjustment if it doesn't support riderId yet
+        riderId,
       });
-      // The shared updateStatus hook might need verification. 
-      // Let's check the useUpdateOrderStatus hook implementation if it supports riderId.
       toast.success("Rider assigned! Order is out for delivery.");
       setAssignModalOpen(false);
     } catch (err) {
@@ -90,7 +99,7 @@ export default function OrderDetail() {
     }
   };
 
-  const handleCancel = async () => {
+  const executeCancel = async () => {
     try {
       await cancelOrder.mutateAsync(order.id);
       toast.success("Order cancelled");
@@ -101,7 +110,7 @@ export default function OrderDetail() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl">
+    <div className="p-4 md:p-6 max-w-3xl pb-24 md:pb-6 relative min-h-screen md:min-h-0">
       {/* Header */}
       <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
         <button
@@ -211,26 +220,49 @@ export default function OrderDetail() {
         </div>
       </div>
 
-      {/* Actions */}
+      {/* Actions - Sticky on mobile */}
       {order.status !== "arrived" && order.status !== "cancelled" && (
-        <div className="flex gap-3">
-          {nextStatus && (
-            <Button
-              className="flex-1 bg-secondary hover:bg-secondary/90 min-h-[48px] text-base"
-              onClick={handleAdvance}
-              disabled={updateStatus.isPending}
-            >
-              Move to {ORDER_STATUS_LABELS[nextStatus]}
-            </Button>
-          )}
-          <Button
-            variant="destructive"
-            onClick={handleCancel}
-            disabled={cancelOrder.isPending}
-            className="min-h-[48px]"
-          >
-            Cancel Order
-          </Button>
+        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t shadow-lg z-20 md:static md:p-0 md:bg-transparent md:border-t-0 md:shadow-none md:z-auto">
+          <div className="flex gap-3 max-w-3xl mx-auto">
+            {nextStatus && (
+              <Button
+                className="flex-1 bg-secondary hover:bg-secondary/90 min-h-[48px] text-base"
+                onClick={handleAdvance}
+                disabled={updateStatus.isPending}
+              >
+                Move to {ORDER_STATUS_LABELS[nextStatus]}
+              </Button>
+            )}
+            
+            <AlertDialog>
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="destructive"
+                  disabled={cancelOrder.isPending}
+                  className="min-h-[48px]"
+                >
+                  Cancel Order
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Cancel Order?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    Are you sure you want to cancel order #{order.order_number}? This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Keep Order</AlertDialogCancel>
+                  <AlertDialogAction 
+                    onClick={executeCancel}
+                    className="bg-destructive hover:bg-destructive/90"
+                  >
+                    Yes, Cancel
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </div>
         </div>
       )}
 
