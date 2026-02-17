@@ -238,7 +238,7 @@ export default function Payment() {
           <div className="pt-4 mt-4 border-t border-gray-200 space-y-2">
             <div className="flex justify-between items-center">
               <span className="text-gray-500">{items.reduce((sum, item) => sum + item.quantity, 0)} items</span>
-              <span className="text-sm text-gray-500">Pay on delivery</span>
+              <span className="text-sm text-gray-500">Pay on Delivery</span>
             </div>
             <div className="flex justify-between items-center pt-2 border-t border-gray-100">
               <span className="font-bold text-lg text-[#212282]">Total</span>

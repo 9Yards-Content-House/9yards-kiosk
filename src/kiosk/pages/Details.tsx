@@ -53,10 +53,11 @@ const detectNetworkOperator = (phone: string): { name: string; color: string; lo
       name: 'MTN',
       color: '#FFCC00',
       logo: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="10" cy="10" r="10" fill="#FFCC00"/>
-          <text x="10" y="14" textAnchor="middle" fontSize="8" fontWeight="bold" fill="#000">MTN</text>
-        </svg>
+        <img 
+          src="/images/networks/mtn-new-logo.svg" 
+          alt="MTN" 
+          className="h-6 w-auto object-contain"
+        />
       )
     };
   }
@@ -67,10 +68,11 @@ const detectNetworkOperator = (phone: string): { name: string; color: string; lo
       name: 'Airtel',
       color: '#ED1C24',
       logo: (
-        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" xmlns="http://www.w3.org/2000/svg">
-          <circle cx="10" cy="10" r="10" fill="#ED1C24"/>
-          <path d="M6 14L10 6L14 14" stroke="white" strokeWidth="2" fill="none"/>
-        </svg>
+        <img 
+          src="/images/networks/Airtel_Uganda-Logo.wine.svg" 
+          alt="Airtel" 
+          className="h-6 w-auto object-contain"
+        />
       )
     };
   }
@@ -285,7 +287,7 @@ export default function Details() {
                   className="px-2 py-0.5 rounded-full text-xs font-medium"
                   style={{ backgroundColor: `${networkOperator.color}20`, color: networkOperator.color }}
                 >
-                  {networkOperator.name}
+                  {networkOperator.logo || networkOperator.name}
                 </span>
               )}
             </p>
@@ -301,8 +303,8 @@ export default function Details() {
                 <CheckCircle2 className="w-5 h-5 sm:w-6 sm:h-6" />
               </div>
               <div>
-                <p className="font-bold text-[#212282] text-sm sm:text-base">Pay at Counter</p>
-                <p className="text-xs sm:text-sm text-gray-500">Pay when you pick up your order</p>
+                <p className="font-bold text-[#212282] text-sm sm:text-base">Pay on Delivery</p>
+                <p className="text-xs sm:text-sm text-gray-500">Pay the delivery person when your order arrives</p>
               </div>
             </div>
           </div>
@@ -349,7 +351,7 @@ export default function Details() {
               <span className="text-base sm:text-lg font-bold text-[#212282]">Total</span>
             </div>
             <div className="flex justify-between items-center">
-              <span className="text-xs sm:text-sm text-gray-400">Pay at counter</span>
+              <span className="text-xs sm:text-sm text-gray-400">Pay on delivery</span>
               <span className="text-xl sm:text-2xl font-bold text-[#E6411C]">{formatPrice(subtotal)}</span>
             </div>
           </div>
