@@ -10,6 +10,7 @@ import {
   Package,
   Delete,
   MessageSquare,
+  Bike,
 } from "lucide-react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { useTranslation } from "@shared/context/LanguageContext";
@@ -509,10 +510,10 @@ function OrderTimeline({ order }: { order: Order }) {
       icon: ChefHat,
     },
     {
-      label: t("tracking.readyAt"),
+      label: "Out for Delivery",
       time: order.ready_at,
       completed: !!order.ready_at,
-      icon: Package,
+      icon: Bike,
     },
     {
       label: t("tracking.deliveredAt"),
