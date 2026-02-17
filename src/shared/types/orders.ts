@@ -124,7 +124,7 @@ export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
 export const ORDER_STATUS_COLORS: Record<OrderStatus, string> = {
   new: "bg-blue-100 text-blue-800",
   preparing: "bg-yellow-100 text-yellow-800",
-  out_for_delivery: "bg-purple-100 text-purple-800",
+  out_for_delivery: "bg-green-100 text-green-800",
   arrived: "bg-green-100 text-green-800",
   delivered: "bg-blue-100 text-blue-800",
   cancelled: "bg-red-100 text-red-800",
