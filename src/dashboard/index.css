@@ -132,7 +132,7 @@
     display: grid;
     grid-template-columns: none; /* Override the default repeat(4) */
     grid-auto-flow: column;
-    grid-auto-columns: minmax(340px, 400px); /* Fixed width columns */
+    grid-auto-columns: minmax(320px, 45%); /* Flexible width columns */
     gap: 1.5rem;
     overflow-x: auto;
     padding-bottom: 1.5rem; /* Space for scrollbar */
