@@ -110,33 +110,68 @@ export default function OrderDetail() {
   };
 
   return (
-    <div className="p-4 md:p-6 max-w-3xl pb-24 md:pb-6 relative min-h-screen md:min-h-0">
+    <div className="p-4 md:p-6 max-w-3xl pb-40 md:pb-6 relative min-h-screen md:min-h-0">
       {/* Header */}
-      <div className="flex items-center gap-3 md:gap-4 mb-6 flex-wrap">
-        <button
-          onClick={() => navigate("/orders")}
-          className="w-11 h-11 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 active:scale-95 transition-all"
-        >
-          <ArrowLeft className="w-5 h-5" />
-        </button>
-        <div className="flex-1 min-w-0">
-          <h1 className="text-xl md:text-2xl font-bold truncate">{order.order_number}</h1>
-          <p className="text-muted-foreground text-sm">{timeAgo(order.created_at)}</p>
-        </div>
-        {/* Edit button - only show for non-completed orders */}
-        {order.status !== "arrived" && order.status !== "cancelled" && (
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setEditModalOpen(true)}
-            className="min-h-[44px] px-4"
+      {/* Header */}
+      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-6">
+        <div className="flex items-start gap-3 md:gap-4 w-full">
+          <button
+            onClick={() => navigate("/orders")}
+            className="w-10 h-10 md:w-11 md:h-11 flex-shrink-0 flex items-center justify-center rounded-lg bg-muted hover:bg-muted/80 active:scale-95 transition-all"
           >
-            <FileEdit className="w-4 h-4 mr-2" />
-            Edit
-          </Button>
-        )}
-        <PrintReceipt order={order} />
-        <StatusBadge status={order.status} />
+            <ArrowLeft className="w-5 h-5" />
+          </button>
+          
+          <div className="flex-1 min-w-0">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <h1 className="text-xl md:text-2xl font-bold truncate leading-tight">{order.order_number}</h1>
+                <p className="text-muted-foreground text-sm mt-0.5">{timeAgo(order.created_at)}</p>
+              </div>
+              <div className="md:hidden">
+                <StatusBadge status={order.status} />
+              </div>
+            </div>
+          </div>
+
+          <div className="hidden md:flex items-center gap-2">
+             <PrintReceipt order={order} />
+             <StatusBadge status={order.status} />
+          </div>
+        </div>
+
+        {/* Mobile Actions Row (Edit, Print) */}
+        <div className="flex items-center gap-2 md:hidden">
+          {order.status !== "arrived" && order.status !== "cancelled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditModalOpen(true)}
+              className="flex-1 h-9"
+            >
+              <FileEdit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          )}
+          <div className="flex-shrink-0">
+            <PrintReceipt order={order} />
+          </div>
+        </div>
+
+        {/* Desktop Edit Button */}
+        <div className="hidden md:block">
+           {order.status !== "arrived" && order.status !== "cancelled" && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setEditModalOpen(true)}
+              className="min-h-[44px] px-4"
+            >
+              <FileEdit className="w-4 h-4 mr-2" />
+              Edit
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Details grid */}
@@ -159,8 +194,8 @@ export default function OrderDetail() {
               {order.customer_location}
             </div>
           )}
-          <div className="flex items-center gap-2 text-sm">
-            <CreditCard className="w-4 h-4 text-muted-foreground" />
+          <div className="flex flex-wrap items-center gap-2 text-sm">
+            <CreditCard className="w-4 h-4 text-muted-foreground flex-shrink-0" />
             <span className="capitalize">{formatPaymentMethod(order.payment_method)}</span>
             <Badge variant={order.payment_status === "paid" ? "default" : "secondary"}>
               {order.payment_status}
@@ -184,10 +219,10 @@ export default function OrderDetail() {
             : (item.sauce_name || "Item");
           
           return (
-            <div key={item.id} className="flex justify-between py-2 border-b last:border-b-0">
-              <div>
-                <p className="font-medium">
-                  {itemName} x{item.quantity}
+            <div key={item.id} className="flex justify-between items-start py-3 gap-4 border-b last:border-b-0">
+              <div className="min-w-0">
+                <p className="font-medium leading-tight">
+                  {itemName} <span className="text-muted-foreground ml-1">x{item.quantity}</span>
                 </p>
                 {item.main_dishes && item.main_dishes.length > 0 && (
                   <p className="text-sm text-muted-foreground">
@@ -222,26 +257,19 @@ export default function OrderDetail() {
 
       {/* Actions - Sticky on mobile */}
       {order.status !== "arrived" && order.status !== "cancelled" && (
-        <div className="fixed bottom-0 left-0 right-0 p-4 bg-background/95 backdrop-blur border-t shadow-lg z-20 md:static md:p-0 md:bg-transparent md:border-t-0 md:shadow-none md:z-auto">
+        <div 
+          className="fixed left-0 right-0 p-4 bg-background/95 backdrop-blur border-t shadow-lg z-20 md:static md:p-0 md:bg-transparent md:border-t-0 md:shadow-none md:z-auto"
+          style={{ bottom: "calc(3.5rem + env(safe-area-inset-bottom))" }}
+        >
           <div className="flex gap-3 max-w-3xl mx-auto">
-            {nextStatus && (
-              <Button
-                className="flex-1 bg-secondary hover:bg-secondary/90 min-h-[48px] text-base"
-                onClick={handleAdvance}
-                disabled={updateStatus.isPending}
-              >
-                Move to {ORDER_STATUS_LABELS[nextStatus]}
-              </Button>
-            )}
-            
             <AlertDialog>
               <AlertDialogTrigger asChild>
                 <Button
-                  variant="destructive"
+                  variant="outline"
                   disabled={cancelOrder.isPending}
-                  className="min-h-[48px]"
+                  className="flex-1 min-h-[48px] border-destructive text-destructive hover:bg-destructive/10 hover:text-destructive"
                 >
-                  Cancel Order
+                  Cancel
                 </Button>
               </AlertDialogTrigger>
               <AlertDialogContent>
@@ -262,6 +290,16 @@ export default function OrderDetail() {
                 </AlertDialogFooter>
               </AlertDialogContent>
             </AlertDialog>
+
+            {nextStatus && (
+              <Button
+                className="flex-[2] bg-primary text-primary-foreground hover:bg-primary/90 min-h-[48px] text-base font-semibold shadow-md"
+                onClick={handleAdvance}
+                disabled={updateStatus.isPending}
+              >
+                Move to {ORDER_STATUS_LABELS[nextStatus]}
+              </Button>
+            )}
           </div>
         </div>
       )}
