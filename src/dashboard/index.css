@@ -148,8 +148,9 @@
 /* Large screens: show all 4 columns */
 @media (min-width: 1281px) {
   .kanban-board {
-    grid-template-columns: repeat(4, 1fr);
+    grid-template-columns: repeat(4, minmax(300px, 1fr));
     max-width: 100%;
-    overflow-x: hidden;
+    overflow-x: auto;
+    padding-bottom: 1rem;
   }
 }

@@ -146,14 +146,14 @@ export default function OrderCard({ order, isNew, onAdvance }: OrderCardProps) {
             <button
               onClick={handleAdvance}
               disabled={updateStatus.isPending}
-              className="flex-1 flex items-center justify-center gap-1.5 px-3 py-2.5 min-h-[44px] text-sm font-medium bg-secondary text-white rounded-lg hover:bg-secondary/90 active:scale-[0.98] disabled:opacity-50 transition-all"
+              className="flex-1 flex items-center justify-center gap-1.5 px-2 py-2.5 min-h-[44px] text-sm font-medium bg-secondary text-white rounded-lg hover:bg-secondary/90 active:scale-[0.98] disabled:opacity-50 transition-all whitespace-nowrap"
             >
               {updateStatus.isPending ? (
                 <span className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
               ) : (
                 <>
                   <ChevronRight className="w-4 h-4" />
-                  {ORDER_STATUS_LABELS[nextStatus]}
+                  {nextStatus === 'out_for_delivery' ? 'Start Delivery' : ORDER_STATUS_LABELS[nextStatus]}
                 </>
               )}
             </button>
