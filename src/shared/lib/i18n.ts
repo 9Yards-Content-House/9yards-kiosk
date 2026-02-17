@@ -296,7 +296,7 @@ const translations: { en: TranslationKeys } = {
     // Combo Builder
     'combo.title': 'Build Your Combo',
     'combo.step1Title': 'Choose Your Food',
-    'combo.step1Desc': 'Select your main dishes (included free)',
+    'combo.step1Desc': 'Select your main dishes',
     'combo.step2Title': 'Choose Your Sauce',
     'combo.step2Desc': 'Pick your protein - this sets your combo price',
     'combo.step3Title': 'Choose Side Dish',
@@ -306,13 +306,13 @@ const translations: { en: TranslationKeys } = {
     'combo.step5Title': 'Review Order',
     'combo.step5Desc': 'Check your selections before adding to cart',
     'combo.selectPreparation': 'How would you like it prepared?',
-    'combo.selectSize': 'Select portion size',
+    'combo.selectSize': 'How many of this combo?',
     'combo.selectedItems': 'Selected Items',
     'combo.runningTotal': 'Running Total',
-    'combo.addToCart': 'Add to Cart',
+    'combo.addToCart': 'Added to Order',
     'combo.updateCart': 'Update Cart',
     'combo.editSelection': 'Edit',
-    'combo.includedFree': 'Included FREE',
+    'combo.includedFree': 'Included',
     
     // Cart
     'cart.title': 'Your Order',

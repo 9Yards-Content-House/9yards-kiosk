@@ -1138,6 +1138,13 @@ export default function ComboBuilder({
                 </section>
               )}
 
+              {/* Divider between Juices and Desserts */}
+              {juices.length > 0 && desserts.length > 0 && (
+                <div className="px-4 mb-6">
+                  <div className="h-px bg-gray-100" />
+                </div>
+              )}
+
               {/* Desserts Section */}
               {desserts.length > 0 && (
                 <section className="mb-4 sm:mb-6">
