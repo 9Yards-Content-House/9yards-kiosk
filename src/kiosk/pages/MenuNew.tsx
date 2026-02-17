@@ -261,20 +261,20 @@ export default function MenuNew() {
     if (item.price) {
       if (item.categoryType === 'sauce') {
         return (
-          <span className="text-[#E6411C] font-bold text-[clamp(1rem,1.5vw,1.5rem)]">
+          <span className="text-secondary font-bold text-base">
             {formatPrice(item.price)}
           </span>
         );
       }
       if (item.categoryType === 'juice' || item.categoryType === 'dessert') {
         return (
-          <span className="text-[#E6411C] font-bold text-[clamp(1rem,1.5vw,1.5rem)]">
+          <span className="text-secondary font-bold text-base">
             {formatPrice(item.price)}
           </span>
         );
       }
       return (
-        <span className="text-[#E6411C] font-extrabold text-[clamp(1.125rem,1.8vw,1.75rem)]">
+        <span className="text-secondary font-extrabold text-lg">
           {formatPrice(item.price)}
         </span>
       );
@@ -347,7 +347,7 @@ export default function MenuNew() {
               onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Find your favorite dish..."
               aria-label="Search menu items"
-              className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-background text-sm focus:border-[#E6411C] focus:ring-1 focus:ring-[#E6411C]/20 focus:outline-none transition-all"
+              className="w-full pl-10 pr-10 py-2.5 rounded-xl border border-border bg-background text-sm focus:border-secondary focus:ring-1 focus:ring-secondary/20 focus:outline-none transition-all"
               inputMode="search"
               enterKeyHint="search"
               autoComplete="off"
@@ -355,7 +355,7 @@ export default function MenuNew() {
             {searchQuery && (
               <button
                 onClick={() => setSearchQuery('')}
-                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C]"
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 hover:bg-muted rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary"
                 aria-label="Clear search"
               >
                 <X className="w-4 h-4 text-muted-foreground" aria-hidden="true" />
@@ -386,10 +386,10 @@ export default function MenuNew() {
                 aria-selected={isActive}
                 aria-controls="menu-grid"
                 className={cn(
-                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border min-h-[40px] flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2',
+                  'flex items-center gap-1.5 px-4 py-2 rounded-full text-sm font-medium whitespace-nowrap transition-all border min-h-[40px] flex-shrink-0 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2',
                   isActive
-                    ? 'bg-[#E6411C] text-white border-[#E6411C] shadow-md'
-                    : 'bg-card text-muted-foreground border-border hover:border-[#E6411C]/50 hover:bg-[#E6411C]/5'
+                    ? 'bg-secondary text-secondary-foreground border-secondary shadow-md'
+                    : 'bg-card text-muted-foreground border-border hover:border-secondary/50 hover:bg-secondary/5'
                 )}
               >
                 <span>{config.label}</span>
@@ -435,7 +435,7 @@ export default function MenuNew() {
             id="menu-grid"
             role="tabpanel"
             aria-label={`${categoryConfig[activeCategory]?.label || 'All Items'} menu items`}
-            className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 xl:grid-cols-5 2xl:grid-cols-6 gap-3 p-4"
+            className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 2xl:grid-cols-5 gap-4 md:gap-6 p-4"
           >
             <AnimatePresence mode="popLayout">
               {filteredItems.map((item, index) => (
@@ -546,10 +546,10 @@ function MenuItemCard({
       aria-label={`${item.name}${!item.available ? ' - Sold out' : isIndividual ? ' - Add to order' : ' - Start combo'}`}
       aria-disabled={!item.available}
       className={cn(
-        'group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-[#E6411C]/50 hover:bg-[#E6411C]/5 active:scale-[0.98]',
-        'transition-all duration-200 flex flex-col h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2',
+        'group relative bg-white rounded-2xl overflow-hidden border border-gray-100 hover:border-secondary/50 hover:bg-secondary/5 active:scale-[0.98]',
+        'transition-all duration-200 flex flex-col h-full focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2',
         item.available ? 'cursor-pointer' : 'cursor-not-allowed',
-        isHighlighted && 'ring-4 ring-[#E6411C] ring-offset-2 animate-pulse',
+        isHighlighted && 'ring-4 ring-secondary ring-offset-2 animate-pulse',
         !item.available && 'opacity-60'
       )}
     >
@@ -574,7 +574,7 @@ function MenuItemCard({
         {/* Badge - Top Left */}
         <div className="absolute top-2.5 left-2.5">
           {item.available && item.isPopular && (
-            <span className="bg-[#E6411C] text-white text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
+            <span className="bg-secondary text-secondary-foreground text-[10px] font-bold px-2 py-1 rounded-full flex items-center gap-1">
               <Flame className="w-3 h-3" aria-hidden="true" />
               Popular
             </span>
@@ -595,12 +595,12 @@ function MenuItemCard({
         </span>
 
         {/* Name */}
-        <h3 className="font-bold text-foreground text-[clamp(0.875rem,1.2vw,1.25rem)] leading-tight mb-0.5 line-clamp-1">
+        <h3 className="font-bold text-foreground text-sm md:text-base leading-tight mb-0.5 line-clamp-1">
           {item.name}
         </h3>
 
         {/* Description */}
-        <p className="text-gray-600 text-[clamp(0.75rem,1vw,1rem)] line-clamp-1 mb-2">
+        <p className="text-gray-600 text-xs md:text-sm line-clamp-1 mb-2">
           {item.description || item.category}
         </p>
 
@@ -611,18 +611,18 @@ function MenuItemCard({
           {/* Add to Cart button / Quantity Stepper for Individual items */}
           {item.available && isIndividual && onAddToCart && (
             cartQuantity > 0 ? (
-              <div className="flex items-center gap-2 bg-[#E6411C]/10 rounded-full px-2 py-1" role="group" aria-label={`Quantity controls for ${item.name}`}>
+              <div className="flex items-center gap-2 bg-secondary/10 rounded-full px-2 py-1" role="group" aria-label={`Quantity controls for ${item.name}`}>
                 <button
                   onClick={(e) => {
                     e.stopPropagation();
                     onRemoveFromCart?.();
                   }}
-                  className="w-7 h-7 flex items-center justify-center bg-white text-[#E6411C] rounded-full shadow-sm hover:bg-gray-50 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-1"
+                  className="w-7 h-7 flex items-center justify-center bg-white text-secondary rounded-full shadow-sm hover:bg-gray-50 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1"
                   aria-label={`Decrease quantity of ${item.name}`}
                 >
                   <Minus className="w-3.5 h-3.5" />
                 </button>
-                <span className="text-sm font-bold w-4 text-center text-[#212282]" aria-label={`Quantity: ${cartQuantity}`}>
+                <span className="text-sm font-bold w-4 text-center text-foreground" aria-label={`Quantity: ${cartQuantity}`}>
                   {cartQuantity}
                 </span>
                 <button
@@ -630,7 +630,7 @@ function MenuItemCard({
                     e.stopPropagation();
                     onAddToCart();
                   }}
-                  className="w-7 h-7 flex items-center justify-center bg-[#E6411C] text-white rounded-full shadow-sm hover:bg-[#d13a18] active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-1"
+                  className="w-7 h-7 flex items-center justify-center bg-secondary text-secondary-foreground rounded-full shadow-sm hover:bg-secondary/90 active:scale-95 transition-all focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-1"
                   aria-label={`Increase quantity of ${item.name}`}
                 >
                   <Plus className="w-3.5 h-3.5" />
@@ -642,7 +642,7 @@ function MenuItemCard({
                   e.stopPropagation();
                   onAddToCart();
                 }}
-                className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#d13a18] text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2"
+                className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2"
               >
                 Add to Order
               </button>
@@ -656,7 +656,7 @@ function MenuItemCard({
                 e.stopPropagation();
                 onAddToOrder();
               }}
-              className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-[#E6411C] hover:bg-[#d13a18] text-white hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-[#E6411C] focus-visible:ring-offset-2 flex items-center gap-1"
+              className="text-xs font-bold px-3 py-2 rounded-full transition-all bg-secondary hover:bg-secondary/90 text-secondary-foreground hover:scale-105 active:scale-95 focus-visible:ring-2 focus-visible:ring-secondary focus-visible:ring-offset-2 flex items-center gap-1"
             >
               <Plus className="w-3 h-3" />
               Start Combo

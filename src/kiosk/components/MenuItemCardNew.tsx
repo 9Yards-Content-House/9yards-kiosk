@@ -71,8 +71,8 @@ export default function MenuItemCardNew({
           </div>
         </div>
         <div className="p-4">
-          <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
-          <p className="text-sm text-muted-foreground line-clamp-2 mt-1">
+          <h3 className="font-bold text-foreground text-sm md:text-base leading-tight mb-0.5 line-clamp-1">{item.name}</h3>
+          <p className="text-gray-600 text-xs md:text-sm line-clamp-2 mt-1">
             {item.description}
           </p>
         </div>
@@ -131,8 +131,8 @@ export default function MenuItemCardNew({
 
       {/* Content */}
       <div className="p-4">
-        <h3 className="font-semibold text-lg line-clamp-1">{item.name}</h3>
-        <p className="text-sm text-muted-foreground line-clamp-2 mt-1 min-h-[2.5rem]">
+        <h3 className="font-bold text-foreground text-sm md:text-base leading-tight mb-0.5 line-clamp-1">{item.name}</h3>
+        <p className="text-gray-600 text-xs md:text-sm line-clamp-2 mt-1 min-h-[2.5rem]">
           {item.description}
         </p>
 
@@ -140,7 +140,7 @@ export default function MenuItemCardNew({
         <div className="mt-3 flex items-center justify-between">
           {!isFree ? (
             <div>
-              <span className="text-xl font-bold text-secondary">
+              <span className="text-secondary font-bold text-base">
                 {formatPrice(displayPrice)}
               </span>
               {item.sizes && item.sizes.length > 1 && (
@@ -148,7 +148,7 @@ export default function MenuItemCardNew({
               )}
             </div>
           ) : (
-            <span className="text-lg font-bold text-green-600">
+            <span className="text-green-600 font-semibold text-sm">
               {t('combo.includedFree')}
             </span>
           )}
