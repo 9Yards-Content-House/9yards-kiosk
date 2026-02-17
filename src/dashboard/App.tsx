@@ -21,6 +21,7 @@ const Settings = lazy(() => import("./pages/Settings"));
 const MyDeliveries = lazy(() => import("./pages/rider/MyDeliveries"));
 const KitchenDisplay = lazy(() => import("./pages/KitchenDisplay"));
 const Reception = lazy(() => import("./pages/Reception"));
+const Feedback = lazy(() => import("./pages/Feedback"));
 
 // Loading fallback for lazy-loaded pages
 function PageLoader() {
@@ -230,6 +231,16 @@ export default function App() {
             element={
               <RoleRoute permission="reception:read">
                 <Reception />
+              </RoleRoute>
+            }
+          />
+          
+          {/* Customer Feedback - admin only */}
+          <Route
+            path="/feedback"
+            element={
+              <RoleRoute permission="analytics:read">
+                <Feedback />
               </RoleRoute>
             }
           />

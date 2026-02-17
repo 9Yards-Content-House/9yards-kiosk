@@ -13,6 +13,7 @@ import {
   PanelLeft,
   Building2,
   FolderOpen,
+  MessageSquare,
 } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "../context/AuthContext";
@@ -31,6 +32,7 @@ const ALL_NAV_LINKS = [
   { to: "/categories", label: "Categories", icon: FolderOpen, roles: ["admin"] },
   { to: "/staff", label: "Staff", icon: Users, roles: ["admin"] },
   { to: "/analytics", label: "Analytics", icon: BarChart3, roles: ["admin"] },
+  { to: "/feedback", label: "Feedback", icon: MessageSquare, roles: ["admin"] },
   { to: "/deliveries", label: "Deliveries", icon: Truck, roles: ["admin", "rider"] },
   { to: "/settings", label: "Settings", icon: Settings, roles: ["admin", "kitchen", "rider", "reception"] },
 ];

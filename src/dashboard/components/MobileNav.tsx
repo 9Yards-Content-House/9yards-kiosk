@@ -1,5 +1,5 @@
 import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, UtensilsCrossed, Truck, Settings, ChefHat, Users, BarChart3, MoreHorizontal } from "lucide-react";
+import { LayoutDashboard, UtensilsCrossed, Truck, Settings, ChefHat, Users, BarChart3, MoreHorizontal, MessageSquare } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
@@ -23,6 +23,7 @@ export default function MobileNav() {
   const moreLinks = [
     { to: "/staff", label: "Staff", icon: Users, permission: "staff:read" },
     { to: "/analytics", label: "Analytics", icon: BarChart3, permission: "analytics:read" },
+    { to: "/feedback", label: "Feedback", icon: MessageSquare, permission: "analytics:read" },
     { to: "/deliveries", label: "Deliveries", icon: Truck, permission: "deliveries:read" },
     { to: "/settings", label: "Settings", icon: Settings, permission: "settings:read" },
   ];
