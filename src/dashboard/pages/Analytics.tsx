@@ -18,6 +18,7 @@ import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { formatPrice, cn } from '@shared/lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '@shared/types/auth';
+import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
 import RevenueChart from '../components/RevenueChart';
 import OrdersByHourChart from '../components/OrdersByHourChart';
 import AIInsightsPanel from '../components/AIInsightsPanel';
@@ -138,6 +139,9 @@ export default function Analytics() {
     from: subDays(new Date(), 29),
     to: new Date(),
   });
+  
+  const { data: categories = [] } = useCategories();
+  const { data: allMenuItems = [] } = useAllMenuItems();
 
   const { data: orders, isLoading } = useQuery<Order[]>({
     queryKey: ['analytics', 'orders', dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
@@ -193,7 +197,10 @@ export default function Analytics() {
 
     const hourCounts: Record<number, number> = {};
     orders.forEach((o) => {
-      const hour = new Date(o.created_at).getHours();
+      // Ensure we use Uganda Time (+3) for the hourly chart
+      // The DB is UTC, so we shift based on UTC offset to be precise
+      const date = new Date(o.created_at);
+      const hour = (date.getUTCHours() + 3) % 24;
       hourCounts[hour] = (hourCounts[hour] || 0) + 1;
     });
     const ordersByHour = Array.from({ length: 24 }, (_, h) => ({ hour: h, count: hourCounts[h] || 0 }));
@@ -210,6 +217,10 @@ export default function Analytics() {
 
     const itemCounts: Record<string, { count: number; revenue: number }> = {};
     const categoryCounts: Record<string, { count: number; revenue: number }> = {};
+    
+    // Create a lookup for menu item names/categories
+    const menuLookup = new Map(allMenuItems.map(m => [m.name, m]));
+
     orders.forEach((o) => {
       const orderItems = (o.order_items || o.items || []) as AnalyticsOrderItem[];
       orderItems.forEach((item) => {
@@ -217,13 +228,18 @@ export default function Analytics() {
         const name = item.sauce_name || item.menu_item?.name || (item.main_dishes?.[0]) || 'Unknown';
         if (name && name !== 'Unknown') {
           if (!itemCounts[name]) itemCounts[name] = { count: 0, revenue: 0 };
+          const itemRevenue = item.total_price || (item.unit_price || 0) * (item.quantity || 1);
           itemCounts[name].count += item.quantity || 1;
-          itemCounts[name].revenue += (item.unit_price || 0) * (item.quantity || 1);
+          itemCounts[name].revenue += itemRevenue;
         }
         
-        // Infer category from item data - real order_items don't have menu_item relationship
+        // Smart category inference
         let category = 'Other';
-        if (item.menu_item?.category?.name) {
+        const menuItem = menuLookup.get(name);
+        
+        if (menuItem?.category?.name) {
+          category = menuItem.category.name;
+        } else if (item.menu_item?.category?.name) {
           category = item.menu_item.category.name;
         } else if (item.type === 'combo') {
           category = 'Combos';
@@ -236,8 +252,9 @@ export default function Analytics() {
         }
         
         if (!categoryCounts[category]) categoryCounts[category] = { count: 0, revenue: 0 };
+        const itemRevenue = item.total_price || (item.unit_price || 0) * (item.quantity || 1);
         categoryCounts[category].count += item.quantity || 1;
-        categoryCounts[category].revenue += (item.unit_price || 0) * (item.quantity || 1);
+        categoryCounts[category].revenue += itemRevenue;
       });
     });
     const topItems = Object.entries(itemCounts).map(([name, data]) => ({ name, ...data })).sort((a, b) => b.count - a.count).slice(0, 10);
