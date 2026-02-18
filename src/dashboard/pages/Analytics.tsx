@@ -15,6 +15,7 @@ import {
   PieChart,
   BarChart3,
   GitCompare,
+  Users,
 } from 'lucide-react';
 import { supabase, USE_MOCK_DATA } from '@shared/lib/supabase';
 import { formatPrice, cn } from '@shared/lib/utils';
@@ -178,7 +179,6 @@ export default function Analytics() {
         throw error;
       }
       
-      console.log(`📊 Analytics: fetched ${data?.length || 0} orders`);
       
       return (data || []).map(order => ({
         ...order,
@@ -449,7 +449,23 @@ export default function Analytics() {
       previousValue: showComparison && comparison && comparison.prepTime.previous > 0 ? `${Math.round(comparison.prepTime.previous)} min` : undefined,
       color: 'text-amber-600', 
       bg: 'bg-amber-50',
-      invertedChange: true, // Lower prep time is better
+      invertedChange: true,
+    },
+    { 
+      label: 'Peak Hour', 
+      value: `${metrics.peakHour}:00`, 
+      icon: TrendingUp, 
+      color: 'text-orange-600', 
+      bg: 'bg-orange-50',
+      subValue: 'Highest Demand'
+    },
+    { 
+      label: 'Repeat Customers', 
+      value: metrics.repeatCustomers.toString(), 
+      icon: Users, 
+      color: 'text-indigo-600', 
+      bg: 'bg-indigo-50',
+      subValue: 'Loyal Base'
     },
   ];
 
@@ -498,7 +514,7 @@ export default function Analytics() {
       )}
 
       {!isLoading && (
-        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-6 gap-3 md:gap-4">
           {stats.map((stat, idx) => {
             const Icon = stat.icon;
             // For inverted metrics (like prep time), lower is better so we flip the color logic
@@ -522,7 +538,7 @@ export default function Analytics() {
                   <p className="text-lg md:text-xl font-bold truncate">{stat.value}</p>
                 </div>
                 
-                <div className="mt-2 group">
+                 <div className="mt-2 group">
                   {/* Show previous value when comparison is enabled */}
                   {showComparison && stat.previousValue && (
                     <p className="text-[10px] text-muted-foreground line-clamp-1">
@@ -530,7 +546,7 @@ export default function Analytics() {
                     </p>
                   )}
                   
-                  {stat.change !== undefined && stat.change !== 0 && (
+                  {stat.change !== undefined && stat.change !== 0 ? (
                     <div className={cn(
                       'flex items-center gap-1 text-[10px] md:text-xs font-semibold', 
                       isPositive ? 'text-green-600' : 'text-red-600'
@@ -538,7 +554,9 @@ export default function Analytics() {
                       {stat.change > 0 ? <ArrowUp className="w-2.5 h-2.5 md:w-3 md:h-3" /> : <ArrowDown className="w-2.5 h-2.5 md:w-3 md:h-3" />}
                       {Math.abs(stat.change).toFixed(1)}%
                     </div>
-                  )}
+                  ) : stat.subValue ? (
+                    <p className="text-[10px] md:text-xs font-medium text-muted-foreground">{stat.subValue}</p>
+                  ) : null}
                 </div>
               </motion.div>
             );
@@ -554,14 +572,14 @@ export default function Analytics() {
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Revenue Trend</h3>
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Revenue Trend</h3>
               <div className="h-[250px] md:h-[300px]">
                 <RevenueChart orders={orders || []} />
               </div>
             </div>
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Orders by Hour</h3>
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Orders by Hour</h3>
               <div className="overflow-x-auto no-scrollbar pb-2">
                 <div className="flex items-end gap-1 h-40 min-w-[500px] md:min-w-0">
                   {metrics.ordersByHour.map(({ hour, count }) => {
@@ -569,86 +587,146 @@ export default function Analytics() {
                     const height = (count / maxCount) * 100;
                     const isPeak = hour === metrics.peakHour;
                     return (
-                      <div key={hour} className="flex-1 flex flex-col items-center" title={`${hour}:00 - ${count} orders`}>
-                        <div className={cn('w-full rounded-t transition-all', isPeak ? 'bg-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]' : 'bg-muted')} style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }} />
-                        {hour % 2 === 0 && <span className="text-[9px] md:text-[10px] text-muted-foreground mt-2 font-medium">{hour}h</span>}
+                      <div key={hour} className="flex-1 flex flex-col items-center group relative" title={`${hour}:00 - ${count} orders`}>
+                        <div 
+                          className={cn(
+                            'w-full rounded-t transition-all', 
+                            isPeak 
+                              ? 'bg-secondary shadow-[0_4px_12px_rgba(240,82,35,0.3)] ring-1 ring-secondary/20' 
+                              : 'bg-slate-100 group-hover:bg-slate-200'
+                          )} 
+                          style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }} 
+                        />
+                        {isPeak && (
+                          <div className="absolute -top-6 bg-secondary text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-sm">
+                            Peak
+                          </div>
+                        )}
+                        {hour % 2 === 0 && <span className="text-[9px] md:text-[10px] text-muted-foreground mt-2 font-black tabular-nums">{hour}h</span>}
                       </div>
                     );
                   })}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-4 text-center bg-muted/30 py-1.5 rounded-full">Peak demand usually starts at <span className="font-bold text-foreground">{metrics.peakHour}:00</span></p>
+              <p className="text-[10px] md:text-xs text-muted-foreground mt-4 text-center bg-slate-50 py-2 rounded-xl font-medium">
+                Peak demand usually starts at <span className="font-black text-[#212282]">{metrics.peakHour}:00</span>
+              </p>
             </div>
           </div>
 
           {metrics.avgPrepTime > 0 && (
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Preparation Time Distribution</h3>
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Preparation Time Distribution</h3>
               <div className="overflow-x-auto no-scrollbar">
                 <div className="flex items-end gap-3 h-32 min-w-[300px] md:min-w-0 px-2 lg:px-4">
                   {metrics.prepTimeDistribution.map(({ range, count }) => {
                     const maxCount = Math.max(...metrics.prepTimeDistribution.map(p => p.count)) || 1;
                     const height = (count / maxCount) * 100;
+                    const isOptimal = range === '0-10m' || range === '10-15m';
+                    
                     return (
-                      <div key={range} className="flex-1 flex flex-col items-center">
-                        <span className="text-[10px] font-bold text-muted-foreground mb-1.5">{count}</span>
-                        <div className="w-full bg-secondary/80 rounded-t-lg transition-all" style={{ height: `${height}%`, minHeight: count > 0 ? '8px' : '0' }} />
-                        <span className="text-[10px] text-muted-foreground mt-2.5 font-bold uppercase tracking-tighter opacity-70">{range}</span>
+                      <div key={range} className="flex-1 flex flex-col items-center group">
+                        <span className="text-[10px] font-black text-[#212282] mb-1.5 tabular-nums">{count}</span>
+                        <div 
+                          className={cn(
+                            'w-full rounded-t-lg transition-all', 
+                            isOptimal ? 'bg-emerald-400 group-hover:bg-emerald-500' : 'bg-slate-200 group-hover:bg-slate-300'
+                          )} 
+                          style={{ height: `${height}%`, minHeight: count > 0 ? '8px' : '0' }} 
+                        />
+                        <span className="text-[9px] md:text-[10px] text-slate-400 mt-2.5 font-black uppercase tracking-tighter">{range}</span>
                       </div>
                     );
                   })}
                 </div>
               </div>
-              <p className="text-xs text-muted-foreground mt-6 text-center border-t pt-3 italic">
-                Our target is under 15 minutes. Average: <span className="font-black text-foreground">{metrics.avgPrepTime}m</span>
-              </p>
+              <div className="mt-6 pt-4 border-t flex items-center justify-center gap-4">
+                <div className="flex items-center gap-1.5">
+                  <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Optimal (&lt;15m)</span>
+                </div>
+                <div className="text-[10px] text-slate-400 font-medium italic">
+                  Average Prep: <span className="font-black text-[#212282]">{metrics.avgPrepTime}m</span>
+                </div>
+              </div>
             </div>
           )}
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <AIInsightsPanel orders={orders || []} />
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Top Selling Items</h3>
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Top Selling Items</h3>
               <div className="space-y-3">
                 {metrics.topItems.map((item, idx) => (
                   <div key={item.name} className="flex items-center gap-3">
-                    <span className={cn('w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold', idx === 0 ? 'bg-amber-100 text-amber-700' : idx === 1 ? 'bg-gray-200 text-gray-700' : idx === 2 ? 'bg-orange-100 text-orange-700' : 'bg-muted text-muted-foreground')}>{idx + 1}</span>
+                    <span className={cn(
+                      'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-white shadow-sm', 
+                      idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
+                      idx === 1 ? 'bg-slate-200 text-slate-700' : 
+                      idx === 2 ? 'bg-amber-600 text-white' : 
+                      'bg-slate-100 text-slate-500'
+                    )}>
+                      {idx + 1}
+                    </span>
                     <div className="flex-1 min-w-0">
-                      <p className="font-medium truncate">{item.name}</p>
-                      <p className="text-xs text-muted-foreground">{item.count} sold • {formatPrice(item.revenue)}</p>
+                      <p className="font-bold text-sm text-slate-900 truncate">{item.name}</p>
+                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        {item.count} items • {formatPrice(item.revenue)}
+                      </p>
                     </div>
-                    <div className="w-24 h-2 bg-muted rounded-full overflow-hidden">
-                      <div className="h-full bg-primary rounded-full" style={{ width: `${(item.count / (metrics.topItems[0]?.count || 1)) * 100}%` }} />
+                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
+                      <div 
+                        className="h-full bg-secondary rounded-full" 
+                        style={{ width: `${(item.count / (metrics.topItems[0]?.count || 1)) * 100}%` }} 
+                      />
                     </div>
                   </div>
                 ))}
-                {metrics.topItems.length === 0 && <p className="text-muted-foreground text-center py-8">No data available</p>}
+                {metrics.topItems.length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <ShoppingBag className="w-8 h-8 text-slate-100" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">No Sales Recorded</p>
+                  </div>
+                )}
               </div>
             </div>
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Payment Methods</h3>
-              <div className="space-y-4">
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Payment Methods</h3>
+              <div className="space-y-5">
                 {Object.entries(metrics.paymentBreakdown).map(([method, data]) => {
                   const total = Object.values(metrics.paymentBreakdown).reduce((s, d) => s + d.amount, 0);
                   const pct = total > 0 ? (data.amount / total) * 100 : 0;
-                  const methodLabel = method === 'mobile_money' ? 'Mobile Money' : method === 'pay_at_counter' ? 'Pay at Counter' : method === 'cash' ? 'Cash' : method;
+                  const methodLabel = method === 'mobile_money' ? 'Mobile Money' : method === 'pay_at_counter' ? 'Counter' : method === 'cash' ? 'Cash' : method;
                   return (
                     <div key={method}>
-                      <div className="flex justify-between text-sm mb-1">
-                        <span className="font-medium capitalize">{methodLabel}</span>
-                        <span className="text-muted-foreground">{data.count} orders • {formatPrice(data.amount)}</span>
+                      <div className="flex justify-between items-end mb-1.5">
+                        <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{methodLabel}</span>
+                        <div className="text-right">
+                          <span className="text-[10px] font-black text-[#212282]">{formatPrice(data.amount)}</span>
+                          <span className="text-[10px] text-slate-300 ml-1.5">({data.count})</span>
+                        </div>
                       </div>
-                      <div className="h-2 bg-muted rounded-full overflow-hidden">
-                        <motion.div initial={{ width: 0 }} animate={{ width: `${pct}%` }} className={cn('h-full rounded-full', method === 'mobile_money' ? 'bg-green-500' : method === 'pay_at_counter' ? 'bg-blue-500' : method === 'cash' ? 'bg-amber-500' : 'bg-gray-500')} />
+                      <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
+                        <motion.div 
+                          initial={{ width: 0 }} 
+                          animate={{ width: `${pct}%` }} 
+                          className={cn(
+                            'h-full rounded-full shadow-sm', 
+                            method === 'mobile_money' ? 'bg-green-400' : 
+                            method === 'pay_at_counter' ? 'bg-[#212282]' : 
+                            method === 'cash' ? 'bg-amber-400' : 'bg-slate-400'
+                          )} 
+                        />
                       </div>
                     </div>
                   );
                 })}
-                {Object.keys(metrics.paymentBreakdown).length === 0 && <p className="text-muted-foreground text-center py-8">No data available</p>}
-              </div>
-              <div className="mt-6 pt-4 border-t grid grid-cols-2 gap-4">
-                <div><p className="text-xs text-muted-foreground">Peak Hour</p><p className="font-bold">{metrics.peakHour}:00</p></div>
-                <div><p className="text-xs text-muted-foreground">Repeat Customers</p><p className="font-bold">{metrics.repeatCustomers}</p></div>
+                {Object.keys(metrics.paymentBreakdown).length === 0 && (
+                  <div className="flex flex-col items-center justify-center py-12 gap-2">
+                    <DollarSign className="w-8 h-8 text-slate-100" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">No Transactions</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
@@ -656,49 +734,94 @@ export default function Analytics() {
 
         <TabsContent value="categories" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Revenue by Category</h3>
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Revenue by Category</h3>
               {metrics.categoryBreakdown.length > 0 ? (
                 <div className="h-80">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
-                      <Pie data={metrics.categoryBreakdown} cx="50%" cy="50%" labelLine={false} label={({ name, percent }) => `${name} (${(percent * 100).toFixed(0)}%)`} outerRadius={100} fill="#8884d8" dataKey="revenue" nameKey="name">
-                        {metrics.categoryBreakdown.map((_, index) => <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />)}
+                      <Pie 
+                        data={metrics.categoryBreakdown} 
+                        cx="50%" 
+                        cy="50%" 
+                        innerRadius={60}
+                        outerRadius={100} 
+                        paddingAngle={5}
+                        dataKey="revenue" 
+                        nameKey="name"
+                      >
+                        {metrics.categoryBreakdown.map((_, index) => (
+                          <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                        ))}
                       </Pie>
-                      <Tooltip formatter={(value: number) => formatPrice(value)} />
-                      <Legend />
+                      <Tooltip 
+                        formatter={(value: number) => [formatPrice(value), "Revenue"]}
+                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                      />
+                      <Legend verticalAlign="bottom" height={36}/>
                     </RechartsPie>
                   </ResponsiveContainer>
                 </div>
-              ) : <p className="text-muted-foreground text-center py-20">No category data available</p>}
+              ) : (
+                <div className="flex flex-col items-center justify-center py-20 gap-2">
+                  <PieChart className="w-8 h-8 text-slate-100" />
+                  <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">No Category Data</p>
+                </div>
+              )}
             </div>
-            <div className="bg-card rounded-xl border p-4">
-              <h3 className="font-semibold text-lg mb-4">Category Breakdown</h3>
-              <div className="space-y-3">
+            <div className="bg-card rounded-2xl border shadow-sm p-4">
+              <h3 className="font-bold text-lg mb-4 text-[#212282]">Category Breakdown</h3>
+              <div className="space-y-4">
                 {metrics.categoryBreakdown.map((cat, idx) => {
                   const totalRevenue = metrics.categoryBreakdown.reduce((s, c) => s + c.revenue, 0);
                   const pct = totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0;
                   return (
-                    <div key={cat.name} className="flex items-center gap-3">
-                      <div className="w-3 h-3 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }} />
-                      <div className="flex-1">
-                        <div className="flex justify-between"><span className="font-medium">{cat.name}</span><span className="text-muted-foreground">{formatPrice(cat.revenue)}</span></div>
-                        <div className="flex justify-between text-xs text-muted-foreground"><span>{cat.count} items sold</span><span>{pct.toFixed(1)}%</span></div>
+                    <div key={cat.name} className="group">
+                      <div className="flex items-center justify-between mb-1.5">
+                        <div className="flex items-center gap-2">
+                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }} />
+                          <span className="text-sm font-bold text-slate-900">{cat.name}</span>
+                        </div>
+                        <span className="text-sm font-black text-[#212282]">{formatPrice(cat.revenue)}</span>
+                      </div>
+                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
+                        <span>{cat.count} items sold</span>
+                        <span>{pct.toFixed(1)}% of total</span>
                       </div>
                     </div>
                   );
                 })}
-                {metrics.categoryBreakdown.length === 0 && <p className="text-muted-foreground text-center py-8">No data available</p>}
+                {metrics.categoryBreakdown.length === 0 && (
+                   <div className="flex flex-col items-center justify-center py-20 gap-2">
+                    <BarChart3 className="w-8 h-8 text-slate-100" />
+                    <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">No Data Available</p>
+                  </div>
+                )}
               </div>
             </div>
           </div>
-          <div className="bg-card rounded-xl border p-4">
-            <h3 className="font-semibold text-lg mb-4 flex items-center gap-2"><Calendar className="w-5 h-5" />Today's Summary</h3>
+          <div className="bg-card rounded-2xl border shadow-sm p-4">
+            <h3 className="font-bold text-lg mb-4 text-[#212282] flex items-center gap-2">
+              <Calendar className="w-5 h-5 text-secondary" />
+              Today's Performance
+            </h3>
             <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-muted/50 rounded-lg"><p className="text-2xl font-bold">{metrics.todayOrders}</p><p className="text-sm text-muted-foreground">Orders</p></div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg"><p className="text-2xl font-bold">{formatPrice(metrics.todayRevenue)}</p><p className="text-sm text-muted-foreground">Revenue</p></div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg"><p className="text-2xl font-bold">{metrics.avgPrepTime || 'N/A'}</p><p className="text-sm text-muted-foreground">Avg Prep (min)</p></div>
-              <div className="text-center p-4 bg-muted/50 rounded-lg"><p className="text-2xl font-bold">{metrics.repeatCustomers}</p><p className="text-sm text-muted-foreground">Repeat Customers</p></div>
+              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
+                <p className="text-2xl font-black text-[#212282] tabular-nums">{metrics.todayOrders}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Orders</p>
+              </div>
+              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
+                <p className="text-2xl font-black text-[#212282] tabular-nums">{formatPrice(metrics.todayRevenue)}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Revenue</p>
+              </div>
+              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
+                <p className="text-2xl font-black text-[#212282] tabular-nums">{metrics.avgPrepTime || 'N/A'}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Avg Prep (m)</p>
+              </div>
+              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
+                <p className="text-2xl font-black text-[#212282] tabular-nums">{metrics.repeatCustomers}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Loyal Users</p>
+              </div>
             </div>
           </div>
         </TabsContent>

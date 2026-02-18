@@ -14,7 +14,7 @@ import {
   ChefHat,
   ThumbsUp,
 } from "lucide-react";
-import type { Order } from "@shared/types";
+import type { Order } from "@shared/types/orders";
 import { formatPrice, cn } from "@shared/lib/utils";
 
 interface Insight {
@@ -422,9 +422,9 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
                       </span>
                     )}
                   </div>
-                  <p className="text-xs text-gray-600 leading-relaxed">{insight.description}</p>
+                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{insight.description}</p>
                   {insight.actionable && (
-                    <span className="inline-block mt-2 text-xs font-medium text-[#212282] bg-[#212282]/10 px-2 py-0.5 rounded-full">
+                    <span className="inline-block mt-2 text-[10px] font-bold text-[#212282] bg-white border border-[#212282]/10 px-2.5 py-0.5 rounded-full shadow-sm">
                       💡 {insight.actionable}
                     </span>
                   )}
