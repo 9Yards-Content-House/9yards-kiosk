@@ -19,6 +19,7 @@ import { formatPrice, cn } from '@shared/lib/utils';
 import { useAuth } from '../context/AuthContext';
 import { hasPermission } from '@shared/types/auth';
 import RevenueChart from '../components/RevenueChart';
+import OrdersByHourChart from '../components/OrdersByHourChart';
 import AIInsightsPanel from '../components/AIInsightsPanel';
 import { Button } from '@shared/components/ui/button';
 import { DateRangePicker } from '@shared/components/ui/date-range-picker';
@@ -420,33 +421,11 @@ export default function Analytics() {
             </div>
             <div className="bg-card rounded-2xl border shadow-sm p-4">
               <h3 className="font-bold text-lg mb-4 text-[#212282]">Orders by Hour</h3>
-              <div className="overflow-x-auto no-scrollbar pb-2">
-                <div className="flex items-end gap-1 h-40 min-w-[500px] md:min-w-0">
-                  {metrics.ordersByHour.map(({ hour, count }) => {
-                    const maxCount = Math.max(...metrics.ordersByHour.map((h) => h.count)) || 1;
-                    const height = (count / maxCount) * 100;
-                    const isPeak = hour === metrics.peakHour;
-                    return (
-                      <div key={hour} className="flex-1 flex flex-col items-center group relative" title={`${hour}:00 - ${count} orders`}>
-                        <div 
-                          className={cn(
-                            'w-full rounded-t transition-all', 
-                            isPeak 
-                              ? 'bg-secondary shadow-[0_4px_12px_rgba(240,82,35,0.3)] ring-1 ring-secondary/20' 
-                              : 'bg-slate-100 group-hover:bg-slate-200'
-                          )} 
-                          style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }} 
-                        />
-                        {isPeak && (
-                          <div className="absolute -top-6 bg-secondary text-white text-[8px] font-black px-1.5 py-0.5 rounded uppercase tracking-tighter shadow-sm">
-                            Peak
-                          </div>
-                        )}
-                        {hour % 2 === 0 && <span className="text-[9px] md:text-[10px] text-muted-foreground mt-2 font-black tabular-nums">{hour}h</span>}
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="h-[200px]">
+                <OrdersByHourChart 
+                  data={metrics.ordersByHour} 
+                  peakHour={metrics.peakHour} 
+                />
               </div>
               <p className="text-[10px] md:text-xs text-muted-foreground mt-4 text-center bg-slate-50 py-2 rounded-xl font-medium">
                 Peak demand usually starts at <span className="font-black text-[#212282]">{metrics.peakHour}:00</span>
