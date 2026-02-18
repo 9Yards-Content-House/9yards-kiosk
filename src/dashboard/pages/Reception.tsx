@@ -1,5 +1,5 @@
 import { useState, useMemo, useCallback } from "react";
-import { Search, Phone, MessageCircle, Check, Maximize2, Minimize2, Package, User } from "lucide-react";
+import { Search, Phone, MessageCircle, Check, Maximize2, Minimize2, Package, User, Clock, CreditCard, Banknote, Smartphone, ChevronRight } from "lucide-react";
 import { useAllOrders } from "@shared/hooks/useOrders";
 import { useOrderSubscription } from "../hooks/useOrderSubscription";
 import type { Order } from "@shared/types/orders";
@@ -7,10 +7,20 @@ import { Input } from "@shared/components/ui/input";
 import { Button } from "@shared/components/ui/button";
 import { Badge } from "@shared/components/ui/badge";
 import { Card, CardHeader, CardTitle, CardContent } from "@shared/components/ui/card";
-import { formatPrice, cn } from "@shared/lib/utils";
+import { formatPrice, cn, timeAgo, formatPaymentMethod } from "@shared/lib/utils";
 import { formatPhoneDisplay } from "@shared/lib/validation";
 import { supabase } from "@shared/lib/supabase";
 import { toast } from "sonner";
+import StatusBadge from "../components/StatusBadge";
+
+const PaymentIcon = ({ method }: { method: string }) => {
+  switch (method) {
+    case "mobile_money": return <Smartphone className="w-3.5 h-3.5" />;
+    case "cash": return <Banknote className="w-3.5 h-3.5" />;
+    case "card": return <CreditCard className="w-3.5 h-3.5" />;
+    default: return <CreditCard className="w-3.5 h-3.5" />;
+  }
+};
 
 export default function Reception() {
   useOrderSubscription();
@@ -66,32 +76,6 @@ export default function Reception() {
     }
   }, [refetch]);
 
-  // Send arrival WhatsApp notification
-  const handleSendArrivalNotification = useCallback(async (order: Order) => {
-    if (!order.customer_phone) {
-      toast.error("No phone number on this order");
-      return;
-    }
-
-    try {
-      const response = await supabase.functions.invoke("send-whatsapp", {
-        body: {
-          to: order.customer_phone,
-          orderNumber: order.order_number,
-          customerName: order.customer_name,
-          type: "arrival",
-          message: `Hi ${order.customer_name}, your order #${order.order_number} has arrived at reception! Please pick it up.`,
-        },
-      });
-
-      if (response.error) throw response.error;
-      toast.success("Arrival notification sent!");
-    } catch (error) {
-      console.error("Error sending notification:", error);
-      toast.error("Failed to send notification");
-    }
-  }, []);
-
   // Contact customer via phone
   const handleContactCustomer = useCallback((phone: string | null) => {
     if (!phone) {
@@ -111,20 +95,6 @@ export default function Reception() {
       setIsFullscreen(false);
     }
   }, []);
-
-  // Format time since arrival
-  const getTimeSinceArrival = (order: Order) => {
-    const arrivalTime = new Date(order.delivered_at || order.updated_at);
-    const now = new Date();
-    const diffMs = now.getTime() - arrivalTime.getTime();
-    const diffMins = Math.floor(diffMs / 60000);
-
-    if (diffMins < 1) return "Just now";
-    if (diffMins < 60) return `${diffMins}m ago`;
-    const diffHours = Math.floor(diffMins / 60);
-    if (diffHours < 24) return `${diffHours}h ago`;
-    return `${Math.floor(diffHours / 24)}d ago`;
-  };
 
   // Check if order is waiting too long (> 15 minutes)
   const isWaitingLong = (order: Order) => {
@@ -150,15 +120,15 @@ export default function Reception() {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 p-4 border-b bg-white">
         <div>
-          <h1 className="text-2xl font-bold text-[#212282]">Reception Dashboard</h1>
-          <p className="text-gray-500 text-sm">
+          <h1 className="text-2xl font-bold text-primary">Reception Dashboard</h1>
+          <p className="text-muted-foreground text-sm">
             {arrivedOrders.length} order{arrivedOrders.length !== 1 ? "s" : ""} waiting for pickup
           </p>
         </div>
         <div className="flex items-center gap-3 w-full md:w-auto">
           {/* Search */}
           <div className="relative flex-1 md:w-64">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
             <Input
               placeholder="Search order # or phone..."
               value={searchQuery}
@@ -188,77 +158,71 @@ export default function Reception() {
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
-            {arrivedOrders.map((order) => (
-              <Card
+            {arrivedOrders.map((order) => {
+              const isUrgent = isWaitingLong(order);
+              return (
+              <div
                 key={order.id}
                 className={cn(
-                  "border transition-all shadow-sm hover:shadow-md",
-                  isWaitingLong(order)
-                    ? "border-red-200 bg-red-50/30"
-                    : order.picked_up_at
-                    ? "border-gray-200 bg-gray-50 opacity-60"
-                    : "border-green-200 bg-white"
+                  "bg-card rounded-xl border p-4 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col h-full",
+                  isUrgent && "border-red-400 bg-red-50/30 dark:bg-red-900/10",
+                  order.picked_up_at && "opacity-60"
                 )}
               >
-                <CardHeader className="p-3 md:p-4 border-b border-border/50">
-                  <div className="flex items-center justify-between">
-                    <CardTitle
-                      className={cn(
-                        "text-xl md:text-2xl font-bold tracking-tight",
-                        isWaitingLong(order) ? "text-red-600" : "text-foreground"
-                      )}
-                    >
-                      #{order.order_number}
-                    </CardTitle>
-                    <Badge
-                      variant="outline"
-                      className={cn(
-                        "font-mono text-[10px] md:text-xs",
-                        isWaitingLong(order) 
-                          ? "bg-red-100 text-red-700 border-red-200" 
-                          : "bg-green-50 text-green-700 border-green-200"
-                      )}
-                    >
-                      {getTimeSinceArrival(order)}
-                    </Badge>
-                  </div>
-                </CardHeader>
+                {isUrgent && (
+                  <div className="absolute top-0 right-0 w-2 h-2 bg-red-500 rounded-bl-full md:w-3 md:h-3" title="Urgent: Over 15 mins" />
+                )}
                 
-                <CardContent className="p-3 md:p-4 space-y-4">
-                  {/* Customer Info */}
-                  <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col min-w-0">
-                      <div className="flex items-center gap-2 text-foreground font-semibold text-sm md:text-base">
-                        <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
-                        <span className="truncate">{order.customer_name}</span>
-                      </div>
-                      {order.customer_phone && (
-                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
-                          <Phone className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" />
-                          <span className="font-mono">{formatPhoneDisplay(order.customer_phone)}</span>
-                        </div>
-                      )}
-                    </div>
-                    <div className="text-base md:text-lg font-bold text-primary whitespace-nowrap">
-                      {formatPrice(order.total)}
-                    </div>
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2">
+                    <p className="text-xl font-bold tracking-tight">{order.order_number}</p>
+                    {isUrgent && <Badge variant="destructive" className="h-5 px-1.5 text-[10px]">Overdue</Badge>}
+                  </div>
+                  <StatusBadge status={order.status} />
+                </div>
+
+                <div className="space-y-2 text-sm flex-1">
+                  {/* Customer Info Row */}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <User className="w-4 h-4 shrink-0" />
+                    <span className="font-medium text-foreground truncate">{order.customer_name}</span>
                   </div>
 
-                  {/* Order Items Summary */}
-                  <div className="bg-slate-50/80 rounded-lg p-2.5 md:p-3 border border-slate-100 space-y-1.5 md:space-y-2">
-                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Items</p>
-                    <div className="space-y-1 md:space-y-1.5 max-h-[100px] overflow-y-auto pr-1">
-                      {order.items?.map((item, idx) => {
-                         const hasMainDish = item.main_dishes && item.main_dishes.length > 0;
-                         let mainTitle = "Item";
-                         if (hasMainDish) mainTitle = item.main_dishes.join(" + ");
-                         else if (item.sauce_name) mainTitle = item.sauce_name;
-                         else if (item.side_dish) mainTitle = item.side_dish;
+                  {/* Phone Row */}
+                  {order.customer_phone && (
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="w-4 h-4 shrink-0" />
+                      <span className="font-mono">{formatPhoneDisplay(order.customer_phone)}</span>
+                    </div>
+                  )}
 
-                         return (
-                          <div key={idx} className="text-xs md:text-sm flex items-start gap-2">
-                            <span className="font-bold text-foreground min-w-[18px]">{item.quantity}x</span>
-                            <span className="text-slate-700 leading-tight line-clamp-2">{mainTitle}</span>
+                  {/* Items count and Price Row */}
+                  <div className="flex items-center gap-2 text-muted-foreground">
+                    <Package className="w-4 h-4 shrink-0" />
+                    <span>{order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items • {formatPrice(order.total)}</span>
+                  </div>
+
+                  {/* Time Row */}
+                  <div className={cn("flex items-center gap-2 text-muted-foreground transition-colors", isUrgent && "text-red-600 font-medium")}>
+                    <Clock className="w-4 h-4 shrink-0" />
+                    {timeAgo(order.delivered_at || order.updated_at)}
+                  </div>
+
+                  {/* Items Summary (Smaller) */}
+                  <div className="mt-3 bg-slate-50/80 dark:bg-slate-900/40 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800">
+                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider mb-1.5">Items Summary</p>
+                    <div className="space-y-1 max-h-[80px] overflow-y-auto thin-scrollbar">
+                      {order.items?.map((item, idx) => {
+                        const hasMainDish = item.main_dishes && item.main_dishes.length > 0;
+                        let mainTitle = "Item";
+                        if (hasMainDish) mainTitle = item.main_dishes.join(" + ");
+                        else if (item.sauce_name) mainTitle = item.sauce_name;
+                        else if (item.side_dish) mainTitle = item.side_dish;
+
+                        return (
+                          <div key={idx} className="text-xs flex items-start gap-2">
+                            <span className="font-bold text-foreground opacity-70">{item.quantity}x</span>
+                            <span className="text-slate-600 dark:text-slate-400 leading-tight line-clamp-1">{mainTitle}</span>
                           </div>
                         );
                       })}
@@ -267,42 +231,50 @@ export default function Reception() {
 
                   {/* Special Instructions */}
                   {order.special_instructions && (
-                    <div className="bg-amber-50/50 rounded-lg p-2.5 md:p-3 border border-amber-100/50 italic text-[11px] md:text-xs text-amber-900 line-clamp-2">
+                    <div className="mt-2 text-xs bg-yellow-50 dark:bg-yellow-900/20 text-yellow-700 dark:text-yellow-400 px-2.5 py-2 rounded-lg flex items-start gap-2 border border-yellow-100 dark:border-yellow-900/30 italic">
                       “{order.special_instructions}”
                     </div>
                   )}
+                </div>
 
-                  {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 pt-1 md:pt-2">
-                    {!order.picked_up_at ? (
-                      <>
-                        <Button
-                          className="w-full bg-green-600 hover:bg-green-700 h-11 md:h-10 text-sm font-semibold shadow-sm"
-                          onClick={() => handleMarkPickedUp(order)}
-                        >
-                          <Check className="w-4 h-4 mr-2" />
-                          Mark Picked Up
-                        </Button>
-                        
-                        <Button
-                          variant="ghost"
-                          className="w-full h-11 md:h-10 text-sm text-slate-600 hover:bg-slate-100"
-                          onClick={() => handleContactCustomer(order.customer_phone)}
-                        >
-                          <Phone className="w-4 h-4 mr-2" />
-                          Call Customer
-                        </Button>
-                      </>
-                    ) : (
-                      <Badge variant="secondary" className="justify-center py-2.5 md:py-2 text-sm">
-                        <Check className="w-4 h-4 mr-1.5" />
-                        Completed Pickup
-                      </Badge>
-                    )}
+                {/* Footer / Payment Info */}
+                <div className="mt-4 pt-3 border-t flex items-center justify-between text-xs text-muted-foreground">
+                  <div className="flex items-center gap-1.5" title={formatPaymentMethod(order.payment_method)}>
+                    <PaymentIcon method={order.payment_method} />
+                    <span className="capitalize">{formatPaymentMethod(order.payment_method)}</span>
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                  <span className="capitalize font-medium">{order.payment_status}</span>
+                </div>
+                
+                {/* Action Buttons */}
+                <div className="mt-4 flex flex-col gap-2">
+                  {!order.picked_up_at ? (
+                    <>
+                      <button
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] text-sm font-bold bg-secondary text-white rounded-xl hover:bg-secondary/90 active:scale-[0.98] transition-all shadow-sm"
+                        onClick={() => handleMarkPickedUp(order)}
+                      >
+                        <Check className="w-4 h-4" />
+                        Mark Picked Up
+                      </button>
+                      
+                      <button
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 min-h-[44px] text-sm font-medium text-foreground bg-muted hover:bg-muted/80 rounded-xl active:scale-[0.98] transition-all"
+                        onClick={() => handleContactCustomer(order.customer_phone)}
+                      >
+                        <Phone className="w-4 h-4" />
+                        Call Customer
+                      </button>
+                    </>
+                  ) : (
+                    <div className="flex items-center justify-center gap-2 py-3 px-4 bg-muted text-muted-foreground rounded-xl text-sm font-medium">
+                      <Check className="w-4 h-4" />
+                      Completed Pickup
+                    </div>
+                  )}
+                </div>
+              </div>
+            )})}
           </div>
         )}
       </div>
