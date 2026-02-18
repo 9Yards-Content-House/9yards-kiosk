@@ -155,9 +155,8 @@ export default function Login() {
                       backgroundColor: pin[i] ? "hsl(var(--primary))" : "transparent",
                     }}
                     className={cn(
-                      "w-3.5 h-3.5 rounded-full border-2 transition-colors",
-                      i < MIN_PIN_LENGTH ? "border-primary" : "border-gray-300",
-                      pin[i] && "border-primary"
+                      "w-4 h-4 rounded-full border-2 transition-all duration-200",
+                      pin[i] ? "border-primary" : "border-muted-foreground/20 bg-muted/20"
                     )}
                   />
                 ))}
