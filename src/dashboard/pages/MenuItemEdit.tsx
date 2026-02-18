@@ -317,9 +317,10 @@ export default function MenuItemEdit() {
       const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
       form.setValue("image_url", urlData.publicUrl, { shouldDirty: true });
       toast.success("Image uploaded and optimized!");
-    } catch (err) {
+    } catch (err: any) {
       console.error("Upload error:", err);
-      toast.error("Failed to upload image.");
+      const errorMessage = err.message || err.error_description || "Unknown error";
+      toast.error(`Upload failed: ${errorMessage}`);
     } finally {
       setUploading(false);
     }
