@@ -1,0 +1,167 @@
+
+> 9yards-kiosk@1.0.0 lint
+> eslint .
+
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\components\MobileNav.tsx
+  2:61  warning  'ChefHat' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\components\NotificationBell.tsx
+   74:11  warning  Empty block statement  no-empty
+   82:11  warning  Empty block statement  no-empty
+   91:11  warning  Empty block statement  no-empty
+  101:11  warning  Empty block statement  no-empty
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\components\OrderTimeline.tsx
+  25:27  warning  'index' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\components\RevenueChart.tsx
+  10:37  warning  'isSameDay' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  88:40  warning  'label' is defined but never used. Allowed unused args must match /^_/u      @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\components\Sidebar.tsx
+  11:3  warning  'ChefHat' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\components\StaffPerformancePanel.tsx
+  7:10  warning  'Badge' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\Analytics.tsx
+   12:3   warning  'ArrowDown' is defined but never used. Allowed unused vars must match /^_/u                                    @typescript-eslint/no-unused-vars
+   26:10  warning  'Button' is defined but never used. Allowed unused vars must match /^_/u                                       @typescript-eslint/no-unused-vars
+  151:17  warning  'categories' is assigned a value but never used. Allowed unused vars must match /^_/u                          @typescript-eslint/no-unused-vars
+  167:11  error    'query' is never reassigned. Use 'const' instead                                                               prefer-const
+  339:6   warning  React Hook useMemo has a missing dependency: 'allMenuItems'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+  462:19  warning  'isPositive' is assigned a value but never used. Allowed unused vars must match /^_/u                          @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\Feedback.tsx
+  12:3  warning  'Loader2' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+  13:3  warning  'Calendar' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\Login.tsx
+  1:20  warning  'useRef' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\MenuItemEdit.tsx
+  10:14  warning  'formatPrice' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\OrderDetail.tsx
+  95:14  warning  'err' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\Reception.tsx
+  2:25   warning  'MessageCircle' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  2:125  warning  'ChevronRight' is defined but never used. Allowed unused vars must match /^_/u   @typescript-eslint/no-unused-vars
+  9:10   warning  'Card' is defined but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
+  9:16   warning  'CardHeader' is defined but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  9:28   warning  'CardTitle' is defined but never used. Allowed unused vars must match /^_/u      @typescript-eslint/no-unused-vars
+  9:39   warning  'CardContent' is defined but never used. Allowed unused vars must match /^_/u    @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\Settings.tsx
+    2:18   warning  'AnimatePresence' is defined but never used. Allowed unused vars must match /^_/u                   @typescript-eslint/no-unused-vars
+   17:3    warning  'Select' is defined but never used. Allowed unused vars must match /^_/u                            @typescript-eslint/no-unused-vars
+   18:3    warning  'SelectContent' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   19:3    warning  'SelectItem' is defined but never used. Allowed unused vars must match /^_/u                        @typescript-eslint/no-unused-vars
+   20:3    warning  'SelectTrigger' is defined but never used. Allowed unused vars must match /^_/u                     @typescript-eslint/no-unused-vars
+   21:3    warning  'SelectValue' is defined but never used. Allowed unused vars must match /^_/u                       @typescript-eslint/no-unused-vars
+   23:37   warning  'User' is defined but never used. Allowed unused vars must match /^_/u                              @typescript-eslint/no-unused-vars
+   23:75   warning  'Clock' is defined but never used. Allowed unused vars must match /^_/u                             @typescript-eslint/no-unused-vars
+   23:95   warning  'MapPin' is defined but never used. Allowed unused vars must match /^_/u                            @typescript-eslint/no-unused-vars
+   23:103  warning  'BellOff' is defined but never used. Allowed unused vars must match /^_/u                           @typescript-eslint/no-unused-vars
+   62:10   warning  'printCopies' is assigned a value but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+  128:9    warning  'handlePrintCopiesChange' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\dashboard\pages\Staff.tsx
+    3:58  warning  'RefreshCw' is defined but never used. Allowed unused vars must match /^_/u         @typescript-eslint/no-unused-vars
+   49:24  warning  'Shield' is defined but never used. Allowed unused vars must match /^_/u            @typescript-eslint/no-unused-vars
+  125:35  warning  'refetch' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\components\AttractScreen.tsx
+  58:11  warning  't' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\components\CategoryTabsNew.tsx
+    7:10  warning  'Button' is defined but never used. Allowed unused vars must match /^_/u                  @typescript-eslint/no-unused-vars
+   33:13  warning  'containerRect' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   34:13  warning  'buttonRect' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+  151:10  warning  'forwardRef' is defined but never used. Allowed unused vars must match /^_/u              @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\components\ComboBuilderNew.tsx
+   96:20  warning  'removeItem' is assigned a value but never used. Allowed unused vars must match /^_/u                            @typescript-eslint/no-unused-vars
+  137:67  warning  React Hook useMemo has a missing dependency: 'getItemsByType'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\components\MenuItemCardNew.tsx
+   3:10  warning  'Plus' is defined but never used. Allowed unused vars must match /^_/u                           @typescript-eslint/no-unused-vars
+   6:10  warning  'FavoriteButton' is defined but never used. Allowed unused vars must match /^_/u                 @typescript-eslint/no-unused-vars
+  51:9   warning  'handleQuantityChange' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\components\QuickReorder.tsx
+  3:30  warning  'Trash2' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\components\SuccessCelebration.tsx
+  1:31  warning  'useCallback' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\context\AccessibilityContext.tsx
+  47:17  warning  'reducedMotion' is assigned a value but never used. Allowed unused vars must match /^_/u                                  @typescript-eslint/no-unused-vars
+  95:6   warning  React Hook useEffect has a missing dependency: 'settings.highContrast'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\hooks\useSound.ts
+  106:12  warning  'e' is defined but never used  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\CartNew.tsx
+   1:33  warning  'useMemo' is defined but never used. Allowed unused vars must match /^_/u                                                                                                      @typescript-eslint/no-unused-vars
+  32:10  warning  'useSound' is defined but never used. Allowed unused vars must match /^_/u                                                                                                     @typescript-eslint/no-unused-vars
+  44:78  warning  'addItem' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                             @typescript-eslint/no-unused-vars
+  46:17  warning  'categories' is assigned a value but never used. Allowed unused vars must match /^_/u                                                                                          @typescript-eslint/no-unused-vars
+  48:9   warning  The 'play' function makes the dependencies of useCallback Hook (at line 84) change on every render. To fix this, wrap the definition of 'play' in its own useCallback() Hook   react-hooks/exhaustive-deps
+  48:9   warning  The 'play' function makes the dependencies of useCallback Hook (at line 93) change on every render. To fix this, wrap the definition of 'play' in its own useCallback() Hook   react-hooks/exhaustive-deps
+  48:9   warning  The 'play' function makes the dependencies of useCallback Hook (at line 101) change on every render. To fix this, wrap the definition of 'play' in its own useCallback() Hook  react-hooks/exhaustive-deps
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\ConfirmationNew.tsx
+   12:10  warning  'cn' is defined but never used. Allowed unused vars must match /^_/u                      @typescript-eslint/no-unused-vars
+   15:8   warning  'KioskHeader' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+  232:24  warning  'customerPhone' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\Details.tsx
+  149:6  warning  React Hook useEffect has a missing dependency: 'name'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\MenuNew.tsx
+  195:6  warning  React Hook useMemo has a missing dependency: 'CATEGORY_PRIORITY'. Either include it or remove the dependency array  react-hooks/exhaustive-deps
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\OrderLookup.tsx
+  10:3  warning  'Package' is defined but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+  29:9  warning  'queryClient' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\QueueDisplay.tsx
+    4:72  warning  'User' is defined but never used. Allowed unused vars must match /^_/u                            @typescript-eslint/no-unused-vars
+    6:10  warning  'ORDER_STATUS_LABELS' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+    6:31  warning  'ORDER_STATUS_COLORS' is defined but never used. Allowed unused vars must match /^_/u             @typescript-eslint/no-unused-vars
+    9:10  warning  'cn' is defined but never used. Allowed unused vars must match /^_/u                              @typescript-eslint/no-unused-vars
+   25:7   warning  'READY_BANNER_DURATION' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+   31:7   warning  'STATUS_COLORS' is assigned a value but never used. Allowed unused vars must match /^_/u          @typescript-eslint/no-unused-vars
+   39:7   warning  'ORDER_NUMBER_COLOR' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+   40:7   warning  'STATUS_HEADER_TEXT' is assigned a value but never used. Allowed unused vars must match /^_/u     @typescript-eslint/no-unused-vars
+   41:7   warning  'QUEUE_BG' is assigned a value but never used. Allowed unused vars must match /^_/u               @typescript-eslint/no-unused-vars
+  108:11  warning  'now' is assigned a value but never used. Allowed unused vars must match /^_/u                    @typescript-eslint/no-unused-vars
+  179:9   warning  'getFirstName' is assigned a value but never used. Allowed unused vars must match /^_/u           @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\kiosk\pages\Welcome.tsx
+  2:35  warning  'useReducedMotion' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\shared\components\StepProgress.tsx
+   1:18  warning  'AnimatePresence' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+  20:11  warning  't' is assigned a value but never used. Allowed unused vars must match /^_/u       @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\shared\components\SwipeableItem.tsx
+  1:28  warning  'useEffect' is defined but never used. Allowed unused vars must match /^_/u        @typescript-eslint/no-unused-vars
+  2:18  warning  'AnimatePresence' is defined but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\shared\hooks\useMenuMutations.ts
+  213:9  warning  'queryClient' is assigned a value but never used. Allowed unused vars must match /^_/u  @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\src\shared\hooks\useOrders.ts
+  764:10  warning  'payload' is defined but never used. Allowed unused args must match /^_/u  @typescript-eslint/no-unused-vars
+  784:19  warning  'status' is defined but never used. Allowed unused args must match /^_/u   @typescript-eslint/no-unused-vars
+
+C:\Users\Stuart\Desktop\9Yards\9yards-kiosk\tailwind.config.ts
+  121:13  error  A `require()` style import is forbidden  @typescript-eslint/no-require-imports
+
+✖ 91 problems (2 errors, 89 warnings)
+  1 error and 0 warnings potentially fixable with the `--fix` option.
+

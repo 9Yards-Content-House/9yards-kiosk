@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { motion, AnimatePresence } from "framer-motion";
+import { motion } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
 import { usePushNotifications } from "../hooks/usePushNotifications";
@@ -14,13 +14,7 @@ import {
   DialogTrigger,
 } from "@shared/components/ui/dialog";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@shared/components/ui/select";
-import { Bell, Volume2, Smartphone, User, Edit2, Loader2, Store, Printer, Clock, Save, Check, MapPin, BellOff, Key, Eye, EyeOff, Shield, Info, Usb, RefreshCw } from "lucide-react";
+import { Bell, Volume2, Smartphone, Edit2, Loader2, Store, Printer, Save, Check, Key, Eye, EyeOff, Shield, Info, Usb, RefreshCw } from "lucide-react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { toast } from "sonner";
 
@@ -125,7 +119,7 @@ export default function Settings() {
   };
 
   // Handle print copies change
-  const handlePrintCopiesChange = (copies: number) => {
+  const handlePrintCopies = (copies: number) => {
     const validCopies = Math.min(Math.max(1, copies), 5);
     setPrintCopies(validCopies);
     saveSetting(STORAGE_KEYS.PRINT_COPIES, validCopies);

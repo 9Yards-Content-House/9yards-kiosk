@@ -32,7 +32,9 @@ export function useRealtime<T = Record<string, unknown>>(
   useEffect(() => {
     // Skip realtime in mock mode - rely on polling instead
     if (USE_MOCK_DATA) {
-      console.log("📦 Mock mode: Realtime subscription disabled, using polling");
+      import("@shared/lib/devLog").then(({ devLog }) => {
+        devLog.log("📦 Mock mode: Realtime subscription disabled, using polling");
+      });
       return;
     }
 

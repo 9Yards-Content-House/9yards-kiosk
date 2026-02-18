@@ -3,6 +3,7 @@ import { motion } from "framer-motion";
 import { Loader2, Smartphone, ArrowLeft, RefreshCw } from "lucide-react";
 import { formatPrice } from "@shared/lib/utils";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
+import { devLog } from "@shared/lib/devLog";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import KioskHeader from "./KioskHeader";
@@ -70,7 +71,7 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
 
     // Mock mode - simulate successful payment
     if (USE_MOCK_DATA) {
-      console.log("📦 Mock MoMo payment:", { phone: momoPhone, amount, network });
+      devLog.log("📦 Mock MoMo payment:", { phone: momoPhone, amount, network });
       timeoutRef.current = setTimeout(() => {
         setStep("success");
         setTimeout(onSuccess, 1500);
@@ -109,7 +110,7 @@ export default function MoMoPayment({ phone, amount, onSuccess, onCancel }: MoMo
             }
           } catch (err) {
             // Continue polling on network errors - don't interrupt payment flow
-            if (import.meta.env.DEV) console.warn('Payment status poll failed:', err);
+            if (import.meta.env.DEV) devLog.warn('Payment status poll failed:', err);
           }
         }, 3000);
 
