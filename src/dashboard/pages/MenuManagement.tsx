@@ -309,10 +309,10 @@ export default function MenuManagement() {
         {/* Items list */}
         {viewMode === "list" ? (
           <div className="bg-card rounded-xl border overflow-hidden">
-            <div className="hidden md:grid grid-cols-[1fr_120px_100px_120px_100px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
+            <div className="hidden md:flex md:items-center md:gap-4 lg:grid lg:grid-cols-[1fr_120px_100px_120px_100px] px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
               <button 
                 onClick={() => toggleSort("name")}
-                className="flex items-center gap-1 hover:text-foreground transition-colors text-left"
+                className="flex-1 flex items-center gap-1 hover:text-foreground transition-colors text-left lg:flex-none"
                 aria-sort={sortBy === "name" ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
               >
                 Item
@@ -320,7 +320,7 @@ export default function MenuManagement() {
               </button>
               <button 
                 onClick={() => toggleSort("category")}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                className="hidden lg:flex items-center gap-1 hover:text-foreground transition-colors"
                 aria-sort={sortBy === "category" ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
               >
                 Category
@@ -328,14 +328,14 @@ export default function MenuManagement() {
               </button>
               <button 
                 onClick={() => toggleSort("price")}
-                className="flex items-center gap-1 hover:text-foreground transition-colors"
+                className="flex items-center gap-1 hover:text-foreground transition-colors shrink-0"
                 aria-sort={sortBy === "price" ? (sortOrder === "asc" ? "ascending" : "descending") : undefined}
               >
                 Price
                 {sortBy === "price" && <ArrowUpDown className="w-3 h-3" aria-hidden="true" />}
               </button>
-              <span>Badges</span>
-              <span>Actions</span>
+              <span className="hidden lg:block">Badges</span>
+              <span className="shrink-0">Actions</span>
             </div>
             {sortedItems?.map((item) => (
               <MenuItemRow
