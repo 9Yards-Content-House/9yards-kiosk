@@ -1,4 +1,5 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { useQuery } from "@tanstack/react-query";
 import {
   Star,
@@ -8,10 +9,15 @@ import {
   ChevronDown,
   Users,
   TrendingUp,
+  Loader2,
+  Calendar,
+  ChevronRight,
 } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { cn } from "@shared/lib/utils";
 import { Button } from "@shared/components/ui/button";
+import { Skeleton } from "@shared/components/ui/skeleton";
 
 /* ─── Types ─── */
 interface FeedbackEntry {
@@ -105,31 +111,38 @@ function StatCard({
   icon: Icon,
   subtitle,
   color,
+  delay = 0,
 }: {
   label: string;
   value: string;
   icon: typeof Star;
   subtitle?: string;
   color: string;
+  delay?: number;
 }) {
   return (
-    <div className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm">
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-sm font-medium text-gray-500">{label}</p>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      className="bg-white rounded-2xl border border-slate-100 p-4 md:p-5 shadow-sm transition-all group"
+    >
+      <div className="flex items-start justify-between mb-2 md:mb-3 gap-2">
+        <p className="text-[9px] md:text-[10px] font-black text-slate-400 uppercase tracking-widest leading-tight">{label}</p>
         <div
           className={cn(
-            "w-10 h-10 rounded-xl flex items-center justify-center",
+            "hidden md:flex w-10 h-10 rounded-xl items-center justify-center shrink-0 transition-colors",
             color
           )}
         >
           <Icon className="w-5 h-5" />
         </div>
       </div>
-      <p className="text-3xl font-bold text-gray-900">{value}</p>
+      <p className="text-2xl md:text-3xl font-black text-primary tracking-tighter">{value}</p>
       {subtitle && (
-        <p className="text-xs text-gray-400 mt-1">{subtitle}</p>
+        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-tight mt-1 truncate">{subtitle}</p>
       )}
-    </div>
+    </motion.div>
   );
 }
 
@@ -138,6 +151,7 @@ export default function Feedback() {
   const [searchTerm, setSearchTerm] = useState("");
   const [filterRating, setFilterRating] = useState<number | null>(null);
   const [showFilterDropdown, setShowFilterDropdown] = useState(false);
+  const navigate = useNavigate();
 
   // Fetch feedback
   const { data: feedback = [], isLoading } = useQuery<FeedbackEntry[]>({
@@ -211,187 +225,256 @@ export default function Feedback() {
   return (
     <div className="p-6 max-w-7xl mx-auto">
       {/* Page Header */}
-      <div className="mb-8">
-        <h1 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
-          <MessageSquare className="w-7 h-7 text-[#212282]" />
-          Customer Feedback
+      <div className="mb-6 flex flex-col gap-2">
+        <h1 className="text-xl md:text-2xl font-black text-primary uppercase tracking-tight flex items-center gap-2">
+          <MessageSquare className="w-6 h-6 md:w-7 md:h-7" />
+          <span className="truncate">Feedback</span>
         </h1>
-        <p className="text-sm text-gray-500 mt-1">
-          View and analyze customer feedback from orders
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-none">
+          Service quality analysis
         </p>
       </div>
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-8">
+      <div className="grid grid-cols-3 gap-2 md:gap-4 mb-6">
         <StatCard
-          label="Average Rating"
+          label="Rating"
           value={stats.avgRating.toFixed(1)}
           icon={Star}
-          subtitle={`out of 5 stars`}
-          color="bg-yellow-50 text-yellow-600"
+          subtitle="Out of 5"
+          color="bg-yellow-50 text-yellow-500"
+          delay={0.1}
         />
         <StatCard
-          label="Total Reviews"
+          label="Reviews"
           value={stats.total.toString()}
           icon={Users}
-          subtitle="all time"
-          color="bg-blue-50 text-blue-600"
+          subtitle="Total"
+          color="bg-primary/5 text-primary"
+          delay={0.2}
         />
         <StatCard
-          label="With Comments"
+          label="Comments"
           value={stats.withComments.toString()}
           icon={TrendingUp}
-          subtitle={`out of ${stats.total} reviews`}
-          color="bg-green-50 text-green-600"
+          subtitle="With Text"
+          color="bg-secondary/5 text-secondary"
+          delay={0.3}
         />
       </div>
 
-      {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        {/* Search */}
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+      <div className="flex items-center gap-2 mb-6">
+        <div className="relative flex-1 group">
+          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400 transition-colors" />
           <input
             type="text"
-            placeholder="Search by order #, customer, or comment..."
+            placeholder="Search reviews..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
-            className="w-full pl-10 pr-4 py-2.5 border border-gray-200 rounded-xl text-sm focus:border-[#212282] focus:ring-2 focus:ring-[#212282]/20 outline-none transition-all"
+            className="w-full pl-10 pr-4 py-3 bg-white border border-slate-100 rounded-2xl text-sm font-medium focus:border-primary focus:ring-1 focus:ring-primary/10 outline-none transition-all shadow-sm"
           />
         </div>
 
-        {/* Rating Filter */}
-        <div className="relative">
+        <div className="relative shrink-0">
           <Button
             variant="outline"
             onClick={() => setShowFilterDropdown(!showFilterDropdown)}
-            className="gap-2 rounded-xl h-[42px] border-gray-200"
+            className="h-[46px] w-[46px] md:w-auto md:gap-2 rounded-2xl border-slate-100 p-0 md:px-5 font-bold text-slate-600 hover:text-primary hover:border-primary/20 transition-all bg-white shadow-sm flex items-center justify-center"
           >
             <Filter className="w-4 h-4" />
-            {filterRating !== null ? `${filterRating} Stars` : "All Ratings"}
-            <ChevronDown className="w-3 h-3" />
+            <span className="hidden md:inline">
+              {filterRating !== null ? `${filterRating} Stars` : "All Ratings"}
+            </span>
+            <ChevronDown className={cn("hidden md:block w-3.5 h-3.5 transition-transform duration-300", showFilterDropdown && "rotate-180")} />
           </Button>
-          {showFilterDropdown && (
-            <div className="absolute top-full right-0 mt-1 bg-white border border-gray-200 rounded-xl shadow-lg py-1 z-10 min-w-[140px]">
-              <button
-                onClick={() => {
-                  setFilterRating(null);
-                  setShowFilterDropdown(false);
-                }}
-                className={cn(
-                  "w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition-colors",
-                  filterRating === null && "bg-gray-50 font-medium"
-                )}
+
+          <AnimatePresence>
+            {showFilterDropdown && (
+              <motion.div 
+                initial={{ opacity: 0, y: 10, scale: 0.95 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 10, scale: 0.95 }}
+                className="absolute top-full right-0 mt-2 bg-white border border-slate-100 rounded-2xl shadow-xl py-2 z-20 min-w-[180px] overflow-hidden"
               >
-                All Ratings
-              </button>
-              {[5, 4, 3, 2, 1].map((r) => (
                 <button
-                  key={r}
                   onClick={() => {
-                    setFilterRating(r);
+                    setFilterRating(null);
                     setShowFilterDropdown(false);
                   }}
                   className={cn(
-                    "w-full px-4 py-2 text-sm text-left hover:bg-gray-50 transition-colors flex items-center gap-2",
-                    filterRating === r && "bg-gray-50 font-medium"
+                    "w-full px-4 py-2.5 text-[10px] font-black uppercase tracking-widest text-left hover:bg-slate-50 transition-colors",
+                    filterRating === null ? "text-primary bg-primary/5" : "text-slate-400"
                   )}
                 >
-                  <Stars value={r} size="xs" />
-                  <span className="text-gray-400 text-xs">
-                    ({feedback.filter((f) => f.rating === r).length})
-                  </span>
+                  All Ratings
                 </button>
-              ))}
-            </div>
-          )}
+                {[5, 4, 3, 2, 1].map((r) => (
+                  <button
+                    key={r}
+                    onClick={() => {
+                      setFilterRating(r);
+                      setShowFilterDropdown(false);
+                    }}
+                    className={cn(
+                      "w-full px-4 py-3 text-sm text-left hover:bg-slate-50 transition-colors flex items-center justify-between group",
+                      filterRating === r && "bg-slate-50"
+                    )}
+                  >
+                    <div className="flex items-center gap-2">
+                       <Stars value={r} size="xs" />
+                       <span className={cn("text-xs font-bold", filterRating === r ? "text-primary" : "text-slate-600")}>{r} Stars</span>
+                    </div>
+                    <span className="text-[10px] font-black text-slate-300 group-hover:text-slate-400 transition-colors">
+                      {feedback.filter((f) => f.rating === r).length}
+                    </span>
+                  </button>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
       </div>
 
       {/* Feedback List */}
       {isLoading ? (
-        <div className="flex items-center justify-center py-20">
-          <div className="w-10 h-10 border-4 border-[#212282] border-t-transparent rounded-full animate-spin" />
-        </div>
-      ) : filtered.length === 0 ? (
-        <div className="text-center py-20">
-          <MessageSquare className="w-12 h-12 text-gray-300 mx-auto mb-4" />
-          <p className="text-gray-500 font-medium">No feedback found</p>
-          <p className="text-gray-400 text-sm mt-1">
-            {searchTerm || filterRating !== null
-              ? "Try adjusting your filters"
-              : "Feedback will appear here when customers leave reviews"}
-          </p>
-        </div>
-      ) : (
         <div className="space-y-3">
-          {filtered.map((entry) => (
-            <div
-              key={entry.id}
-              className="bg-white rounded-2xl border border-gray-100 p-5 shadow-sm hover:shadow-md transition-shadow"
-            >
-              <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-3">
-                {/* Left: Customer info + rating */}
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-3 mb-2">
-                    <div className="w-9 h-9 rounded-full bg-[#212282]/10 flex items-center justify-center text-sm font-bold text-[#212282] flex-shrink-0">
-                      {entry.orders?.customer_name?.charAt(0) || "?"}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="font-semibold text-gray-900 text-sm truncate">
-                        {entry.orders?.customer_name || "Customer"}
-                      </p>
-                      <p className="text-xs text-gray-400">
-                        Order #{entry.orders?.order_number || "—"} ·{" "}
-                        {timeAgo(entry.created_at)}
-                      </p>
-                    </div>
+          {[1, 2, 3, 4, 3].map((i) => (
+            <div key={i} className="bg-white rounded-[2rem] border border-slate-50 p-5 animate-pulse">
+              <div className="flex items-start justify-between mb-4">
+                <div className="flex items-center gap-3">
+                  <Skeleton className="w-10 h-10 rounded-xl shrink-0" />
+                  <div className="space-y-1.5">
+                    <Skeleton className="h-3.5 w-24 rounded" />
+                    <Skeleton className="h-2.5 w-32 rounded" />
                   </div>
-
-                  <div className="flex items-center gap-1.5">
-                      <Stars value={entry.rating} />
-                      <span className="text-xs font-medium text-gray-600">
-                        {entry.rating}/5
-                      </span>
-                    </div>
-
-                  {/* Comment */}
-                  {entry.comment && (
-                    <p className="text-sm text-gray-600 bg-gray-50 rounded-xl p-3 mt-2">
-                      "{entry.comment}"
-                    </p>
-                  )}
                 </div>
-
-                {/* Right: Rating badge */}
-                <div
-                  className={cn(
-                    "flex items-center gap-1 px-3 py-1.5 rounded-full text-xs font-bold flex-shrink-0",
-                    entry.rating >= 4
-                      ? "bg-green-50 text-green-700"
-                      : entry.rating === 3
-                        ? "bg-yellow-50 text-yellow-700"
-                        : "bg-red-50 text-red-700"
-                  )}
-                >
-                  <Star
-                    className={cn(
-                      "w-3.5 h-3.5",
-                      entry.rating >= 4
-                        ? "fill-green-500 text-green-500"
-                        : entry.rating === 3
-                          ? "fill-yellow-500 text-yellow-500"
-                          : "fill-red-500 text-red-500"
-                    )}
-                  />
-                  {entry.rating >= 4
-                    ? "Positive"
-                    : entry.rating === 3
-                      ? "Neutral"
-                      : "Needs Attention"}
-                </div>
+                <Skeleton className="h-4 w-16 rounded" />
+              </div>
+              <Skeleton className="h-10 w-full rounded-xl mb-4" />
+              <div className="flex items-center justify-between pt-3 border-t border-slate-50">
+                <Skeleton className="h-6 w-20 rounded-full" />
+                <Skeleton className="h-6 w-24 rounded-full" />
               </div>
             </div>
           ))}
+        </div>
+      ) : filtered.length === 0 ? (
+        <motion.div 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="text-center py-20 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200"
+        >
+          <div className="w-20 h-20 bg-white rounded-full flex items-center justify-center mx-auto mb-6 shadow-sm">
+            <MessageSquare className="w-10 h-10 text-slate-200" />
+          </div>
+          <h3 className="text-lg font-black text-primary uppercase tracking-tight">No feedback found</h3>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2 max-w-[240px] mx-auto leading-relaxed">
+            {searchTerm || filterRating !== null
+              ? "Try adjusting your filters to find specific reviews"
+              : "Feedback will appear here once customers start sharing their experience"}
+          </p>
+          {(searchTerm || filterRating !== null) && (
+            <Button 
+              variant="link" 
+              onClick={() => { setSearchTerm(""); setFilterRating(null); }}
+              className="mt-4 text-primary font-black uppercase tracking-widest text-[10px]"
+            >
+              Clear all filters
+            </Button>
+          )}
+        </motion.div>
+      ) : (
+        <div className="space-y-3">
+          <AnimatePresence mode="popLayout">
+            {filtered.map((entry, idx) => (
+              <motion.div
+                key={entry.id}
+                initial={{ opacity: 0, y: 15 }}
+                animate={{ opacity: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95 }}
+                transition={{ delay: Math.min(idx * 0.05, 0.5) }}
+                className="bg-white rounded-[2rem] border border-slate-100 p-4 md:p-6 shadow-sm transition-all"
+              >
+                <div className="flex flex-col gap-4">
+                  <div className="flex items-start justify-between gap-3">
+                    <div className="flex items-center gap-2.5 min-w-0">
+                      <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl md:rounded-2xl bg-primary/5 flex items-center justify-center text-xs md:text-sm font-black text-primary border border-primary/10 shadow-inner shrink-0">
+                        {entry.orders?.customer_name?.charAt(0).toUpperCase() || "?"}
+                      </div>
+                      <div className="min-w-0">
+                        <h4 className="font-black text-primary text-xs md:text-sm truncate uppercase tracking-tight leading-tight">
+                          {entry.orders?.customer_name || "Guest Customer"}
+                        </h4>
+                        <p className="text-[9px] md:text-[10px] font-bold text-slate-400 uppercase tracking-widest flex items-center gap-1.5 md:gap-2 leading-none mt-1">
+                           <span className="truncate">#{entry.orders?.order_number || "—"}</span>
+                           <span className="w-1 h-1 rounded-full bg-slate-200 shrink-0" />
+                           <span className="shrink-0">{timeAgo(entry.created_at)}</span>
+                        </p>
+                      </div>
+                    </div>
+                    
+                    <div className="shrink-0 flex flex-col items-end gap-1">
+                      <Stars value={entry.rating} size="xs" />
+                      <span className="text-[9px] font-black text-slate-300 uppercase tracking-widest">
+                        {entry.rating}.0 / 5.0
+                      </span>
+                    </div>
+                  </div>
+
+                  {entry.comment && (
+                    <div className="relative pl-3">
+                      <p className="text-xs md:text-sm text-slate-600 italic leading-relaxed">
+                        "{entry.comment}"
+                      </p>
+                      <div className="absolute left-0 top-0 bottom-0 w-0.5 bg-secondary/20 rounded-full" />
+                    </div>
+                  )}
+
+                  <div className="flex items-center justify-between pt-3 border-t border-slate-50 gap-2">
+                    <div
+                      className={cn(
+                        "flex items-center gap-1.5 px-3 py-1 rounded-full text-[9px] font-black uppercase tracking-widest border shrink-0",
+                        entry.rating >= 4
+                          ? "bg-green-500/10 text-green-700 border-green-500/20"
+                          : entry.rating === 3
+                            ? "bg-yellow-500/10 text-yellow-700 border-yellow-500/20"
+                            : "bg-red-500/10 text-red-700 border-red-500/20"
+                      )}
+                    >
+                      <Star
+                        className={cn(
+                          "w-2.5 h-2.5",
+                          entry.rating >= 4
+                            ? "fill-green-500 text-green-500"
+                            : entry.rating === 3
+                              ? "fill-yellow-500 text-yellow-500"
+                              : "fill-red-500 text-red-500"
+                        )}
+                      />
+                      <span className="hidden xs:inline">
+                        {entry.rating >= 4
+                          ? "Positive"
+                          : entry.rating === 3
+                            ? "Neutral"
+                            : "Action"}
+                      </span>
+                      <span className="xs:hidden">
+                        {entry.rating >= 4 ? "Good" : entry.rating === 3 ? "OK" : "Alert"}
+                      </span>
+                    </div>
+                    
+                    <Button 
+                      variant="ghost" 
+                      size="sm" 
+                      onClick={() => entry.orders?.order_number && navigate(`/orders/${entry.orders.order_number}`)}
+                      className="h-7 text-[9px] font-black tracking-widest uppercase text-slate-400 hover:text-primary hover:bg-primary/5 rounded-full px-3 border border-transparent"
+                    >
+                      View Order <ChevronRight className="w-3 h-3 ml-0.5" />
+                    </Button>
+                  </div>
+                </div>
+              </motion.div>
+            ))}
+          </AnimatePresence>
         </div>
       )}
     </div>
