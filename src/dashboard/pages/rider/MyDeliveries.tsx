@@ -584,10 +584,16 @@ function AvailableList({ orders, claimOrder }: { orders: Order[], claimOrder: an
             <Button
               onClick={() => claimOrder.mutate(order.id)}
               disabled={claimOrder.isPending}
-              className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md transition-all active:scale-[0.98]"
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md transition-all active:scale-[0.98] disabled:opacity-70"
             >
-              <UserPlus className="w-4 h-4 mr-2" />
-              Claim Delivery
+              {claimOrder.isPending ? (
+                <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+              ) : (
+                <>
+                  <UserPlus className="w-4 h-4 mr-2" />
+                  Claim Delivery
+                </>
+              )}
             </Button>
           </motion.div>
         ))}
@@ -702,12 +708,18 @@ function MineList({ orders, setConfirmOrder, isPending }: { orders: Order[], set
                 onClick={() => setConfirmOrder(order)}
                 disabled={isPending}
                 className={cn(
-                  "flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md transition-all active:scale-[0.98]",
+                  "flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md transition-all active:scale-[0.98] disabled:opacity-70",
                   urgent ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"
                 )}
               >
-                <CheckCircle2 className="w-4 h-4 mr-2" />
-                Complete Delivery
+                {isPending ? (
+                  <div className="animate-spin w-4 h-4 border-2 border-white border-t-transparent rounded-full" />
+                ) : (
+                  <>
+                    <CheckCircle2 className="w-4 h-4 mr-2" />
+                    Complete Delivery
+                  </>
+                )}
               </Button>
             </div>
           </motion.div>
