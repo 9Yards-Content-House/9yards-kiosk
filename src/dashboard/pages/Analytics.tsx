@@ -475,29 +475,35 @@ export default function Analytics() {
             <AIInsightsPanel orders={orders || []} />
             <div className="bg-card rounded-2xl border shadow-sm p-4">
               <h3 className="font-bold text-lg mb-4 text-[#212282]">Top Selling Items</h3>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 {metrics.topItems.map((item, idx) => (
-                  <div key={item.name} className="flex items-center gap-3">
-                    <span className={cn(
-                      'w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-black border-2 border-white shadow-sm', 
-                      idx === 0 ? 'bg-yellow-400 text-yellow-900' : 
-                      idx === 1 ? 'bg-slate-200 text-slate-700' : 
-                      idx === 2 ? 'bg-amber-600 text-white' : 
-                      'bg-slate-100 text-slate-500'
+                  <div key={item.name} className="flex items-center gap-4 group hover:bg-slate-50/50 p-1.5 -mx-1.5 rounded-xl transition-colors">
+                    <div className={cn(
+                      'w-8 h-8 shrink-0 rounded-full flex items-center justify-center text-xs font-black border-2 shadow-sm',
+                      idx === 0 ? 'bg-yellow-400 border-yellow-200 text-yellow-900 shadow-yellow-100' : 
+                      idx === 1 ? 'bg-slate-200 border-slate-100 text-slate-700 shadow-slate-50' : 
+                      idx === 2 ? 'bg-amber-600 border-amber-500 text-white shadow-amber-100' : 
+                      'bg-slate-50 border-slate-100 text-slate-400'
                     )}>
                       {idx + 1}
-                    </span>
-                    <div className="flex-1 min-w-0">
-                      <p className="font-bold text-sm text-slate-900 truncate">{item.name}</p>
-                      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        {item.count} items • {formatPrice(item.revenue)}
-                      </p>
                     </div>
-                    <div className="w-20 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                      <div 
-                        className="h-full bg-secondary rounded-full" 
-                        style={{ width: `${(item.count / (metrics.topItems[0]?.count || 1)) * 100}%` }} 
-                      />
+                    <div className="flex-1 min-w-0">
+                      <p className="font-black text-sm text-[#212282] truncate leading-tight mb-0.5">{item.name}</p>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.count} items</span>
+                        <span className="w-1 h-1 rounded-full bg-slate-200" />
+                        <span className="text-[10px] font-black text-secondary uppercase tracking-widest">{formatPrice(item.revenue)}</span>
+                      </div>
+                    </div>
+                    <div className="w-24 shrink-0 flex flex-col items-end gap-1.5">
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-100/50">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${(item.count / (metrics.topItems[0]?.count || 1)) * 100}%` }}
+                          transition={{ duration: 1, ease: "easeOut" }}
+                          className="h-full bg-secondary rounded-full shadow-sm" 
+                        />
+                      </div>
                     </div>
                   </div>
                 ))}
