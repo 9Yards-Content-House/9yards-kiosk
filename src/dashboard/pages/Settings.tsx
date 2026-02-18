@@ -258,7 +258,7 @@ export default function Settings() {
         </div>
         <div>
           <h1 className="text-xl md:text-2xl font-black text-primary uppercase tracking-tight">Settings</h1>
-          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dashboard & Account Preferences</p>
+          <p className="text-[10px] font-black text-secondary uppercase tracking-widest">Dashboard & Account Preferences</p>
         </div>
       </div>
 
@@ -268,9 +268,8 @@ export default function Settings() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+          className="bg-white rounded-[2rem] border border-slate-100 p-5 md:p-6 shadow-sm overflow-hidden relative group"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           
           <div className="flex items-center justify-between mb-6 relative z-10">
             <div className="flex items-center gap-4">
@@ -298,7 +297,7 @@ export default function Settings() {
                   Edit
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[2.5rem]">
+              <DialogContent className="rounded-[2rem] md:rounded-[2.5rem] w-[95vw] max-w-lg p-6">
                 <DialogHeader>
                   <DialogTitle className="font-black text-primary uppercase tracking-tight">Edit Profile</DialogTitle>
                 </DialogHeader>
@@ -362,13 +361,12 @@ export default function Settings() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.2 }}
-          className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+          className="bg-white rounded-[2rem] border border-slate-100 p-5 md:p-6 shadow-sm overflow-hidden relative group"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           
           <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="w-10 h-10 rounded-2xl bg-purple-100 flex items-center justify-center">
-              <Shield className="w-5 h-5 text-purple-600" />
+            <div className="w-10 h-10 rounded-2xl bg-[#F05223]/10 flex items-center justify-center">
+              <Shield className="w-5 h-5 text-[#F05223]" />
             </div>
             <div>
               <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Security</h2>
@@ -408,7 +406,7 @@ export default function Settings() {
                   {hasExistingPin ? "Change Security PIN" : "Setup Login PIN"}
                 </Button>
               </DialogTrigger>
-              <DialogContent className="rounded-[2.5rem]">
+              <DialogContent className="rounded-[2rem] md:rounded-[2.5rem] w-[95vw] max-w-lg p-6">
                 <DialogHeader>
                   <DialogTitle className="font-black text-primary uppercase tracking-tight">
                     {hasExistingPin ? "Change Security PIN" : "Setup Login PIN"}
@@ -497,13 +495,12 @@ export default function Settings() {
           initial={{ opacity: 0, x: -10 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.3 }}
-          className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+          className="bg-white rounded-[2rem] border border-slate-100 p-5 md:p-6 shadow-sm overflow-hidden relative group"
         >
-          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
           
           <div className="flex items-center gap-3 mb-6 relative z-10">
-            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
-              <Bell className="w-5 h-5 text-amber-600" />
+            <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+              <Bell className="w-5 h-5 text-primary" />
             </div>
             <div>
               <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Notifications</h2>
@@ -554,11 +551,11 @@ export default function Settings() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.4 }}
-              className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+              className="bg-white rounded-[2rem] border border-slate-100 p-5 md:p-6 shadow-sm overflow-hidden relative group"
             >
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-2xl bg-sky-100 flex items-center justify-center">
-                  <Printer className="w-5 h-5 text-sky-600" />
+                <div className="w-10 h-10 rounded-2xl bg-primary/10 flex items-center justify-center">
+                  <Printer className="w-5 h-5 text-primary" />
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Printing</h2>
@@ -593,11 +590,11 @@ export default function Settings() {
               initial={{ opacity: 0, x: -10 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.5 }}
-              className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+              className="bg-white rounded-[2rem] border border-slate-100 p-5 md:p-6 shadow-sm overflow-hidden relative group"
             >
               <div className="flex items-center gap-3 mb-6">
-                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center">
-                  <Store className="w-5 h-5 text-rose-600" />
+                <div className="w-10 h-10 rounded-2xl bg-[#F05223]/10 flex items-center justify-center">
+                  <Store className="w-5 h-5 text-[#F05223]" />
                 </div>
                 <div>
                   <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Store Info</h2>
