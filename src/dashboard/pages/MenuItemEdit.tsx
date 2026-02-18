@@ -738,15 +738,15 @@ export default function MenuItemEdit() {
         {/* PREVIEW PANEL */}
         <aside className="hidden xl:block w-[360px] sticky top-8 space-y-6 shrink-0">
           <div className="flex items-center justify-between px-2">
-            <h3 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+            <h3 className="font-bold text-[10px] uppercase tracking-[0.15em] text-muted-foreground/70 flex items-center gap-2">
               Kiosk Preview
-              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+              <span className="h-2 w-2 rounded-full bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.6)] animate-pulse" />
             </h3>
-            <span className="text-[10px] bg-muted px-2 py-0.5 rounded text-muted-foreground font-medium">LIVE</span>
+            <span className="text-[9px] bg-secondary/10 text-secondary border border-secondary/20 px-2 py-0.5 rounded-full font-black tracking-tighter">LIVE</span>
           </div>
           
-          <div className="p-6 bg-muted/40 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/20 flex items-center justify-center min-h-[480px]">
-             <div className="w-full transform scale-110 xl:scale-100 origin-top transition-transform duration-300">
+          <div className="p-6 bg-muted/30 backdrop-blur-md rounded-[3rem] border-2 border-dashed border-muted-foreground/15 flex items-center justify-center min-h-[480px] shadow-inner">
+             <div className="w-full transform transition-transform duration-500">
                 <MenuItemCardNew 
                   item={previewItem} 
                   categorySlug={selectedCategory?.slug}

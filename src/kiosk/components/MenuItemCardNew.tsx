@@ -95,9 +95,14 @@ export default function MenuItemCardNew({
           alt={item.name}
           aspectRatio="4/3"
           fallback={
-            <div className="w-full h-full bg-muted/50 flex flex-col items-center justify-center gap-2">
-              <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
-              <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">No Image</span>
+            <div className="w-full h-full bg-gradient-to-br from-muted/50 via-muted/30 to-muted/50 flex flex-col items-center justify-center gap-3">
+              <div className="w-16 h-16 rounded-full bg-white/50 backdrop-blur-sm flex items-center justify-center shadow-inner">
+                <ImageIcon className="w-8 h-8 text-muted-foreground/40" />
+              </div>
+              <div className="flex flex-col items-center gap-1">
+                <span className="text-[11px] font-black text-muted-foreground/40 uppercase tracking-[0.2em]">No Image</span>
+                <div className="h-0.5 w-8 bg-muted-foreground/20 rounded-full" />
+              </div>
             </div>
           }
         />
@@ -128,8 +133,8 @@ export default function MenuItemCardNew({
       <div className="p-4 flex flex-col flex-1">
         {/* Category Lead-in */}
         {categorySlug && (
-          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
-            {categorySlug.replace('-', ' ')}
+          <span className="text-[10px] font-black text-secondary/60 uppercase tracking-[0.15em] mb-2 block">
+            {categorySlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
           </span>
         )}
         
