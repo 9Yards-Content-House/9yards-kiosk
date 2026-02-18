@@ -40,7 +40,15 @@ import {
   SelectValue,
 } from "@shared/components/ui/select";
 import { toast } from "sonner";
-import { MoreVertical } from "lucide-react";
+import {
+  Tabs,
+  TabsContent,
+  TabsList,
+  TabsTrigger,
+} from "@shared/components/ui/tabs";
+import { MoreVertical, Shield, User, Trophy, Users } from "lucide-react";
+import StaffPerformancePanel from "../components/StaffPerformancePanel";
+import { formatPhoneDisplay, normalizePhone } from "@shared/lib/validation";
 
 // Role badge colors
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -97,6 +105,17 @@ const formatRelativeTime = (dateString: string) => {
   if (diffDays < 30) return `${Math.floor(diffDays / 7)} weeks ago`;
   return date.toLocaleDateString();
 };
+
+// Helper to get initials from name
+function getInitials(name: string): string {
+  if (!name) return "?";
+  return name
+    .split(' ')
+    .map(n => n[0])
+    .join('')
+    .toUpperCase()
+    .slice(0, 2);
+}
 
 export default function Staff() {
   const { role, user, loading: authLoading } = useAuth();
@@ -180,7 +199,7 @@ export default function Staff() {
         const newStaff: Profile = {
           id: `user-${Date.now()}`,
           full_name: inviteName,
-          phone: invitePhone || null,
+          phone: normalizePhone(invitePhone) || null,
           role: inviteRole,
           active: true,
           created_at: new Date().toISOString(),
@@ -212,7 +231,7 @@ export default function Staff() {
           .from("profiles")
           .update({
             full_name: inviteName,
-            phone: invitePhone || null,
+            phone: normalizePhone(invitePhone) || null,
             role: inviteRole,
           })
           .eq("id", authData.user.id);
@@ -348,7 +367,7 @@ export default function Staff() {
       id: editingMember.id,
       updates: {
         full_name: editName,
-        phone: editPhone || null,
+        phone: normalizePhone(editPhone) || null,
         role: editRole,
       },
     });
@@ -371,377 +390,430 @@ export default function Staff() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
+    <div className="h-full flex flex-col bg-slate-50/30">
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 p-6 bg-white border-b">
         <div>
-          <h1 className="text-2xl font-bold">Staff Management</h1>
-          <p className="text-muted-foreground">{staff?.length || 0} team members</p>
+          <h1 className="text-2xl font-bold tracking-tight text-[#212282]">Staff Management</h1>
+          <p className="text-muted-foreground text-sm font-medium">Manage your team, roles, and performance</p>
         </div>
         <Dialog open={showInvite} onOpenChange={setShowInvite}>
           <DialogTrigger asChild>
-            <Button>
-              <Plus className="w-4 h-4 mr-2" />
-              Add Staff
+            <Button className="hidden md:flex bg-secondary hover:bg-secondary/90 text-white font-bold h-11 px-6 rounded-xl shadow-sm transition-all active:scale-[0.98] gap-2">
+              <Plus className="w-5 h-5" />
+              Add Staff Member
             </Button>
           </DialogTrigger>
-          <DialogContent>
+          <DialogContent className="max-w-md rounded-2xl">
             <DialogHeader>
-              <DialogTitle>Add New Staff Member</DialogTitle>
+              <DialogTitle className="text-xl font-bold">Add New Staff Member</DialogTitle>
             </DialogHeader>
-            <div className="space-y-4 pt-2">
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Full Name</label>
-                <Input
-                  value={inviteName}
-                  onChange={(e) => setInviteName(e.target.value)}
-                  placeholder="John Doe"
-                />
+            <div className="space-y-4 pt-4">
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground/80">Full Name</label>
+                <div className="relative">
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    value={inviteName}
+                    onChange={(e) => setInviteName(e.target.value)}
+                    placeholder="Enter full name"
+                    className="pl-9 h-11 rounded-xl"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Email</label>
-                <Input
-                  type="email"
-                  value={inviteEmail}
-                  onChange={(e) => setInviteEmail(e.target.value)}
-                  placeholder="john@9yards.co.ug"
-                />
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground/80">Email Address</label>
+                <div className="relative">
+                  <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="email"
+                    value={inviteEmail}
+                    onChange={(e) => setInviteEmail(e.target.value)}
+                    placeholder="email@9yards.co.ug"
+                    className="pl-9 h-11 rounded-xl"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Password</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground/80">Login Password</label>
                 <Input
                   type="password"
                   value={invitePassword}
                   onChange={(e) => setInvitePassword(e.target.value)}
-                  placeholder="At least 6 characters"
+                  placeholder="Minimum 6 characters"
+                  className="h-11 rounded-xl"
                 />
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Phone (optional)</label>
-                <Input
-                  type="tel"
-                  value={invitePhone}
-                  onChange={(e) => setInvitePhone(e.target.value)}
-                  placeholder="+256700123456"
-                />
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground/80">Phone Number (Uganda)</label>
+                <div className="relative">
+                  <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                  <Input
+                    type="tel"
+                    value={invitePhone}
+                    onChange={(e) => setInvitePhone(e.target.value)}
+                    placeholder="07..."
+                    className="pl-9 h-11 rounded-xl"
+                  />
+                </div>
               </div>
-              <div>
-                <label className="block text-sm font-medium mb-1.5">Role</label>
+              <div className="space-y-1.5">
+                <label className="text-sm font-semibold text-foreground/80">Assign Role</label>
                 <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as UserRole)}>
-                  <SelectTrigger>
+                  <SelectTrigger className="h-11 rounded-xl">
                     <SelectValue placeholder="Select role" />
                   </SelectTrigger>
-                  <SelectContent>
+                  <SelectContent className="rounded-xl">
                     <SelectItem value="kitchen">Kitchen Staff</SelectItem>
-                    <SelectItem value="rider">Rider</SelectItem>
+                    <SelectItem value="rider">Delivery Rider</SelectItem>
                     <SelectItem value="reception">Reception</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
+                    <SelectItem value="admin">System Admin</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <Button
                 onClick={() => inviteMutation.mutate()}
                 disabled={inviteMutation.isPending || !inviteName || !inviteEmail || !invitePassword || invitePassword.length < 6}
-                className="w-full"
+                className="w-full bg-secondary h-12 rounded-xl font-bold text-white mt-2 shadow-sm active:scale-[0.98] transition-all"
               >
-                {inviteMutation.isPending && (
-                  <Loader2 className="w-4 h-4 animate-spin mr-2" />
+                {inviteMutation.isPending ? (
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                ) : (
+                  "Create Staff Member"
                 )}
-                Create Staff Member
               </Button>
             </div>
           </DialogContent>
         </Dialog>
       </div>
 
-      {/* Search and Filter */}
-      <div className="flex flex-col sm:flex-row gap-3 mb-6">
-        <div className="relative flex-1">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-          <Input
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search team members..."
-            className="pl-10"
-          />
+      <Tabs defaultValue="directory" className="flex-1 flex flex-col min-h-0">
+        <div className="px-6 border-b bg-white">
+          <TabsList className="bg-transparent h-12 gap-6 p-0">
+            <TabsTrigger 
+              value="directory" 
+              className="relative h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-secondary data-[state=active]:bg-transparent data-[state=active]:shadow-none font-semibold transition-all px-2"
+            >
+              <Users className="w-4 h-4 mr-2" />
+              Team Directory
+            </TabsTrigger>
+            <TabsTrigger 
+              value="performance" 
+              className="relative h-12 rounded-none border-b-2 border-transparent data-[state=active]:border-secondary data-[state=active]:bg-transparent data-[state=active]:shadow-none font-semibold transition-all px-2"
+            >
+              <Trophy className="w-4 h-4 mr-2" />
+              Leaderboard
+            </TabsTrigger>
+          </TabsList>
         </div>
-        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as UserRole | "all")}>
-          <SelectTrigger className="w-full sm:w-[160px]">
-            <SelectValue placeholder="All Roles" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All Roles</SelectItem>
-            <SelectItem value="admin">Admin</SelectItem>
-            <SelectItem value="kitchen">Kitchen</SelectItem>
-            <SelectItem value="rider">Rider</SelectItem>
-            <SelectItem value="reception">Reception</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
+
+        <TabsContent value="directory" className="flex-1 overflow-auto m-0 p-4 md:p-6 pb-24 md:pb-6 relative">
+          {/* Search and Filter Row - Sticky on Mobile */}
+          <div className="sticky top-0 z-10 bg-slate-50/10 backdrop-blur-md -mx-4 px-4 py-3 mb-4 md:relative md:bg-transparent md:p-0 md:m-0 md:mb-6 border-b md:border-0 border-slate-200/60">
+            <div className="flex flex-row gap-2">
+              <div className="relative flex-1">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  placeholder="Search..."
+                  className="pl-9 h-10 md:h-11 rounded-xl shadow-sm border-slate-200 bg-white"
+                />
+              </div>
+              <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as UserRole | "all")}>
+                <SelectTrigger className="w-[110px] sm:w-[150px] md:w-[180px] h-10 md:h-11 rounded-xl shadow-sm border-slate-200 bg-white px-3">
+                  <SelectValue placeholder="Role" />
+                </SelectTrigger>
+                <SelectContent className="rounded-xl">
+                  <SelectItem value="all">All Roles</SelectItem>
+                  <SelectItem value="admin">Admins</SelectItem>
+                  <SelectItem value="kitchen">Kitchen</SelectItem>
+                  <SelectItem value="rider">Riders</SelectItem>
+                  <SelectItem value="reception">Reception</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+
+          {isLoading ? (
+            <div className="flex flex-col items-center justify-center h-64 gap-3 text-muted-foreground">
+              <Loader2 className="w-8 h-8 animate-spin text-secondary" />
+              <p className="text-sm font-medium">Loading team directory...</p>
+            </div>
+          ) : (
+            <div className="bg-white rounded-2xl border border-slate-200 shadow-sm overflow-hidden min-h-full">
+              {/* Desktop/Tablet Header */}
+              <div className="hidden md:grid grid-cols-[1fr_200px_100px_60px] lg:grid-cols-[1fr_200px_120px_100px_120px_60px] gap-4 px-6 py-4 border-b bg-slate-50/50 text-[11px] font-bold text-slate-500 uppercase tracking-wider">
+                <span>Staff Member</span>
+                <span>Contact Details</span>
+                <span className="hidden lg:block">Role</span>
+                <span>Status</span>
+                <span className="hidden lg:block text-center">Member Since</span>
+                <span className="text-right">Actions</span>
+              </div>
+
+              {/* Staff List */}
+              <div className="divide-y divide-slate-100">
+                {filteredStaff?.map((member) => {
+                  const isCurrentUser = member.id === user?.id;
+                  return (
+                    <div
+                      key={member.id}
+                      className="group flex flex-col md:grid md:grid-cols-[1fr_200px_100px_60px] lg:grid-cols-[1fr_200px_120px_100px_120px_60px] gap-3 md:gap-4 px-6 py-5 md:py-4 items-center hover:bg-slate-50/50 transition-all border-l-2 border-transparent hover:border-secondary"
+                    >
+                      {/* Name & Identity */}
+                      <div className="w-full flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center text-slate-600 font-bold text-sm shrink-0 overflow-hidden border-2 border-white shadow-sm">
+                          {member.avatar_url ? (
+                            <img src={member.avatar_url} alt="" className="w-full h-full object-cover" />
+                          ) : (
+                            <span className="bg-gradient-to-br from-slate-100 to-slate-200 w-full h-full flex items-center justify-center">
+                              {getInitials(member.full_name || member.email || "Staff")}
+                            </span>
+                          )}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="font-bold text-slate-900 truncate flex items-center gap-2">
+                            {member.full_name || member.email?.split('@')[0]}
+                            {isCurrentUser && (
+                              <span className="px-1.5 py-0.5 rounded bg-orange-50 text-[9px] font-black text-orange-600 border border-orange-100 uppercase tracking-tight">Me</span>
+                            )}
+                          </p>
+                          <div className="md:hidden flex flex-col gap-1.5 mt-2">
+                             {/* Mobile Contact Shortcuts */}
+                             <div className="flex flex-col gap-1">
+                               {member.email && (
+                                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500 truncate">
+                                   <Mail className="w-3 h-3 text-slate-400" />
+                                   <span className="truncate">{member.email}</span>
+                                 </div>
+                               )}
+                               {member.phone && (
+                                 <div className="flex items-center gap-1.5 text-[10px] text-slate-500">
+                                   <Phone className="w-3 h-3 text-slate-400" />
+                                   <span>{formatPhoneDisplay(member.phone)}</span>
+                                 </div>
+                               )}
+                             </div>
+                             {/* Mobile Badges Row */}
+                             <div className="flex items-center gap-2">
+                               <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]} text-[9px] py-0 h-4 px-1.5 font-medium`}>
+                                 {member.role}
+                               </Badge>
+                               <Badge variant={member.active ? "default" : "destructive"} className="h-4 text-[9px] px-1.5 font-bold border-0">
+                                 {member.active ? "Active" : "Inactive"}
+                               </Badge>
+                               <div className="flex items-center gap-1 text-[9px] text-slate-400 font-medium ml-auto">
+                                 <Calendar className="w-2.5 h-2.5" />
+                                 {formatRelativeTime(member.created_at)}
+                               </div>
+                             </div>
+                          </div>
+                        </div>
+                      </div>
+
+                      {/* Contact Info (Desktop/Tablet) */}
+                      <div className="hidden md:flex flex-col gap-1 w-full min-w-0">
+                        {member.email || member.phone ? (
+                          <>
+                            {member.email && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground truncate">
+                                <Mail className="w-3 h-3 shrink-0 text-slate-400" />
+                                <span className="truncate">{member.email}</span>
+                              </div>
+                            )}
+                            {member.phone && (
+                              <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                <Phone className="w-3 h-3 shrink-0 text-slate-400" />
+                                <span>{formatPhoneDisplay(member.phone)}</span>
+                              </div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[10px] text-slate-400 italic font-medium">No contact added</span>
+                        )}
+                      </div>
+
+                      {/* Desktop Role (Hidden on medium tablets to save space) */}
+                      <div className="hidden lg:block">
+                        <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]} font-medium text-[11px]`}>
+                          {member.role}
+                        </Badge>
+                      </div>
+
+                      {/* Desktop Status */}
+                      <div className="hidden md:block">
+                        <Badge variant={member.active ? "default" : "destructive"} className="text-[11px] font-bold h-6">
+                          {member.active ? "Active" : "Inactive"}
+                        </Badge>
+                      </div>
+
+                      {/* Joined Date (Desktop Only) */}
+                      <div className="hidden lg:flex flex-col items-center justify-center gap-0.5 text-[11px] text-muted-foreground">
+                        <span className="font-medium text-slate-400 uppercase text-[9px]">Since</span>
+                        {formatRelativeTime(member.created_at)}
+                      </div>
+
+                      {/* Actions */}
+                      <div className="w-full md:w-auto flex justify-end">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-9 w-9 p-0 hover:bg-slate-100 rounded-lg">
+                              <MoreVertical className="w-4 h-4" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end" className="w-48 rounded-xl p-1.5 shadow-xl">
+                            <DropdownMenuItem 
+                              onClick={() => openEditDialog(member)}
+                              className="rounded-lg gap-2.5 py-2 cursor-pointer"
+                            >
+                              <Edit2 className="w-4 h-4 text-slate-500" /> 
+                              <span className="font-medium text-sm text-slate-700">Edit Details</span>
+                            </DropdownMenuItem>
+                            <DropdownMenuItem 
+                              onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
+                              disabled={isCurrentUser}
+                              className="rounded-lg gap-2.5 py-2 cursor-pointer"
+                            >
+                              {member.active ? (
+                                <><UserX className="w-4 h-4 text-orange-500" /> <span className="font-medium text-sm text-slate-700">Deactivate</span></>
+                              ) : (
+                                <><UserCheck className="w-4 h-4 text-green-500" /> <span className="font-medium text-sm text-slate-700">Activate User</span></>
+                              )}
+                            </DropdownMenuItem>
+                            <div className="my-1 border-t border-slate-100" />
+                            <DropdownMenuItem 
+                              className="rounded-lg gap-2.5 py-2 cursor-pointer text-red-600 focus:text-red-600 focus:bg-red-50"
+                              onSelect={(e) => e.preventDefault()}
+                              disabled={isCurrentUser}
+                            >
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <div className="flex items-center gap-2.5 w-full">
+                                    <Trash2 className="w-4 h-4" /> 
+                                    <span className="font-medium text-sm">Remove Staff</span>
+                                  </div>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent className="rounded-2xl">
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      This will permanently remove {member.full_name} from the system. This action cannot be undone.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter className="gap-2">
+                                    <AlertDialogCancel className="rounded-xl font-bold">Keep Staff</AlertDialogCancel>
+                                    <AlertDialogAction 
+                                      onClick={() => deleteMutation.mutate(member.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-xl font-bold px-6"
+                                    >
+                                      Yes, Remove
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
+                    </div>
+                  );
+                })}
+                {(!filteredStaff || filteredStaff.length === 0) && (
+                  <div className="p-12 text-center flex flex-col items-center gap-3">
+                    <div className="w-16 h-16 rounded-full bg-slate-50 flex items-center justify-center text-slate-300">
+                      <Search className="w-8 h-8" />
+                    </div>
+                    <div>
+                      <p className="font-bold text-slate-900">No team members found</p>
+                      <p className="text-sm text-muted-foreground">Try adjusting your search or role filters</p>
+                    </div>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="performance" className="flex-1 overflow-auto m-0 p-4 md:p-6 pb-20 md:pb-6">
+          <div className="max-w-4xl mx-auto">
+            <StaffPerformancePanel />
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* Floating Action Button (FAB) for Mobile Staff Creation */}
+      {canManage && (
+        <Dialog open={showInvite} onOpenChange={setShowInvite}>
+          <DialogTrigger asChild>
+            <Button 
+              className="md:hidden fixed bottom-24 right-6 w-14 h-14 rounded-full bg-secondary hover:bg-secondary/90 text-white shadow-2xl active:scale-95 transition-all z-50 p-0 flex items-center justify-center border-4 border-white"
+              aria-label="Add Staff Member"
+            >
+              <Plus className="w-7 h-7" />
+            </Button>
+          </DialogTrigger>
+          {/* DialogContent already handled in desktop header block */}
+        </Dialog>
+      )}
 
       {/* Edit Dialog */}
       <Dialog open={!!editingMember} onOpenChange={(open) => !open && setEditingMember(null)}>
-        <DialogContent>
+        <DialogContent className="max-w-md rounded-2xl">
           <DialogHeader>
-            <DialogTitle>Edit Staff Member</DialogTitle>
+            <DialogTitle className="text-xl font-bold">Edit Staff Details</DialogTitle>
           </DialogHeader>
-          <div className="space-y-4 pt-2">
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Full Name</label>
-              <Input
-                value={editName}
-                onChange={(e) => setEditName(e.target.value)}
-              />
+          <div className="space-y-4 pt-4">
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground/80">Full Name</label>
+              <div className="relative">
+                <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  value={editName}
+                  onChange={(e) => setEditName(e.target.value)}
+                  className="pl-9 h-11 rounded-xl"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Phone</label>
-              <Input
-                type="tel"
-                value={editPhone}
-                onChange={(e) => setEditPhone(e.target.value)}
-              />
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground/80">Phone Number</label>
+              <div className="relative">
+                <Phone className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  type="tel"
+                  value={editPhone}
+                  onChange={(e) => setEditPhone(e.target.value)}
+                  className="pl-9 h-11 rounded-xl"
+                />
+              </div>
             </div>
-            <div>
-              <label className="block text-sm font-medium mb-1.5">Role</label>
+            <div className="space-y-1.5">
+              <label className="text-sm font-semibold text-foreground/80">Staff Role</label>
               <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
-                <SelectTrigger>
+                <SelectTrigger className="h-11 rounded-xl">
                   <SelectValue placeholder="Select role" />
                 </SelectTrigger>
-                <SelectContent>
+                <SelectContent className="rounded-xl">
                   <SelectItem value="kitchen">Kitchen Staff</SelectItem>
-                  <SelectItem value="rider">Rider</SelectItem>
+                  <SelectItem value="rider">Delivery Rider</SelectItem>
                   <SelectItem value="reception">Reception</SelectItem>
-                  <SelectItem value="admin">Admin</SelectItem>
+                  <SelectItem value="admin">System Admin</SelectItem>
                 </SelectContent>
               </Select>
             </div>
             <Button
               onClick={handleEditSave}
               disabled={updateMutation.isPending || !editName}
-              className="w-full"
+              className="w-full bg-secondary h-12 rounded-xl font-bold text-white mt-2 shadow-sm active:scale-[0.98] transition-all"
             >
-              {updateMutation.isPending && (
-                <Loader2 className="w-4 h-4 animate-spin mr-2" />
+              {updateMutation.isPending ? (
+                <Loader2 className="w-5 h-5 animate-spin" />
+              ) : (
+                "Save Changes"
               )}
-              Save Changes
             </Button>
           </div>
         </DialogContent>
       </Dialog>
-
-      {isLoading ? (
-        <div className="flex items-center justify-center h-32">
-          <div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full" />
-        </div>
-      ) : (
-        <div className="bg-card rounded-xl border overflow-hidden">
-          <div className="hidden md:grid grid-cols-[1fr_140px_100px_100px_100px_140px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
-            <span>Name</span>
-            <span>Contact</span>
-            <span>Role</span>
-            <span>Status</span>
-            <span>Joined</span>
-            <span>Actions</span>
-          </div>
-          {filteredStaff?.map((member) => {
-            const isCurrentUser = member.id === user?.id;
-            const memberEmail = member.email;
-            return (
-              <div
-                key={member.id}
-                className="flex flex-col md:grid md:grid-cols-[1fr_140px_100px_100px_100px_140px] gap-3 md:gap-4 px-4 py-4 md:py-3 border-b hover:bg-muted/30 transition-colors relative"
-              >
-                {/* Mobile Header: Name + Status */}
-                <div className="flex items-center justify-between md:hidden">
-                  <div>
-                    <p className="font-medium text-base">
-                      {member.full_name}
-                      {isCurrentUser && (
-                        <Badge variant="outline" className="ml-2 text-[10px] py-0">You</Badge>
-                      )}
-                    </p>
-                    <div className="flex items-center gap-2 mt-1">
-                      <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]} text-xs py-0 h-5`}>
-                        {member.role}
-                      </Badge>
-                    </div>
-                  </div>
-                  <Badge variant={member.active ? "default" : "destructive"} className="h-6">
-                    {member.active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-
-                {/* Desktop Name */}
-                <div className="hidden md:block">
-                  <p className="font-medium">
-                    {member.full_name}
-                    {isCurrentUser && (
-                      <Badge variant="outline" className="ml-2 text-[10px] py-0">You</Badge>
-                    )}
-                  </p>
-                </div>
-
-                {/* Contact Info */}
-                <div className="space-y-1 md:space-y-0.5">
-                  {memberEmail && (
-                    <div className="flex items-center gap-2 md:gap-1.5 text-sm md:text-xs text-muted-foreground">
-                      <Mail className="w-4 h-4 md:w-3 md:h-3" />
-                      <span className="truncate">{memberEmail}</span>
-                    </div>
-                  )}
-                  {member.phone && (
-                    <div className="flex items-center gap-2 md:gap-1.5 text-sm md:text-xs text-muted-foreground">
-                      <Phone className="w-4 h-4 md:w-3 md:h-3" />
-                      <span>{member.phone}</span>
-                    </div>
-                  )}
-                </div>
-
-                {/* Desktop Role */}
-                <div className="hidden md:block">
-                  <Badge variant="outline" className={`capitalize border ${ROLE_COLORS[member.role]}`}>
-                    {member.role}
-                  </Badge>
-                </div>
-
-                {/* Desktop Status */}
-                <div className="hidden md:block">
-                  <Badge variant={member.active ? "default" : "destructive"}>
-                    {member.active ? "Active" : "Inactive"}
-                  </Badge>
-                </div>
-
-                {/* Joined Date */}
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground mt-1 md:mt-0">
-                  <Calendar className="w-3 h-3" />
-                  <span className="md:hidden">Joined: </span>
-                  <span>{formatRelativeTime(member.created_at)}</span>
-                </div>
-
-                {/* Actions */}
-                <div className="flex items-center gap-1 absolute top-4 right-2 md:static">
-                  {/* Mobile Actions */}
-                  <div className="md:hidden">
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                          <MoreVertical className="w-4 h-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuItem 
-                          onClick={() => openEditDialog(member)}
-                          className="flex items-center gap-2"
-                        >
-                          <Edit2 className="w-4 h-4" /> Edit Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
-                          disabled={isCurrentUser}
-                          className="flex items-center gap-2"
-                        >
-                          {member.active ? (
-                            <><UserX className="w-4 h-4 text-orange-500" /> Deactivate</>
-                          ) : (
-                            <><UserCheck className="w-4 h-4 text-green-500" /> Activate</>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuItem 
-                          className="text-destructive focus:text-destructive flex items-center gap-2"
-                          onSelect={(e) => e.preventDefault()}
-                          disabled={isCurrentUser}
-                        >
-                          <AlertDialog>
-                            <AlertDialogTrigger asChild>
-                              <div className="flex items-center gap-2 w-full">
-                                <Trash2 className="w-4 h-4" /> Remove Staff
-                              </div>
-                            </AlertDialogTrigger>
-                            <AlertDialogContent>
-                              <AlertDialogHeader>
-                                <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
-                                <AlertDialogDescription>
-                                  This will remove {member.full_name} from the system. They will no longer be able to access the dashboard.
-                                </AlertDialogDescription>
-                              </AlertDialogHeader>
-                              <AlertDialogFooter>
-                                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                <AlertDialogAction 
-                                  onClick={() => deleteMutation.mutate(member.id)}
-                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                >
-                                  Remove
-                                </AlertDialogAction>
-                              </AlertDialogFooter>
-                            </AlertDialogContent>
-                          </AlertDialog>
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
-
-                  {/* Desktop Actions */}
-                  <div className="hidden md:flex items-center gap-1">
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
-                      disabled={isCurrentUser}
-                      title={member.active ? "Deactivate" : "Activate"}
-                      className="px-3 h-9"
-                    >
-                      {member.active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => openEditDialog(member)}
-                      title="Edit"
-                      className="px-3 h-9"
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                    <AlertDialog>
-                      <AlertDialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          disabled={isCurrentUser}
-                          className="text-destructive hover:text-destructive px-3 h-9"
-                          title="Delete"
-                        >
-                          <Trash2 className="w-4 h-4" />
-                        </Button>
-                      </AlertDialogTrigger>
-                      <AlertDialogContent>
-                        <AlertDialogHeader>
-                          <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
-                          <AlertDialogDescription>
-                            This will remove {member.full_name} from the system. They will no longer be able to access the dashboard.
-                          </AlertDialogDescription>
-                        </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
-                          <AlertDialogAction 
-                            onClick={() => deleteMutation.mutate(member.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                          >
-                            Remove
-                          </AlertDialogAction>
-                        </AlertDialogFooter>
-                      </AlertDialogContent>
-                    </AlertDialog>
-                  </div>
-                </div>
-              </div>
-            );
-          })}
-          {(!filteredStaff || filteredStaff.length === 0) && (
-            <div className="p-8 text-center text-muted-foreground">
-              {search || roleFilter !== "all" ? "No staff members match your filters" : "No staff members yet"}
-            </div>
-          )}
-        </div>
-      )}
     </div>
   );
 }
