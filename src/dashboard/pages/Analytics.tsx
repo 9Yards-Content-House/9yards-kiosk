@@ -129,7 +129,14 @@ function generateMockAnalyticsOrders(): Order[] {
 const MOCK_ANALYTICS_ORDERS = generateMockAnalyticsOrders();
 
 const CATEGORY_COLORS = [
-  '#ef4444', '#f97316', '#eab308', '#22c55e', '#14b8a6', '#3b82f6', '#8b5cf6', '#ec4899',
+  '#212282', // Yards Blue
+  '#E6411C', // Yards Orange
+  '#0d9488', // Teal
+  '#f59e0b', // Amber
+  '#10b981', // Emerald
+  '#6366f1', // Indigo
+  '#8b5cf6', // Violet
+  '#ec4899', // Pink
 ];
 
 export default function Analytics() {
@@ -563,30 +570,56 @@ export default function Analytics() {
             <div className="bg-card rounded-2xl border shadow-sm p-4">
               <h3 className="font-bold text-lg mb-4 text-[#212282]">Revenue by Category</h3>
               {metrics.categoryBreakdown.length > 0 ? (
-                <div className="h-80">
+                <div className="h-80 relative group">
                   <ResponsiveContainer width="100%" height="100%">
                     <RechartsPie>
                       <Pie 
                         data={metrics.categoryBreakdown} 
                         cx="50%" 
                         cy="50%" 
-                        innerRadius={60}
+                        innerRadius={70}
                         outerRadius={100} 
-                        paddingAngle={5}
+                        paddingAngle={4}
                         dataKey="revenue" 
                         nameKey="name"
+                        stroke="none"
+                        animationBegin={0}
+                        animationDuration={1500}
+                        strokeWidth={0}
                       >
                         {metrics.categoryBreakdown.map((_, index) => (
-                          <Cell key={`cell-${index}`} fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]} />
+                          <Cell 
+                            key={`cell-${index}`} 
+                            fill={CATEGORY_COLORS[index % CATEGORY_COLORS.length]}
+                            className="transition-all duration-300 hover:opacity-80"
+                          />
                         ))}
                       </Pie>
                       <Tooltip 
                         formatter={(value: number) => [formatPrice(value), "Revenue"]}
-                        contentStyle={{ borderRadius: '12px', border: 'none', boxShadow: '0 4px 12px rgba(0,0,0,0.1)' }}
+                        contentStyle={{ 
+                          borderRadius: '16px', 
+                          border: 'none', 
+                          boxShadow: '0 10px 25px -5px rgba(0,0,0,0.1), 0 8px 10px -6px rgba(0,0,0,0.1)',
+                          padding: '12px 16px',
+                          fontWeight: '800'
+                        }}
+                        itemStyle={{ color: '#0f172a' }}
                       />
-                      <Legend verticalAlign="bottom" height={36}/>
+                      <Legend 
+                        verticalAlign="bottom" 
+                        height={40}
+                        iconType="circle"
+                        formatter={(value) => <span className="text-[10px] font-black uppercase tracking-widest text-slate-500">{value}</span>}
+                      />
                     </RechartsPie>
                   </ResponsiveContainer>
+                  <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 pointer-events-none text-center">
+                    <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none mb-1">Total</p>
+                    <p className="text-sm font-black text-primary leading-none">
+                      {formatPrice(metrics.categoryBreakdown.reduce((s, c) => s + c.revenue, 0))}
+                    </p>
+                  </div>
                 </div>
               ) : (
                 <div className="flex flex-col items-center justify-center py-20 gap-2">
@@ -602,17 +635,25 @@ export default function Analytics() {
                   const totalRevenue = metrics.categoryBreakdown.reduce((s, c) => s + c.revenue, 0);
                   const pct = totalRevenue > 0 ? (cat.revenue / totalRevenue) * 100 : 0;
                   return (
-                    <div key={cat.name} className="group">
+                    <div key={cat.name} className="group hover:bg-slate-50 p-2 -mx-2 rounded-xl transition-all">
                       <div className="flex items-center justify-between mb-1.5">
                         <div className="flex items-center gap-2">
-                          <div className="w-2.5 h-2.5 rounded-full" style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }} />
-                          <span className="text-sm font-bold text-slate-900">{cat.name}</span>
+                          <div className="w-2.5 h-2.5 rounded-full border border-white shadow-sm" style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }} />
+                          <span className="text-sm font-black text-slate-900 group-hover:text-primary transition-colors">{cat.name}</span>
                         </div>
-                        <span className="text-sm font-black text-[#212282]">{formatPrice(cat.revenue)}</span>
+                        <div className="text-right">
+                          <p className="text-sm font-black text-primary leading-none mb-0.5">{formatPrice(cat.revenue)}</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-tighter">{pct.toFixed(1)}% of total</p>
+                        </div>
                       </div>
-                      <div className="flex justify-between items-center text-[10px] font-bold text-slate-400 uppercase tracking-tighter">
-                        <span>{cat.count} items sold</span>
-                        <span>{pct.toFixed(1)}% of total</span>
+                      <div className="w-full h-1.5 bg-slate-100 rounded-full overflow-hidden border border-slate-100/50">
+                        <motion.div 
+                          initial={{ width: 0 }}
+                          animate={{ width: `${pct}%` }}
+                          transition={{ duration: 1, ease: "easeOut", delay: idx * 0.1 }}
+                          className="h-full rounded-full opacity-80" 
+                          style={{ backgroundColor: CATEGORY_COLORS[idx % CATEGORY_COLORS.length] }}
+                        />
                       </div>
                     </div>
                   );
