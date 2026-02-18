@@ -204,9 +204,14 @@ export default function CategoryManagement() {
           <p className="text-muted-foreground text-sm mt-1">
             Manage menu categories. Categories determine how items are grouped in the kiosk.
           </p>
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-md px-2 py-1 w-fit">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Changing protected slugs (main-dishes, sauces, side-dishes, juices, desserts) may break kiosk</span>
+          <div className="flex flex-col gap-2 mt-3">
+             <div className="flex items-center gap-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 border border-amber-200/50 dark:border-amber-900/50 rounded-lg px-3 py-2 w-fit">
+              <AlertTriangle className="w-4 h-4 shrink-0" />
+              <div className="space-y-0.5">
+                <p className="font-bold uppercase tracking-tight">Kiosk Protected Slugs</p>
+                <p className="opacity-90">Slugs like <code className="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">main-dishes</code> or <code className="font-mono bg-amber-100 dark:bg-amber-900 px-1 rounded">sauces</code> connect your items to the Kiosk logic. <b>Only edit names</b> unless you are an administrator.</p>
+              </div>
+            </div>
           </div>
         </div>
         {canCreate && (
