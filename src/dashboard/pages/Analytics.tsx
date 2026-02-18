@@ -21,6 +21,7 @@ import { hasPermission } from '@shared/types/auth';
 import { useCategories, useAllMenuItems } from '@shared/hooks/useMenu';
 import RevenueChart from '../components/RevenueChart';
 import OrdersByHourChart from '../components/OrdersByHourChart';
+import PrepTimeDistributionChart from '../components/PrepTimeDistributionChart';
 import AIInsightsPanel from '../components/AIInsightsPanel';
 import { Button } from '@shared/components/ui/button';
 import { DateRangePicker } from '@shared/components/ui/date-range-picker';
@@ -453,30 +454,12 @@ export default function Analytics() {
           {metrics.avgPrepTime > 0 && (
             <div className="bg-card rounded-2xl border shadow-sm p-4">
               <h3 className="font-bold text-lg mb-4 text-[#212282]">Preparation Time Distribution</h3>
-              <div className="overflow-x-auto no-scrollbar">
-                <div className="flex items-end gap-3 h-32 min-w-[300px] md:min-w-0 px-2 lg:px-4">
-                  {metrics.prepTimeDistribution.map(({ range, count }) => {
-                    const maxCount = Math.max(...metrics.prepTimeDistribution.map(p => p.count)) || 1;
-                    const height = (count / maxCount) * 100;
-                    const isOptimal = range === '0-10m' || range === '10-15m';
-                    
-                    return (
-                      <div key={range} className="flex-1 flex flex-col items-center group">
-                        <span className="text-[10px] font-black text-[#212282] mb-1.5 tabular-nums">{count}</span>
-                        <div 
-                          className={cn(
-                            'w-full rounded-t-lg transition-all', 
-                            isOptimal ? 'bg-emerald-400 group-hover:bg-emerald-500' : 'bg-slate-200 group-hover:bg-slate-300'
-                          )} 
-                          style={{ height: `${height}%`, minHeight: count > 0 ? '8px' : '0' }} 
-                        />
-                        <span className="text-[9px] md:text-[10px] text-slate-400 mt-2.5 font-black uppercase tracking-tighter">{range}</span>
-                      </div>
-                    );
-                  })}
-                </div>
+              <div className="h-40">
+                <PrepTimeDistributionChart 
+                  data={metrics.prepTimeDistribution} 
+                />
               </div>
-              <div className="mt-6 pt-4 border-t flex items-center justify-center gap-4">
+              <div className="mt-8 pt-4 border-t flex items-center justify-center gap-4">
                 <div className="flex items-center gap-1.5">
                   <div className="w-2.5 h-2.5 rounded-full bg-emerald-400" />
                   <span className="text-[10px] font-bold text-slate-500 uppercase tracking-tight">Optimal (&lt;15m)</span>
