@@ -321,44 +321,44 @@ export default function Analytics() {
       label: 'Total Orders', 
       value: metrics.totalOrders.toString(), 
       icon: ShoppingBag, 
-      color: 'text-blue-600', 
-      bg: 'bg-blue-50' 
+      color: 'text-[#212282]', 
+      bg: 'bg-[#212282]/5' 
     },
     { 
       label: 'Revenue', 
       value: formatPrice(metrics.totalRevenue), 
       icon: DollarSign, 
-      color: 'text-green-600', 
-      bg: 'bg-green-50' 
+      color: 'text-[#212282]', 
+      bg: 'bg-[#212282]/5' 
     },
     { 
       label: 'Avg Order', 
       value: formatPrice(metrics.avgOrderValue), 
       icon: TrendingUp, 
-      color: 'text-purple-600', 
-      bg: 'bg-purple-50' 
+      color: 'text-[#212282]', 
+      bg: 'bg-[#212282]/5' 
     },
     { 
       label: 'Avg Prep Time', 
       value: metrics.avgPrepTime > 0 ? `${metrics.avgPrepTime} min` : 'N/A', 
       icon: Clock, 
-      color: 'text-amber-600', 
-      bg: 'bg-amber-50',
+      color: 'text-secondary', 
+      bg: 'bg-secondary/5',
     },
     { 
       label: 'Peak Hour', 
       value: metrics.totalOrders > 0 ? `${metrics.peakHour}:00` : 'N/A', 
       icon: Clock, 
-      color: 'text-orange-600', 
-      bg: 'bg-orange-50',
+      color: 'text-secondary', 
+      bg: 'bg-secondary/5',
       subValue: 'Highest Demand'
     },
     { 
       label: 'Repeat Customers', 
       value: metrics.repeatCustomers.toString(), 
       icon: Users, 
-      color: 'text-indigo-600', 
-      bg: 'bg-indigo-50',
+      color: 'text-[#212282]', 
+      bg: 'bg-[#212282]/5',
       subValue: 'Loyal Base'
     },
   ];
@@ -401,19 +401,25 @@ export default function Analytics() {
                 initial={{ opacity: 0, y: 20 }} 
                 animate={{ opacity: 1, y: 0 }} 
                 transition={{ delay: idx * 0.1 }} 
-                className="bg-card rounded-xl border p-3 md:p-4 flex flex-col justify-between"
+                className="bg-white rounded-2xl border border-slate-100 p-4 flex flex-col justify-between shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all duration-300 group"
               >
                 <div>
-                  <div className={cn('w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mb-2 md:mb-3', stat.bg)}>
-                    <Icon className={cn('w-4 h-4 md:w-5 md:h-5', stat.color)} />
+                  <div className={cn(
+                    'w-10 h-10 rounded-xl flex items-center justify-center mb-4 transition-transform group-hover:scale-110 duration-300', 
+                    stat.bg
+                  )}>
+                    <Icon className={cn('w-5 h-5', stat.color)} />
                   </div>
-                  <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">{stat.label}</p>
-                  <p className="text-lg md:text-xl font-bold truncate">{stat.value}</p>
+                  <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.15em] mb-1">{stat.label}</p>
+                  <p className="text-xl font-black text-[#212282] tracking-tight truncate">{stat.value}</p>
                 </div>
                 
-                  {stat.subValue && (
-                    <p className="mt-2 text-[10px] md:text-xs font-medium text-muted-foreground">{stat.subValue}</p>
-                  )}
+                {stat.subValue && (
+                  <p className="mt-3 text-[10px] font-bold text-slate-400 uppercase tracking-tighter flex items-center gap-1.5">
+                    <span className="w-1 h-1 rounded-full bg-slate-200" />
+                    {stat.subValue}
+                  </p>
+                )}
               </motion.div>
             );
           })}
