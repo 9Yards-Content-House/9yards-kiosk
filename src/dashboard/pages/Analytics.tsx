@@ -521,25 +521,26 @@ export default function Analytics() {
                 {Object.entries(metrics.paymentBreakdown).map(([method, data]) => {
                   const total = Object.values(metrics.paymentBreakdown).reduce((s, d) => s + d.amount, 0);
                   const pct = total > 0 ? (data.amount / total) * 100 : 0;
-                  const methodLabel = method === 'mobile_money' ? 'Mobile Money' : method === 'pay_at_counter' ? 'Counter' : method === 'cash' ? 'Cash' : method;
+                  const methodLabel = method === 'mobile_money' ? 'Mobile Money' : method === 'pay_at_counter' ? 'Pay on Delivery' : method === 'cash' ? 'Cash' : method;
                   return (
-                    <div key={method}>
-                      <div className="flex justify-between items-end mb-1.5">
+                    <div key={method} className="group">
+                      <div className="flex justify-between items-end mb-1.5 transition-transform group-hover:translate-x-1">
                         <span className="text-xs font-black text-slate-700 uppercase tracking-tight">{methodLabel}</span>
                         <div className="text-right">
-                          <span className="text-[10px] font-black text-[#212282]">{formatPrice(data.amount)}</span>
-                          <span className="text-[10px] text-slate-300 ml-1.5">({data.count})</span>
+                          <span className="text-[10px] font-black text-primary">{formatPrice(data.amount)}</span>
+                          <span className="text-[10px] text-slate-300 ml-1.5 font-bold">({data.count})</span>
                         </div>
                       </div>
                       <div className="h-2 bg-slate-50 rounded-full overflow-hidden border border-slate-100/50">
                         <motion.div 
                           initial={{ width: 0 }} 
                           animate={{ width: `${pct}%` }} 
+                          transition={{ duration: 1, ease: "easeOut" }}
                           className={cn(
                             'h-full rounded-full shadow-sm', 
-                            method === 'mobile_money' ? 'bg-green-400' : 
-                            method === 'pay_at_counter' ? 'bg-[#212282]' : 
-                            method === 'cash' ? 'bg-amber-400' : 'bg-slate-400'
+                            method === 'mobile_money' ? 'bg-emerald-400' : 
+                            method === 'pay_at_counter' ? 'bg-primary' : 
+                            method === 'cash' ? 'bg-secondary' : 'bg-slate-400'
                           )} 
                         />
                       </div>
