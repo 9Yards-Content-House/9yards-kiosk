@@ -25,11 +25,28 @@ export default function MenuItemCardNew({
   const [quantity, setQuantity] = useState(1);
   const [isAdding, setIsAdding] = useState(false);
 
-  // Use item_type for combo/standalone determination (preferred over slugs)
+  // Determine combo vs standalone using item_type field
   const isComboItem = item.item_type === 'combo_driver' || item.item_type === 'combo_component';
   const isIndividualItem = item.item_type === 'standalone' || !item.item_type;
-  const isFree = item.price === 0 && item.item_type !== 'combo_component';
+  
+  // Smart "FREE" logic: Only side dishes should have the "FREE" label
+  // This matches the kiosk requirement where only sides are shown as free add-ons
+  const isFree = categorySlug === 'side-dishes';
   const displayPrice = item.sizes?.[0]?.price || item.price;
+
+  // Smart Category Mapping (aligned with MenuNew.tsx)
+  const getSmartLabel = (slug?: string) => {
+    if (!slug) return '';
+    switch (slug) {
+      case 'lusaniya': return 'Signature';
+      case 'main-dishes': return 'Combo Base';
+      case 'sauces': return 'Combo Protein';
+      case 'side-dishes': return 'Included Side';
+      case 'juices': return 'Add-on';
+      case 'desserts': return 'Add-on';
+      default: return slug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ');
+    }
+  };
 
   const handleQuantityChange = useCallback((delta: number) => {
     vibrate();
@@ -134,11 +151,11 @@ export default function MenuItemCardNew({
         {/* Category Lead-in */}
         {categorySlug && (
           <span className="text-[10px] font-black text-secondary/60 uppercase tracking-[0.15em] mb-2 block">
-            {categorySlug.split('-').map(word => word.charAt(0).toUpperCase() + word.slice(1)).join(' ')}
+            {getSmartLabel(categorySlug)}
           </span>
         )}
         
-        <h3 className="font-bold text-secondary-foreground text-sm md:text-lg leading-tight mb-1 line-clamp-1">
+        <h3 className="font-bold text-foreground text-sm md:text-lg leading-tight mb-1 line-clamp-1">
           {item.name}
         </h3>
         <p className="text-gray-500 text-xs md:text-sm line-clamp-2 mt-0.5 min-h-[2.5rem] leading-relaxed">
@@ -150,22 +167,22 @@ export default function MenuItemCardNew({
 
         {/* Price and action */}
         <div className="mt-auto flex items-center justify-between gap-4">
-          {!isFree && item.price > 0 ? (
+          {!isFree && (item.price > 0 || !categorySlug) ? (
             <div className="flex flex-col">
               <span className="text-secondary font-black text-xl tracking-tight">
-                {formatPrice(displayPrice)}
+                {item.price > 0 ? formatPrice(displayPrice) : '—'}
               </span>
               {item.sizes && item.sizes.length > 1 && (
                 <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Multiple Sizes Available</span>
               )}
             </div>
-          ) : item.item_type === 'combo_component' ? (
-            <span className="text-blue-600 font-bold text-sm uppercase tracking-wide">
-              Combo Only
+          ) : categorySlug === 'side-dishes' ? (
+            <span className="text-green-600 font-bold text-sm uppercase tracking-wide">
+              {t('common.free')}
             </span>
           ) : (
-            <span className="text-green-600 font-bold text-sm uppercase tracking-wide">
-              {t('combo.includedFree')}
+            <span className="text-muted-foreground font-medium text-sm">
+              Included
             </span>
           )}
 
