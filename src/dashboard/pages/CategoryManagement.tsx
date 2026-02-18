@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown } from "lucide-react";
+import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown, ShieldCheck, Lock } from "lucide-react";
 import { useCategories, useAllMenuItems } from "@shared/hooks/useMenu";
 import {
   useCreateCategory,
@@ -204,9 +204,9 @@ export default function CategoryManagement() {
           <p className="text-muted-foreground text-sm mt-1">
             Manage menu categories. Categories determine how items are grouped in the kiosk.
           </p>
-          <div className="flex items-center gap-1.5 mt-2 text-xs text-amber-600 bg-amber-50 dark:bg-amber-950/30 rounded-md px-2 py-1 w-fit">
-            <AlertTriangle className="w-3.5 h-3.5" />
-            <span>Changing protected slugs (main-dishes, sauces, side-dishes, juices, desserts) may break kiosk</span>
+          <div className="flex items-center gap-2 mt-3 text-[11px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2 border border-red-100 dark:border-red-900/50 w-full sm:w-fit shadow-sm">
+            <Lock className="w-4 h-4" />
+            <span>CRITICAL: Protected slugs (main-dishes, sauces, etc.) must NOT be changed to keep Kiosk working</span>
           </div>
         </div>
         {canCreate && (
@@ -259,7 +259,12 @@ export default function CategoryManagement() {
                   <FolderOpen className="w-5 h-5 text-secondary" />
                 </div>
                 <div>
-                  <p className="font-medium">{category.name}</p>
+                  <p className="font-medium flex items-center gap-1.5">
+                    {category.name}
+                    {isProtectedSlug(category.slug) && (
+                      <ShieldCheck className="w-3.5 h-3.5 text-blue-500" title="System Category" />
+                    )}
+                  </p>
                   <p className="text-xs text-muted-foreground md:hidden">{category.slug}</p>
                 </div>
               </div>
@@ -447,6 +452,7 @@ export default function CategoryManagement() {
                 value={editName}
                 onChange={(e) => setEditName(e.target.value)}
                 placeholder="Category name"
+                autoFocus
               />
             </div>
             <div>

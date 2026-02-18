@@ -38,6 +38,12 @@ import {
   SelectValue,
 } from "@shared/components/ui/select";
 import MenuItemCardNew from "@kiosk/components/MenuItemCardNew";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@shared/components/ui/tooltip";
 import { toast } from "sonner";
 import type { MenuItem, MenuItemType } from "@shared/types/menu";
 
@@ -395,16 +401,17 @@ export default function MenuItemEdit() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-7xl mx-auto">
-      <div className="flex items-center justify-between mb-8">
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" size="icon" onClick={() => navigate("/menu")}>
-            <ArrowLeft className="w-5 h-5" />
-          </Button>
-          <h1 className="text-2xl font-bold">
-            {isNew ? "Add Menu Item" : "Edit Menu Item"}
-          </h1>
-        </div>
+    <TooltipProvider>
+      <div className="p-4 md:p-6 max-w-7xl mx-auto">
+        <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center gap-4">
+            <Button variant="ghost" size="icon" onClick={() => navigate("/menu")}>
+              <ArrowLeft className="w-5 h-5" />
+            </Button>
+            <h1 className="text-2xl font-bold">
+              {isNew ? "Add Menu Item" : "Edit Menu Item"}
+            </h1>
+          </div>
         {!isNew && (
           <div className="flex items-center gap-2">
             <Button variant="outline" size="sm" onClick={handleDuplicate} disabled={isPending}>
@@ -469,28 +476,35 @@ export default function MenuItemEdit() {
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="flex w-full overflow-x-auto overflow-y-hidden bg-muted/50 p-1 h-auto no-scrollbar">
               <TabsTrigger value="general" className="relative flex-1 py-2 px-3">
-              General
-              {(form.formState.errors.name || form.formState.errors.category_id) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="media" className="flex-1 py-2 px-3">Media</TabsTrigger>
-            <TabsTrigger value="pricing" className="relative flex-1 py-2 px-3">
-              Pricing
-              {(form.formState.errors.price || form.formState.errors.sizes) && (
-                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
-              )}
-            </TabsTrigger>
-            <TabsTrigger value="settings" className="flex-1 py-2 px-3">Settings</TabsTrigger>
-          </TabsList>
+                General
+                {(form.formState.errors.name || form.formState.errors.category_id) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-white" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="media" className="relative flex-1 py-2 px-3">
+                Media
+                {form.formState.errors.image_url && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-white" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="pricing" className="relative flex-1 py-2 px-3">
+                Pricing
+                {(form.formState.errors.price || form.formState.errors.sizes) && (
+                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-red-500 animate-pulse border border-white" />
+                )}
+              </TabsTrigger>
+              <TabsTrigger value="settings" className="relative flex-1 py-2 px-3">
+                Settings
+              </TabsTrigger>
+            </TabsList>
 
           {/* GENERAL TAB */}
           <TabsContent value="general" className="space-y-4 py-4">
              <div className="bg-card rounded-xl border p-6 space-y-4">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Name <span className="text-red-500">*</span></label>
-                  <Input {...form.register("name")} placeholder="Item name" />
-                  {form.formState.errors.name && (
+                  <div>
+                    <label className="block text-sm font-medium mb-1.5">Name <span className="text-red-500">*</span></label>
+                    <Input {...form.register("name")} placeholder="Item name" autoFocus />
+                    {form.formState.errors.name && (
                     <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
                   )}
                 </div>
@@ -525,22 +539,33 @@ export default function MenuItemEdit() {
                      )}
                    </div>
                    
-                   <div>
-                     <label className="block text-sm font-medium mb-1.5">Item Type</label>
-                     <Select
-                       value={form.watch("item_type")}
-                       onValueChange={(value) => handleItemTypeChange(value as MenuItemType)}
-                     >
-                       <SelectTrigger>
-                         <SelectValue placeholder="Select type" />
-                       </SelectTrigger>
-                       <SelectContent>
-                         <SelectItem value="standalone">Standalone</SelectItem>
-                         <SelectItem value="combo_component">Combo Component</SelectItem>
-                         <SelectItem value="combo_driver">Combo Driver (Sauce)</SelectItem>
-                       </SelectContent>
-                     </Select>
-                   </div>
+                    <div>
+                      <label className="block text-sm font-medium mb-1.5">Item Type</label>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <div className="w-full">
+                            <Select
+                              value={form.watch("item_type")}
+                              onValueChange={(value) => handleItemTypeChange(value as MenuItemType)}
+                            >
+                              <SelectTrigger>
+                                <SelectValue placeholder="Select type" />
+                              </SelectTrigger>
+                              <SelectContent>
+                                <SelectItem value="standalone">Standalone</SelectItem>
+                                <SelectItem value="combo_component">Combo Component</SelectItem>
+                                <SelectItem value="combo_driver">Combo Driver (Sauce)</SelectItem>
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        </TooltipTrigger>
+                        <TooltipContent className="max-w-[300px] p-3 space-y-2">
+                          <p><strong>Standalone:</strong> Sold individually (e.g. Juice, Dessert).</p>
+                          <p><strong>Combo Component:</strong> Base food (e.g. Rice, Beans) included in combos.</p>
+                          <p><strong>Combo Driver:</strong> Starts a combo (e.g. Beef, Chicken Sauces).</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </div>
                 </div>
              </div>
           </TabsContent>
@@ -823,7 +848,8 @@ export default function MenuItemEdit() {
              </div>
           </div>
         </aside>
+        </div>
       </div>
-    </div>
+    </TooltipProvider>
   );
 }

@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Plus, Search, Filter, LayoutGrid, List, ArrowUpDown } from "lucide-react";
 import { useAllMenuItems, useCategories, useMenuRealtime } from "@shared/hooks/useMenu";
 import { useAuth } from "../context/AuthContext";
@@ -31,15 +31,30 @@ export default function MenuManagement() {
   const { role } = useAuth();
   const { data: items, isLoading } = useAllMenuItems();
   const { data: categories } = useCategories();
-  const [search, setSearch] = useState("");
+  const [searchParams, setSearchParams] = useSearchParams();
+  
+  // Sync state with URL params
+  const [search, setSearch] = useState(searchParams.get("search") || "");
   const [showFilters, setShowFilters] = useState(false);
-  const [filterCategory, setFilterCategory] = useState<string>("all");
-  const [filterType, setFilterType] = useState<FilterType>("all");
-  const [filterItemType, setFilterItemType] = useState<ItemTypeFilter>("all");
+  const [filterCategory, setFilterCategory] = useState<string>(searchParams.get("category") || "all");
+  const [filterType, setFilterType] = useState<FilterType>((searchParams.get("type") as FilterType) || "all");
+  const [filterItemType, setFilterItemType] = useState<ItemTypeFilter>((searchParams.get("itemType") as ItemTypeFilter) || "all");
+
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     const saved = localStorage.getItem("menuViewMode");
     return (saved === "list" || saved === "grid") ? saved : "list";
   });
+
+  // Update URL when filters change
+  useEffect(() => {
+    const params = new URLSearchParams();
+    if (search) params.set("search", search);
+    if (filterCategory !== "all") params.set("category", filterCategory);
+    if (filterType !== "all") params.set("type", filterType);
+    if (filterItemType !== "all") params.set("itemType", filterItemType);
+    
+    setSearchParams(params, { replace: true });
+  }, [search, filterCategory, filterType, filterItemType, setSearchParams]);
 
   useEffect(() => {
     localStorage.setItem("menuViewMode", viewMode);
