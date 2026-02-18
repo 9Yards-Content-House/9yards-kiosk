@@ -132,35 +132,6 @@ export function useToggleMenuItemAvailability() {
   });
 }
 
-/** Bulk update menu item availability */
-export function useBulkUpdateMenuAvailability() {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async ({ ids, available }: { ids: string[]; available: boolean }) => {
-      if (USE_MOCK_DATA) {
-        ids.forEach(id => {
-          const item = mockMenuItems.find(i => i.id === id);
-          if (item) item.available = available;
-        });
-        console.log(`📦 Mock: Bulk updated ${ids.length} items to availability: ${available}`);
-        return;
-      }
-
-      const { error } = await supabase
-        .from("menu_items")
-        .update({ available, updated_at: new Date().toISOString() })
-        .in("id", ids);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["menu_items"] });
-      queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
-    },
-  });
-}
-
 /** Toggle popular badge */
 export function useToggleMenuItemPopular() {
   const queryClient = useQueryClient();

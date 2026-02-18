@@ -12,12 +12,6 @@ import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Switch } from "@shared/components/ui/switch";
 import {
-  Tooltip,
-  TooltipContent,
-  TooltipTrigger,
-  TooltipProvider,
-} from "@shared/components/ui/tooltip";
-import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
@@ -35,10 +29,6 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@shared/components/ui/dialog";
-import {
-  HelpCircle,
-  Info
-} from "lucide-react";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import {
   Select,
@@ -404,10 +394,6 @@ export default function MenuItemEdit() {
     );
   }
 
-  const errors = form.formState.errors;
-  const hasGeneralErrors = !!(errors.name || errors.category_id || errors.description);
-  const hasPricingErrors = !!(errors.price || errors.sizes || errors.preparations);
-
   return (
     <div className="p-4 md:p-6 max-w-7xl mx-auto">
       <div className="flex items-center justify-between mb-8">
@@ -483,27 +469,27 @@ export default function MenuItemEdit() {
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="flex w-full overflow-x-auto overflow-y-hidden bg-muted/50 p-1 h-auto no-scrollbar">
               <TabsTrigger value="general" className="relative flex-1 py-2 px-3">
-                General
-                {hasGeneralErrors && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="media" className="flex-1 py-2 px-3">Media</TabsTrigger>
-              <TabsTrigger value="pricing" className="relative flex-1 py-2 px-3">
-                Pricing
-                {hasPricingErrors && (
-                  <span className="absolute top-1.5 right-1.5 w-2 h-2 rounded-full bg-destructive animate-pulse" />
-                )}
-              </TabsTrigger>
-              <TabsTrigger value="settings" className="flex-1 py-2 px-3">Settings</TabsTrigger>
-            </TabsList>
+              General
+              {(form.formState.errors.name || form.formState.errors.category_id) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="media" className="flex-1 py-2 px-3">Media</TabsTrigger>
+            <TabsTrigger value="pricing" className="relative flex-1 py-2 px-3">
+              Pricing
+              {(form.formState.errors.price || form.formState.errors.sizes) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+              )}
+            </TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 py-2 px-3">Settings</TabsTrigger>
+          </TabsList>
 
           {/* GENERAL TAB */}
           <TabsContent value="general" className="space-y-4 py-4">
              <div className="bg-card rounded-xl border p-6 space-y-4">
                 <div>
                   <label className="block text-sm font-medium mb-1.5">Name <span className="text-red-500">*</span></label>
-                  <Input {...form.register("name")} placeholder="Item name" autoFocus={isNew} />
+                  <Input {...form.register("name")} placeholder="Item name" />
                   {form.formState.errors.name && (
                     <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
                   )}
@@ -539,45 +525,22 @@ export default function MenuItemEdit() {
                      )}
                    </div>
                    
-                    <div>
-                      <div className="flex items-center gap-1.5 mb-1.5">
-                        <label className="block text-sm font-medium">Item Type</label>
-                        <TooltipProvider delayDuration={0}>
-                          <Tooltip>
-                            <TooltipTrigger asChild>
-                              <HelpCircle className="w-3.5 h-3.5 text-muted-foreground cursor-help" />
-                            </TooltipTrigger>
-                            <TooltipContent className="max-w-[280px] p-3 space-y-2">
-                              <div>
-                                <p className="font-bold text-xs uppercase mb-0.5">Standalone</p>
-                                <p className="text-xs text-muted-foreground">Standard item sold individually with its own price (e.g. Rice, Chicken).</p>
-                              </div>
-                              <div>
-                                <p className="font-bold text-xs uppercase mb-0.5 text-blue-600">Combo Component</p>
-                                <p className="text-xs text-muted-foreground">Part of a meal. Price is 0 because it's included in the combo total.</p>
-                              </div>
-                              <div>
-                                <p className="font-bold text-xs uppercase mb-0.5 text-purple-600">Combo Driver (Sauce)</p>
-                                <p className="text-xs text-muted-foreground">Items that offer choices like sizes or preparation styles (e.g. Sauces).</p>
-                              </div>
-                            </TooltipContent>
-                          </Tooltip>
-                        </TooltipProvider>
-                      </div>
-                      <Select
-                        value={form.watch("item_type")}
-                        onValueChange={(value) => handleItemTypeChange(value as MenuItemType)}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Select type" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="standalone">Standalone</SelectItem>
-                          <SelectItem value="combo_component">Combo Component</SelectItem>
-                          <SelectItem value="combo_driver">Combo Driver (Sauce)</SelectItem>
-                        </SelectContent>
-                      </Select>
-                    </div>
+                   <div>
+                     <label className="block text-sm font-medium mb-1.5">Item Type</label>
+                     <Select
+                       value={form.watch("item_type")}
+                       onValueChange={(value) => handleItemTypeChange(value as MenuItemType)}
+                     >
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select type" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="standalone">Standalone</SelectItem>
+                         <SelectItem value="combo_component">Combo Component</SelectItem>
+                         <SelectItem value="combo_driver">Combo Driver (Sauce)</SelectItem>
+                       </SelectContent>
+                     </Select>
+                   </div>
                 </div>
              </div>
           </TabsContent>
