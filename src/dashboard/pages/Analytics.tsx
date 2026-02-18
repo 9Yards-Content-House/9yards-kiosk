@@ -431,7 +431,10 @@ export default function Analytics() {
             <div className="bg-card rounded-2xl border shadow-sm p-4">
               <h3 className="font-bold text-lg mb-4 text-[#212282]">Revenue Trend</h3>
               <div className="h-[250px] md:h-[300px]">
-                <RevenueChart orders={orders || []} />
+                <RevenueChart 
+                  orders={orders || []} 
+                  dateRange={dateRange}
+                />
               </div>
             </div>
             <div className="bg-card rounded-2xl border shadow-sm p-4">

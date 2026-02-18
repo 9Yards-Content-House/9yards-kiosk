@@ -1,75 +1,125 @@
 import {
-  BarChart,
-  Bar,
+  AreaChart,
+  Area,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { format, eachDayOfInterval, isSameDay } from "date-fns";
 import type { Order } from "@shared/types/orders";
+import { DateRange } from "react-day-picker";
 
 interface RevenueChartProps {
   orders: Order[];
+  dateRange?: DateRange;
 }
 
-export default function RevenueChart({ orders }: RevenueChartProps) {
-  // Group by date
-  const dailyData = orders.reduce<Record<string, number>>((acc, order) => {
-    const date = new Date(order.created_at).toLocaleDateString("en-UG", {
-      month: "short",
-      day: "numeric",
-    });
-    acc[date] = (acc[date] || 0) + order.total;
+export default function RevenueChart({ orders, dateRange }: RevenueChartProps) {
+  // Generate date range bounds
+  const startDate = dateRange?.from || new Date(new Date().setDate(new Date().getDate() - 29));
+  const endDate = dateRange?.to || new Date();
+
+  // Generate all days in interval to fill gaps
+  const days = eachDayOfInterval({
+    start: startDate,
+    end: endDate,
+  });
+
+  // Pre-group orders by date string for efficiency
+  const revenueMap = orders.reduce<Record<string, number>>((acc, order) => {
+    const d = format(new Date(order.created_at), "yyyy-MM-dd");
+    acc[d] = (acc[d] || 0) + order.total;
     return acc;
   }, {});
 
-  const chartData = Object.entries(dailyData).map(([date, revenue]) => ({
-    date,
-    revenue,
-  }));
+  const chartData = days.map(day => {
+    const d = format(day, "yyyy-MM-dd");
+    return {
+      date: format(day, "MMM d"),
+      fullDate: format(day, "PPPP"),
+      revenue: revenueMap[d] || 0,
+    };
+  });
 
   if (chartData.length === 0) {
     return (
-      <div className="h-64 flex items-center justify-center text-muted-foreground">
-        No data yet
+      <div className="h-64 flex items-center justify-center text-muted-foreground font-medium uppercase tracking-widest text-[10px]">
+        No trend data available
       </div>
     );
   }
 
+  // Calculate interval for XAxis to prevent crowding
+  const interval = chartData.length > 14 ? Math.floor(chartData.length / 7) : 0;
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <BarChart data={chartData}>
-        <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="rgba(0,0,0,0.05)" />
+    <ResponsiveContainer width="100%" height="100%">
+      <AreaChart data={chartData} margin={{ top: 10, right: 10, left: 0, bottom: 0 }}>
+        <defs>
+          <linearGradient id="colorRevenue" x1="0" y1="0" x2="0" y2="1">
+            <stop offset="5%" stopColor="#212282" stopOpacity={0.15}/>
+            <stop offset="95%" stopColor="#212282" stopOpacity={0}/>
+          </linearGradient>
+        </defs>
+        <CartesianGrid 
+          strokeDasharray="4 4" 
+          vertical={false} 
+          stroke="rgba(0,0,0,0.03)" 
+        />
         <XAxis
           dataKey="date"
-          tick={{ fontSize: 10, fontWeight: 700 }}
+          tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }}
           axisLine={false}
           tickLine={false}
-          stroke="hsl(var(--muted-foreground))"
+          interval={interval}
+          dy={10}
         />
         <YAxis
-          tick={{ fontSize: 10, fontWeight: 700 }}
+          tick={{ fontSize: 9, fontWeight: 800, fill: '#64748b' }}
           axisLine={false}
           tickLine={false}
-          stroke="hsl(var(--muted-foreground))"
-          tickFormatter={(v: number) => `${(v / 1000).toFixed(0)}k`}
+          tickFormatter={(v: number) => v >= 1000 ? `${(v / 1000).toFixed(0)}k` : v.toString()}
+          width={40}
         />
         <Tooltip
-          cursor={{ fill: 'rgba(0,0,0,0.02)' }}
-          formatter={(value: number) => [`${value.toLocaleString()} UGX`, "Revenue"]}
-          contentStyle={{
-            backgroundColor: "#fff",
-            border: "none",
-            borderRadius: "12px",
-            boxShadow: "0 10px 15px -3px rgba(0,0,0,0.1), 0 4px 6px -2px rgba(0,0,0,0.05)",
-            padding: "12px",
+          cursor={{ stroke: '#212282', strokeWidth: 1, strokeDasharray: '4 4' }}
+          content={({ active, payload, label }) => {
+            if (active && payload && payload.length) {
+              const data = payload[0].payload;
+              return (
+                <div className="bg-white p-3 rounded-2xl shadow-xl border border-slate-100 min-w-[140px]">
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-tighter mb-1.5">{data.fullDate}</p>
+                  <div className="flex items-center justify-between gap-4">
+                    <span className="text-[11px] font-bold text-slate-600">Revenue</span>
+                    <span className="text-sm font-black text-[#212282]">
+                      {payload[0].value?.toLocaleString()} <span className="text-[9px] opacity-70">UGX</span>
+                    </span>
+                  </div>
+                </div>
+              );
+            }
+            return null;
           }}
-          itemStyle={{ fontSize: '12px', fontWeight: 800, color: '#212282' }}
-          labelStyle={{ fontSize: '10px', fontWeight: 700, color: '#64748b', marginBottom: '4px' }}
         />
-        <Bar dataKey="revenue" fill="#F05223" radius={[4, 4, 0, 0]} barSize={24} />
-      </BarChart>
+        <Area
+          type="monotone"
+          dataKey="revenue"
+          stroke="#212282"
+          strokeWidth={3}
+          fillOpacity={1}
+          fill="url(#colorRevenue)"
+          activeDot={{ 
+            r: 5, 
+            fill: '#ffffff', 
+            stroke: '#212282', 
+            strokeWidth: 2,
+            boxShadow: '0 4px 10px rgba(33,34,130,0.2)' 
+          }}
+          animationDuration={1500}
+        />
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
