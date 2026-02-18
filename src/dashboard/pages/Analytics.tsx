@@ -200,8 +200,32 @@ export default function Analytics() {
       };
     }
 
-    const today = new Date().toDateString();
-    const todayOrders = orders.filter((o) => new Date(o.created_at).toDateString() === today);
+    // Calibrate "Today" for Uganda Time (+3 UTC)
+    const nowUTC = new Date();
+    const nowUganda = new Date(nowUTC.getTime() + (3 * 60 * 60 * 1000));
+    const todayStr = nowUganda.toISOString().split('T')[0];
+
+    const todayOrders = orders.filter((o) => {
+      const d = new Date(o.created_at);
+      const dUganda = new Date(d.getTime() + (3 * 60 * 60 * 1000));
+      return dUganda.toISOString().split('T')[0] === todayStr;
+    });
+
+    // Loyal Users (Today): People who ordered today who have ordered at least once before in the dataset
+    const todayCustomerPhones = new Set(todayOrders.map(o => o.customer_phone).filter(Boolean));
+    const loyalUsersToday = Array.from(todayCustomerPhones).filter(phone => {
+      const customerOrders = orders.filter(o => o.customer_phone === phone);
+      return customerOrders.length > 1; // If more than 1 order in the dataset, they are "loyal"
+    }).length;
+
+    // Avg Prep Time for TODAY specifically
+    const todayPrepTimes = todayOrders
+      .filter(o => o.created_at && o.prepared_at)
+      .map(o => Math.round((new Date(o.prepared_at).getTime() - new Date(o.created_at).getTime()) / 60000))
+      .filter(t => t > 0 && t < 120);
+    const todayAvgPrepTime = todayPrepTimes.length > 0 
+      ? Math.round(todayPrepTimes.reduce((a, b) => a + b, 0) / todayPrepTimes.length) 
+      : 0;
 
     const hourCounts: Record<number, number> = {};
     orders.forEach((o) => {
@@ -307,6 +331,8 @@ export default function Analytics() {
       avgOrderValue: orders.length > 0 ? Math.round(orders.reduce((sum, o) => sum + o.total, 0) / orders.length) : 0,
       todayOrders: todayOrders.length,
       todayRevenue: todayOrders.reduce((sum, o) => sum + o.total, 0),
+      todayLoyalUsers: loyalUsersToday,
+      todayAvgPrepTime,
       ordersByHour, ordersByDay, topItems, categoryBreakdown, paymentBreakdown,
       peakHour, avgPrepTime, repeatCustomers, prepTimeDistribution,
     };
@@ -372,14 +398,55 @@ export default function Analytics() {
     <div className="p-4 md:p-6 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold">Analytics</h1>
-          <p className="text-muted-foreground">Track performance and insights</p>
+          <h1 className="text-2xl font-black text-primary uppercase tracking-tight">Analytics</h1>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Business Intelligence Dashboard</p>
         </div>
         <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
           <DateRangePicker value={dateRange} onChange={setDateRange} />
         </div>
       </div>
+
+      {/* Today's Performance Section */}
+      <div className="bg-card rounded-2xl border border-slate-100 p-6 shadow-sm">
+        <div className="flex items-center gap-3 mb-6">
+          <div className="w-10 h-10 bg-secondary/10 rounded-xl flex items-center justify-center border border-secondary/20">
+            <Calendar className="w-5 h-5 text-secondary" />
+          </div>
+          <div>
+            <h3 className="font-black text-primary uppercase tracking-tight">Today's Performance</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest line-clamp-1">Real-time operational metrics (Uganda Time)</p>
+          </div>
+        </div>
+
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+          {[
+            { label: 'Orders', value: metrics.todayOrders, color: 'text-primary' },
+            { label: 'Revenue', value: formatPrice(metrics.todayRevenue), color: 'text-primary' },
+            { label: 'Avg Prep (M)', value: metrics.todayAvgPrepTime > 0 ? metrics.todayAvgPrepTime : '--', color: 'text-primary' },
+            { label: 'Loyal Users', value: metrics.todayLoyalUsers, color: 'text-primary' },
+          ].map((stat, idx) => (
+            <motion.div
+              key={stat.label}
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ delay: idx * 0.1 }}
+              className="bg-slate-50/50 rounded-2xl p-6 flex flex-col items-center justify-center text-center border border-slate-100/50 hover:border-primary/20 transition-colors group"
+            >
+              <p className="text-3xl font-black text-primary tracking-tighter mb-1 transition-transform group-hover:scale-110 duration-300">
+                {stat.value}
+              </p>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{stat.label}</p>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+
+      <div className="h-px bg-slate-100 mx-2" />
       
+      <div className="flex items-center gap-2">
+        <TrendingUp className="w-4 h-4 text-primary" />
+        <h2 className="text-sm font-black text-primary uppercase tracking-widest">Historical Insights</h2>
+      </div>
 
       {isLoading && (
         <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
@@ -664,30 +731,6 @@ export default function Analytics() {
                     <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest text-center">No Data Available</p>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-          <div className="bg-card rounded-2xl border shadow-sm p-4">
-            <h3 className="font-bold text-lg mb-4 text-[#212282] flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-secondary" />
-              Today's Performance
-            </h3>
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
-                <p className="text-2xl font-black text-[#212282] tabular-nums">{metrics.todayOrders}</p>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Orders</p>
-              </div>
-              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
-                <p className="text-2xl font-black text-[#212282] tabular-nums">{formatPrice(metrics.todayRevenue)}</p>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Revenue</p>
-              </div>
-              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
-                <p className="text-2xl font-black text-[#212282] tabular-nums">{metrics.avgPrepTime || 'N/A'}</p>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Avg Prep (m)</p>
-              </div>
-              <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-100/50 hover:bg-slate-100 transition-colors">
-                <p className="text-2xl font-black text-[#212282] tabular-nums">{metrics.repeatCustomers}</p>
-                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-1">Loyal Users</p>
               </div>
             </div>
           </div>
