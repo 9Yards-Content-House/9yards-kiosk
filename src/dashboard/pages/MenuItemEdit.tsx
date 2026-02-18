@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { ArrowLeft, Save, Loader2, Upload, Trash2, Image as ImageIcon, X, Plus, Copy } from "lucide-react";
+import { ArrowLeft, Save, Loader2, Upload, Trash2, Image as ImageIcon, X, Plus, Copy, Sparkles } from "lucide-react";
 import { useForm, useFieldArray } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
@@ -22,6 +22,13 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@shared/components/ui/alert-dialog";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@shared/components/ui/dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
 import {
   Select,
@@ -430,7 +437,34 @@ export default function MenuItemEdit() {
         )}
       </div>
 
-      <div className="flex flex-col lg:flex-row gap-8 items-start">
+      {/* Mobile Preview Toggle */}
+      <div className="xl:hidden fixed bottom-24 right-4 z-50">
+        <Dialog>
+          <DialogTrigger asChild>
+            <Button size="lg" className="rounded-full h-14 w-14 shadow-2xl bg-secondary hover:bg-secondary/90 text-white p-0">
+              <Sparkles className="w-6 h-6 animate-pulse" />
+            </Button>
+          </DialogTrigger>
+          <DialogContent className="max-w-[calc(100vw-2rem)] rounded-3xl p-4 overflow-hidden">
+            <DialogHeader className="mb-4">
+              <DialogTitle className="text-center font-black text-xs uppercase tracking-widest text-muted-foreground">Kiosk Card Preview</DialogTitle>
+            </DialogHeader>
+            <div className="flex items-center justify-center py-2">
+              <div className="w-full max-w-[320px]">
+                <MenuItemCardNew 
+                  item={previewItem} 
+                  categorySlug={selectedCategory?.slug}
+                />
+              </div>
+            </div>
+            <p className="text-[10px] text-center text-muted-foreground mt-4 italic">
+              * This is how the item looks on the kiosk.
+            </p>
+          </DialogContent>
+        </Dialog>
+      </div>
+
+      <div className="flex flex-col xl:flex-row gap-8 items-start">
         <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-24 flex-1 w-full max-w-2xl">
           <Tabs defaultValue="general" className="w-full">
             <TabsList className="flex w-full overflow-x-auto overflow-y-hidden bg-muted/50 p-1 h-auto no-scrollbar">
@@ -470,7 +504,7 @@ export default function MenuItemEdit() {
                   />
                 </div>
 
-                <div className="grid grid-cols-2 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                    <div>
                      <label className="block text-sm font-medium mb-1.5">Category <span className="text-red-500">*</span></label>
                      <Select
@@ -482,7 +516,7 @@ export default function MenuItemEdit() {
                        </SelectTrigger>
                        <SelectContent>
                          {categories?.map((cat) => (
-                           <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                            <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
                          ))}
                        </SelectContent>
                      </Select>
@@ -614,26 +648,38 @@ export default function MenuItemEdit() {
                           <Plus className="w-4 h-4 mr-1" /> Add
                         </Button>
                       </div>
-                      <div className="space-y-2">
+                     <div className="space-y-4">
                          {preparationFields.map((field, index) => (
-                           <div key={field.id} className="flex gap-2 items-center">
-                             <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" className="flex-1" />
-                             <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 border w-36 overflow-hidden focus-within:ring-2 focus-within:ring-ring transition-all">
-                               <span className="text-[10px] font-bold text-muted-foreground shrink-0 uppercase tracking-tighter">UGX</span>
-                               <Input 
-                                 type="number" 
-                                 {...form.register(`preparations.${index}.priceModifier` as const)} 
-                                 placeholder="0" 
-                                 className="h-9 border-none bg-transparent text-sm focus-visible:ring-0 p-0 shadow-none"
-                               />
+                           <div key={field.id} className="flex flex-col sm:flex-row gap-3 p-4 bg-muted/20 rounded-xl border relative">
+                             <div className="flex-1 space-y-1.5">
+                               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Label</label>
+                               <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" className="bg-background" />
                              </div>
-                             <Button type="button" variant="ghost" size="icon" onClick={() => removePrep(index)} className="shrink-0">
-                               <X className="w-4 h-4" />
+                             <div className="w-full sm:w-44 space-y-1.5">
+                               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Extra Cost (UGX)</label>
+                               <div className="flex items-center gap-2 bg-background rounded-lg px-3 border focus-within:ring-2 focus-within:ring-ring transition-all">
+                                 <span className="text-[10px] font-black text-muted-foreground shrink-0 uppercase tracking-tighter">UGX</span>
+                                 <Input 
+                                   type="number" 
+                                   {...form.register(`preparations.${index}.priceModifier` as const)} 
+                                   placeholder="0" 
+                                   className="h-10 border-none bg-transparent text-sm focus-visible:ring-0 p-0 shadow-none"
+                                 />
+                               </div>
+                             </div>
+                             <Button 
+                               type="button" 
+                               variant="ghost" 
+                               size="icon" 
+                               onClick={() => removePrep(index)} 
+                               className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-sm hover:text-destructive"
+                             >
+                               <X className="w-3 h-3" />
                              </Button>
                            </div>
                          ))}
                          {preparationFields.length === 0 && (
-                            <p className="text-sm text-muted-foreground italic">No preparations defined.</p>
+                            <p className="text-sm text-muted-foreground italic text-center py-4">No preparations defined.</p>
                          )}
                       </div>
                     </div>
@@ -648,18 +694,30 @@ export default function MenuItemEdit() {
                           <Plus className="w-4 h-4 mr-1" /> Add Size
                         </Button>
                       </div>
-                      <div className="space-y-2">
+                      <div className="space-y-4">
                          {sizeFields.map((field, index) => (
-                           <div key={field.id} className="flex gap-2">
-                             <Input {...form.register(`sizes.${index}.name` as const)} placeholder="Size Name" className="flex-1" />
-                             <Input type="number" {...form.register(`sizes.${index}.price` as const)} placeholder="Price" className="w-32" />
-                             <Button type="button" variant="ghost" size="icon" onClick={() => removeSize(index)}>
-                               <X className="w-4 h-4" />
+                           <div key={field.id} className="flex flex-col sm:flex-row gap-3 p-4 bg-muted/20 rounded-xl border relative">
+                             <div className="flex-1 space-y-1.5">
+                               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Size Name</label>
+                               <Input {...form.register(`sizes.${index}.name` as const)} placeholder="e.g. Regular, Large" className="bg-background" />
+                             </div>
+                             <div className="w-full sm:w-44 space-y-1.5">
+                               <label className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest px-1">Price (UGX)</label>
+                               <Input type="number" {...form.register(`sizes.${index}.price` as const)} placeholder="Price" className="bg-background" />
+                             </div>
+                             <Button 
+                               type="button" 
+                               variant="ghost" 
+                               size="icon" 
+                               onClick={() => removeSize(index)}
+                               className="absolute -top-2 -right-2 h-7 w-7 rounded-full bg-background border shadow-sm hover:text-destructive"
+                             >
+                               <X className="w-3 h-3" />
                              </Button>
                            </div>
                          ))}
                          {sizeFields.length === 0 && (
-                            <p className="text-sm text-muted-foreground italic">No sizes defined.</p>
+                            <p className="text-sm text-muted-foreground italic text-center py-4">No sizes defined.</p>
                          )}
                       </div>
                     </div>
