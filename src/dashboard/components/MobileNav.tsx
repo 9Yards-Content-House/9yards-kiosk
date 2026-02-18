@@ -1,5 +1,5 @@
-import { NavLink, useLocation } from "react-router-dom";
-import { LayoutDashboard, UtensilsCrossed, Truck, Settings, ChefHat, Users, BarChart3, MoreHorizontal, MessageSquare, Building2 } from "lucide-react";
+import { NavLink, useLocation, useNavigate } from "react-router-dom";
+import { LayoutDashboard, UtensilsCrossed, Truck, Settings, ChefHat, Users, BarChart3, MoreHorizontal, MessageSquare, Building2, FolderOpen, LogOut } from "lucide-react";
 import { cn } from "@shared/lib/utils";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
@@ -7,12 +7,19 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
+  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@shared/components/ui/dropdown-menu";
 
 export default function MobileNav() {
-  const { role } = useAuth();
+  const { role, signOut } = useAuth();
   const location = useLocation();
+  const navigate = useNavigate();
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate("/login");
+  };
 
   const primaryLinks = [
     { to: "/orders", label: "Orders", icon: LayoutDashboard, permission: "orders:read" },
@@ -22,6 +29,7 @@ export default function MobileNav() {
   ];
 
   const moreLinks = [
+    { to: "/categories", label: "Categories", icon: FolderOpen, permission: "menu:read" },
     { to: "/staff", label: "Staff", icon: Users, permission: "staff:read" },
     { to: "/feedback", label: "Feedback", icon: MessageSquare, permission: "analytics:read" },
     { to: "/deliveries", label: "Deliveries", icon: Truck, permission: "deliveries:read" },
@@ -44,7 +52,7 @@ export default function MobileNav() {
               to={link.to}
               className={({ isActive }) =>
                 cn(
-                  "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-xs font-medium transition-colors rounded-lg",
+                   "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-[10px] font-medium transition-colors rounded-lg",
                   isActive ? "text-primary bg-primary/10" : "text-muted-foreground active:bg-muted"
                 )
               }
@@ -60,7 +68,7 @@ export default function MobileNav() {
             <DropdownMenuTrigger asChild>
               <button
                 className={cn(
-                  "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-xs font-medium transition-colors rounded-lg",
+                  "flex flex-col items-center justify-center gap-0.5 min-w-[56px] min-h-[48px] px-3 py-2 text-[10px] font-medium transition-colors rounded-lg",
                   isMoreActive ? "text-primary bg-primary/10" : "text-muted-foreground active:bg-muted"
                 )}
               >
@@ -68,25 +76,38 @@ export default function MobileNav() {
                 More
               </button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-48 mb-2">
-              {filteredMore.map((link) => {
-                const Icon = link.icon;
-                const isActive = location.pathname === link.to;
-                return (
-                  <DropdownMenuItem key={link.to} asChild className="min-h-[44px]">
+            <DropdownMenuContent align="end" className="w-56 mb-4 p-2 shadow-xl border-2">
+              <div className="grid grid-cols-2 gap-1 mb-2">
+                {filteredMore.map((link) => {
+                  const Icon = link.icon;
+                  const isActive = location.pathname === link.to;
+                  return (
                     <NavLink
+                      key={link.to}
                       to={link.to}
                       className={cn(
-                        "flex items-center gap-2 w-full py-3",
-                        isActive && "bg-muted"
+                        "flex flex-col items-center justify-center gap-1.5 p-3 rounded-xl transition-all border",
+                        isActive 
+                          ? "bg-primary/5 text-primary border-primary/20 font-bold" 
+                          : "text-muted-foreground border-transparent hover:bg-muted active:scale-95"
                       )}
                     >
-                      <Icon className="w-4 h-4" />
-                      {link.label}
+                      <Icon className="w-5 h-5" />
+                      <span className="text-[10px]">{link.label}</span>
                     </NavLink>
-                  </DropdownMenuItem>
-                );
-              })}
+                  );
+                })}
+              </div>
+              
+              <DropdownMenuSeparator className="my-2" />
+              
+              <DropdownMenuItem 
+                onClick={handleSignOut}
+                className="flex items-center gap-3 py-3 px-4 text-destructive focus:text-destructive focus:bg-destructive/5 rounded-xl cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+                <span className="font-semibold">Sign Out</span>
+              </DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         )}
