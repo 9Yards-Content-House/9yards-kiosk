@@ -1,6 +1,7 @@
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
-import type { MenuItem, SaucePreparation, SauceSize } from "@shared/types/menu";
+import { toast } from "sonner";
+import type { MenuItem, SaucePreparation, SauceSize, MenuItemType } from "@shared/types/menu";
 
 // In-memory store for mock mode menu items (references useMenu.ts mock data)
 // This is a simple demo - when connected to Supabase, the real DB will handle this
@@ -16,6 +17,7 @@ interface CreateMenuItemPayload {
   sort_order: number;
   is_popular?: boolean;
   is_new?: boolean;
+  item_type?: MenuItemType;
   preparations?: SaucePreparation[] | null;
   sizes?: SauceSize[] | null;
 }
@@ -118,9 +120,10 @@ export function useToggleMenuItemAvailability() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["menu_items"] });
       queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
+      toast.success(variables.available ? "Item marked available" : "Item marked unavailable");
     },
   });
 }
@@ -143,8 +146,9 @@ export function useToggleMenuItemPopular() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["menu_items"] });
+      toast.success(variables.is_popular ? "Marked as popular" : "Removed popular badge");
     },
   });
 }
@@ -167,8 +171,9 @@ export function useToggleMenuItemNew() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["menu_items"] });
+      toast.success(variables.is_new ? "Marked as new" : "Removed new badge");
     },
   });
 }

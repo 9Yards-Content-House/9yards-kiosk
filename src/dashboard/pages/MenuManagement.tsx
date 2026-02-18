@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Plus, Search, Filter, LayoutGrid, List, ArrowUpDown, GripVertical } from "lucide-react";
+import { Plus, Search, Filter, LayoutGrid, List, ArrowUpDown } from "lucide-react";
 import { useAllMenuItems, useCategories, useMenuRealtime } from "@shared/hooks/useMenu";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
@@ -17,7 +17,7 @@ import {
   SelectValue,
 } from "@shared/components/ui/select";
 import { TooltipProvider } from "@shared/components/ui/tooltip";
-import { formatPrice, cn } from "@shared/lib/utils";
+import { cn } from "@shared/lib/utils";
 import type { MenuItemType } from "@shared/types/menu";
 
 type FilterType = "all" | "available" | "unavailable" | "popular" | "new" | "scheduled";
@@ -32,6 +32,7 @@ export default function MenuManagement() {
   const { data: items, isLoading } = useAllMenuItems();
   const { data: categories } = useCategories();
   const [search, setSearch] = useState("");
+  const [showFilters, setShowFilters] = useState(false);
   const [filterCategory, setFilterCategory] = useState<string>("all");
   const [filterType, setFilterType] = useState<FilterType>("all");
   const [filterItemType, setFilterItemType] = useState<ItemTypeFilter>("all");
@@ -175,11 +176,8 @@ export default function MenuManagement() {
             <Button
               variant="outline"
               size="icon"
-              className="md:hidden shrink-0"
-              onClick={() => {
-                const el = document.getElementById('mobile-filters');
-                if (el) el.classList.toggle('hidden');
-              }}
+              className={cn("md:hidden shrink-0", showFilters && "bg-accent")}
+              onClick={() => setShowFilters(prev => !prev)}
             >
               <Filter className="w-4 h-4" />
             </Button>
@@ -240,7 +238,7 @@ export default function MenuManagement() {
           </div>
 
           {/* Filter Validations - 2-Col Grid on Mobile, Flex Row on Desktop */}
-          <div id="mobile-filters" className="hidden md:flex flex-col md:flex-row gap-2 animate-in slide-in-from-top-2 duration-200">
+          <div className={cn(showFilters ? "flex" : "hidden", "md:flex flex-col md:flex-row gap-2 animate-in slide-in-from-top-2 duration-200")}>
             
             {/* Mobile Grid Container for Advanced Filters */}
             <div className="grid grid-cols-2 gap-2 md:contents">

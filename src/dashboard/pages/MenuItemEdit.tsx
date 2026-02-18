@@ -80,6 +80,7 @@ export default function MenuItemEdit() {
   const deleteMenuItem = useDeleteMenuItem();
 
   const [uploading, setUploading] = useState(false);
+  const [loading, setLoading] = useState(!isNew);
   
   const form = useForm<MenuItemFormValues>({
     resolver: zodResolver(menuItemSchema),
@@ -114,37 +115,44 @@ export default function MenuItemEdit() {
 
   // Fetch existing item
   useEffect(() => {
-    if (isNew || USE_MOCK_DATA) return;
+    if (isNew || USE_MOCK_DATA) {
+      setLoading(false);
+      return;
+    }
     supabase
       .from("menu_items")
       .select("*")
       .eq("id", id)
       .single()
-      .then(({ data }) => {
-        if (data) {
-          form.reset({
-            name: data.name,
-            description: data.description || "",
-            price: data.price,
-            category_id: data.category_id,
-            image_url: data.image_url || "",
-            available: data.available,
-            sort_order: data.sort_order,
-            is_popular: data.is_popular || false,
-            is_new: data.is_new || false,
-            item_type: (data.item_type as MenuItemType) || "standalone",
-            preparations: data.preparations || [],
-            sizes: data.sizes || [],
-          });
+      .then(({ data, error }) => {
+        if (error || !data) {
+          toast.error("Menu item not found");
+          navigate("/menu");
+          return;
         }
+        form.reset({
+          name: data.name,
+          description: data.description || "",
+          price: data.price,
+          category_id: data.category_id,
+          image_url: data.image_url || "",
+          available: data.available,
+          sort_order: data.sort_order,
+          is_popular: data.is_popular || false,
+          is_new: data.is_new || false,
+          item_type: (data.item_type as MenuItemType) || "standalone",
+          preparations: data.preparations || [],
+          sizes: data.sizes || [],
+        });
+        setLoading(false);
       });
-  }, [id, isNew, form]);
+  }, [id, isNew, form, navigate]);
 
   const onSubmit = async (data: MenuItemFormValues) => {
     try {
       const payload = {
         ...data,
-        // Ensure combo components are always free (redundant safeguard)
+        // Combo components have no standalone price (included in combo)
         price: data.item_type === 'combo_component' ? 0 : data.price,
         // Sanitize arrays
         preparations: data.preparations && data.preparations.length > 0 ? data.preparations : null,
@@ -195,15 +203,18 @@ export default function MenuItemEdit() {
   // Logic Adapters
   const handleCategoryChange = (categoryId: string) => {
     form.setValue("category_id", categoryId);
-    const category = categories?.find(c => c.id === categoryId);
-    if (category) {
-      if (category.slug === 'sauces') {
-        form.setValue("item_type", 'combo_driver');
-      } else if (category.slug === 'main-dishes' || category.slug === 'side-dishes') {
-        form.setValue("item_type", 'combo_component');
-        form.setValue("price", 0);
-      } else {
-        form.setValue("item_type", 'standalone');
+    // Only auto-set item_type for new items to avoid overriding manual choices
+    if (isNew) {
+      const category = categories?.find(c => c.id === categoryId);
+      if (category) {
+        if (category.slug === 'sauces') {
+          form.setValue("item_type", 'combo_driver');
+        } else if (category.slug === 'main-dishes' || category.slug === 'side-dishes') {
+          form.setValue("item_type", 'combo_component');
+          form.setValue("price", 0);
+        } else {
+          form.setValue("item_type", 'standalone');
+        }
       }
     }
   };
@@ -279,6 +290,14 @@ export default function MenuItemEdit() {
 
   const isPending = createMenuItem.isPending || updateMenuItem.isPending || form.formState.isSubmitting;
   const showPreparationsAndSizes = watchedItemType === 'combo_driver';
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin w-8 h-8 border-4 border-secondary border-t-transparent rounded-full" />
+      </div>
+    );
+  }
 
   return (
     <div className="p-4 md:p-6 max-w-2xl">
@@ -469,7 +488,7 @@ export default function MenuItemEdit() {
                    )}
                    <p className="text-xs text-muted-foreground mt-1.5">
                      {watchedItemType === 'combo_component' 
-                        ? 'Combo components are usually free (price 0).'
+                        ? 'Combo components are included in the combo price and cannot be sold individually.'
                         : 'For items with sizes, this is usually the price of the smallest/default size.'}
                    </p>
                 </div>
