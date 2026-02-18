@@ -324,67 +324,72 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
 
   if (insights.length === 0) {
     return (
-      <div className="bg-gradient-to-br from-slate-50 to-purple-50/50 rounded-2xl p-6 shadow-sm border border-purple-100/50">
+      <div className="bg-card rounded-2xl p-6 shadow-sm border border-slate-100">
         <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200">
-            <Sparkles className="w-5 h-5 text-white" />
+          <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+            <Sparkles className="w-5 h-5 text-secondary" />
           </div>
           <div>
-            <h3 className="font-bold text-[#212282]">AI Insights</h3>
-            <p className="text-sm text-gray-500">Smart business recommendations</p>
+            <h3 className="font-black text-[#212282] uppercase tracking-tight">AI Insights</h3>
+            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Business Intelligence</p>
           </div>
         </div>
-        <p className="text-gray-500 text-center py-8">
-          More data needed to generate insights. Keep collecting orders!
-        </p>
+        <div className="flex flex-col items-center justify-center py-12 gap-3">
+          <div className="p-4 bg-slate-50 rounded-full">
+            <Zap className="w-8 h-8 text-slate-200" />
+          </div>
+          <p className="text-xs font-bold text-slate-400 text-center max-w-[200px]">
+            More data needed to generate smart recommendations.
+          </p>
+        </div>
       </div>
     );
   }
 
   const typeConfig = {
     success: {
-      bg: "bg-gradient-to-br from-green-50 to-emerald-50/50",
-      border: "border-green-200/60",
-      iconBg: "bg-gradient-to-br from-green-400 to-emerald-500",
-      iconColor: "text-white",
-      metricColor: "text-green-700",
+      bg: "bg-white",
+      border: "border-slate-100",
+      iconBg: "bg-emerald-50",
+      iconColor: "text-emerald-500",
+      metricColor: "text-emerald-600",
     },
     warning: {
-      bg: "bg-gradient-to-br from-amber-50 to-orange-50/50",
-      border: "border-amber-200/60",
-      iconBg: "bg-gradient-to-br from-amber-400 to-orange-500",
-      iconColor: "text-white",
-      metricColor: "text-amber-700",
+      bg: "bg-white",
+      border: "border-slate-100",
+      iconBg: "bg-amber-50",
+      iconColor: "text-amber-500",
+      metricColor: "text-amber-600",
     },
     info: {
-      bg: "bg-gradient-to-br from-blue-50 to-indigo-50/50",
-      border: "border-blue-200/60",
-      iconBg: "bg-gradient-to-br from-blue-400 to-indigo-500",
-      iconColor: "text-white",
-      metricColor: "text-blue-700",
+      bg: "bg-white",
+      border: "border-slate-100",
+      iconBg: "bg-blue-50",
+      iconColor: "text-blue-500",
+      metricColor: "text-blue-600",
     },
     prediction: {
-      bg: "bg-gradient-to-br from-purple-50 to-pink-50/50",
-      border: "border-purple-200/60",
-      iconBg: "bg-gradient-to-br from-purple-400 to-pink-500",
-      iconColor: "text-white",
-      metricColor: "text-purple-700",
+      bg: "bg-white",
+      border: "border-slate-100",
+      iconBg: "bg-orange-50",
+      iconColor: "text-secondary",
+      metricColor: "text-secondary",
     },
   };
 
   return (
-    <div className="bg-gradient-to-br from-slate-50 to-purple-50/50 rounded-2xl p-6 shadow-sm border border-purple-100/50">
+    <div className="bg-card rounded-2xl p-6 shadow-sm border border-slate-100">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-gradient-to-br from-purple-500 to-pink-500 rounded-xl flex items-center justify-center shadow-lg shadow-purple-200">
-          <Sparkles className="w-5 h-5 text-white" />
+        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+          <Sparkles className="w-5 h-5 text-secondary" />
         </div>
         <div>
-          <h3 className="font-bold text-[#212282]">AI Insights</h3>
-          <p className="text-sm text-gray-500">Smart business recommendations</p>
+          <h3 className="font-black text-[#212282] uppercase tracking-tight">AI Insights</h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Business Intelligence</p>
         </div>
       </div>
 
-      <div className="space-y-3">
+      <div className="space-y-4">
         {insights.slice(0, 5).map((insight, idx) => {
           const config = typeConfig[insight.type];
           const Icon = insight.icon;
@@ -392,41 +397,44 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
           return (
             <motion.div
               key={insight.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.08, type: "spring", stiffness: 400, damping: 25 }}
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: idx * 0.08 }}
               className={cn(
-                "p-4 rounded-xl border shadow-sm hover:shadow-md transition-shadow",
+                "p-4 rounded-2xl border transition-all hover:border-secondary/20 hover:shadow-md group",
                 config.bg,
                 config.border
               )}
             >
-              <div className="flex items-start gap-3">
+              <div className="flex items-start gap-4">
                 <div className={cn(
-                  "w-9 h-9 rounded-lg flex items-center justify-center shadow-sm flex-shrink-0",
+                  "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 transition-colors",
                   config.iconBg
                 )}>
-                  <Icon className={cn("w-4 h-4", config.iconColor)} />
+                  <Icon className={cn("w-5 h-5", config.iconColor)} />
                 </div>
                 <div className="flex-1 min-w-0">
                   <div className="flex items-center justify-between gap-2 mb-1">
-                    <h4 className="font-semibold text-gray-900 text-sm">{insight.title}</h4>
+                    <h4 className="font-bold text-slate-900 text-sm leading-none">{insight.title}</h4>
                     {insight.metric && (
                       <span className={cn(
-                        "text-sm font-bold whitespace-nowrap flex items-center gap-1",
+                        "text-xs font-black whitespace-nowrap flex items-center gap-1 bg-slate-50 px-2 py-1 rounded-lg",
                         config.metricColor
                       )}>
                         {insight.metric}
-                        {insight.trend === "up" && <TrendingUp className="w-3.5 h-3.5 text-green-500" />}
-                        {insight.trend === "down" && <TrendingDown className="w-3.5 h-3.5 text-red-500" />}
+                        {insight.trend === "up" && <TrendingUp className="w-3 h-3" />}
+                        {insight.trend === "down" && <TrendingDown className="w-3 h-3" />}
                       </span>
                     )}
                   </div>
-                  <p className="text-[11px] text-slate-500 leading-relaxed font-medium">{insight.description}</p>
+                  <p className="text-[11px] text-slate-500 leading-normal font-medium mb-2">{insight.description}</p>
                   {insight.actionable && (
-                    <span className="inline-block mt-2 text-[10px] font-bold text-[#212282] bg-white border border-[#212282]/10 px-2.5 py-0.5 rounded-full shadow-sm">
-                      💡 {insight.actionable}
-                    </span>
+                    <div className="flex items-center gap-2">
+                       <span className="inline-flex items-center gap-1.5 text-[10px] font-black text-secondary bg-secondary/5 px-2.5 py-1 rounded-lg border border-secondary/10 uppercase tracking-tight">
+                        <Zap className="w-3 h-3 fill-secondary" />
+                        {insight.actionable}
+                      </span>
+                    </div>
                   )}
                 </div>
               </div>
@@ -436,9 +444,11 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
       </div>
 
       {insights.length > 5 && (
-        <p className="text-center text-xs text-gray-500 mt-4 font-medium">
-          +{insights.length - 5} more insights available
-        </p>
+        <div className="mt-6 pt-4 border-t border-slate-50 text-center">
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">
+            +{insights.length - 5} additional perspectives
+          </p>
+        </div>
       )}
     </div>
   );
