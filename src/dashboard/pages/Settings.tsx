@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { motion, AnimatePresence } from "framer-motion";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
 import { usePushNotifications } from "../hooks/usePushNotifications";
@@ -19,7 +20,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@shared/components/ui/select";
-import { Bell, Volume2, Smartphone, User, Edit2, Loader2, Store, Printer, Clock, Save, Check, MapPin, BellOff, Key, Eye, EyeOff, Shield } from "lucide-react";
+import { Bell, Volume2, Smartphone, User, Edit2, Loader2, Store, Printer, Clock, Save, Check, MapPin, BellOff, Key, Eye, EyeOff, Shield, Info, Usb, RefreshCw } from "lucide-react";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { toast } from "sonner";
 
@@ -120,6 +121,7 @@ export default function Settings() {
   const handleAutoPrintToggle = (enabled: boolean) => {
     setAutoPrint(enabled);
     saveSetting(STORAGE_KEYS.AUTO_PRINT, enabled);
+    toast.success(enabled ? "Auto-print enabled" : "Auto-print disabled");
   };
 
   // Handle print copies change
@@ -136,7 +138,6 @@ export default function Settings() {
     setIsSaving(true);
     try {
       if (USE_MOCK_DATA) {
-        // Mock mode - just show success
         toast.success("Profile updated (mock)");
         setEditProfileOpen(false);
         setIsSaving(false);
@@ -156,7 +157,6 @@ export default function Settings() {
       toast.success("Profile updated successfully");
       setEditProfileOpen(false);
       
-      // Refresh profile data
       if (refreshProfile) {
         await refreshProfile();
       }
@@ -181,7 +181,6 @@ export default function Settings() {
 
   // Handle PIN update
   const handlePinUpdate = async () => {
-    // Validation
     if (!/^\d{4,6}$/.test(newPin)) {
       toast.error("PIN must be 4-6 digits");
       return;
@@ -200,7 +199,6 @@ export default function Settings() {
     setIsSavingPin(true);
     try {
       if (USE_MOCK_DATA) {
-        // Mock mode - just show success
         toast.success("PIN updated (mock)");
         setPinDialogOpen(false);
         resetPinDialog();
@@ -209,7 +207,6 @@ export default function Settings() {
         return;
       }
 
-      // Call the set-pin Edge Function
       const { data, error } = await supabase.functions.invoke("set-pin", {
         body: {
           newPin,
@@ -218,13 +215,8 @@ export default function Settings() {
         },
       });
 
-      if (error) {
-        throw new Error(error.message || "Failed to update PIN");
-      }
-
-      if (!data.success) {
-        throw new Error(data.error || "Failed to update PIN");
-      }
+      if (error) throw new Error(error.message || "Failed to update PIN");
+      if (!data.success) throw new Error(data.error || "Failed to update PIN");
 
       toast.success(hasExistingPin ? "PIN updated successfully" : "PIN set successfully");
       setPinDialogOpen(false);
@@ -249,454 +241,409 @@ export default function Settings() {
   if (!canView) {
     return (
       <div className="p-6 text-center">
-        <p className="text-muted-foreground">You don't have access to settings.</p>
+        <p className="text-muted-foreground font-black uppercase tracking-widest text-xs">You don't have access to settings.</p>
       </div>
     );
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-2xl">
-      <h1 className="text-2xl font-bold mb-6">Settings</h1>
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="p-4 md:p-6 max-w-2xl mx-auto"
+    >
+      <div className="flex items-center gap-3 mb-8">
+        <div className="w-12 h-12 rounded-2xl bg-primary/5 flex items-center justify-center border border-primary/10 shadow-sm">
+          <Shield className="w-6 h-6 text-primary" />
+        </div>
+        <div>
+          <h1 className="text-xl md:text-2xl font-black text-primary uppercase tracking-tight">Settings</h1>
+          <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Dashboard & Account Preferences</p>
+        </div>
+      </div>
 
-      {/* Profile */}
-      <section className="bg-card rounded-xl border p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center">
-              <User className="w-5 h-5 text-primary" />
-            </div>
-            <h2 className="font-semibold text-lg">Profile</h2>
-          </div>
-          <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
-            <DialogTrigger asChild>
-              <Button variant="outline" size="sm">
-                <Edit2 className="w-4 h-4 mr-2" />
-                Edit
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Edit Profile</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Full Name</label>
-                  <Input
-                    value={editName}
-                    onChange={(e) => setEditName(e.target.value)}
-                    placeholder="Your name"
-                  />
-                </div>
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Phone</label>
-                  <Input
-                    type="tel"
-                    value={editPhone}
-                    onChange={(e) => setEditPhone(e.target.value)}
-                    placeholder="+256700123456"
-                  />
-                </div>
-                <div className="text-sm text-muted-foreground">
-                  <p><strong>Email:</strong> {user?.email}</p>
-                  <p><strong>Role:</strong> {profile?.role}</p>
-                </div>
-                <Button
-                  onClick={handleProfileUpdate}
-                  disabled={isSaving || !editName}
-                  className="w-full"
-                >
-                  {isSaving ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Save className="w-4 h-4 mr-2" />
-                  )}
-                  Save Changes
-                </Button>
+      <div className="space-y-6">
+        {/* Profile */}
+        <motion.section 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-primary/5 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          
+          <div className="flex items-center justify-between mb-6 relative z-10">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 rounded-2xl bg-primary flex items-center justify-center text-white text-2xl font-black shadow-lg shadow-primary/20">
+                {profile?.full_name?.charAt(0) || user?.email?.charAt(0) || "U"}
               </div>
-            </DialogContent>
-          </Dialog>
-        </div>
-        <div className="space-y-2 text-sm">
-          <p><strong>Name:</strong> {profile?.full_name}</p>
-          <p><strong>Role:</strong> <span className="capitalize">{profile?.role}</span></p>
-          <p><strong>Phone:</strong> {profile?.phone || "Not set"}</p>
-          <p><strong>Email:</strong> {user?.email || "Not available"}</p>
-        </div>
-      </section>
+              <div>
+                <h2 className="text-lg font-black text-primary uppercase tracking-tight">Profile</h2>
+                <div className="flex items-center gap-2 mt-1">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 text-[8px] font-black uppercase tracking-widest">
+                    {profile?.role || "User"}
+                  </span>
+                  {profile?.active && (
+                    <span className="px-2 py-0.5 rounded-full bg-green-100 text-green-600 text-[8px] font-black uppercase tracking-widest">
+                      Active
+                    </span>
+                  )}
+                </div>
+              </div>
+            </div>
+            <Dialog open={editProfileOpen} onOpenChange={setEditProfileOpen}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm" className="rounded-xl border-slate-100 font-black uppercase tracking-widest text-[10px] h-9 shadow-sm hover:bg-slate-50">
+                  <Edit2 className="w-3.5 h-3.5 mr-2" />
+                  Edit
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2.5rem]">
+                <DialogHeader>
+                  <DialogTitle className="font-black text-primary uppercase tracking-tight">Edit Profile</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Full Name</label>
+                    <Input
+                      value={editName}
+                      onChange={(e) => setEditName(e.target.value)}
+                      placeholder="Your name"
+                      className="rounded-2xl border-slate-100 focus:ring-primary focus:border-primary font-bold h-12"
+                    />
+                  </div>
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Phone</label>
+                    <Input
+                      type="tel"
+                      value={editPhone}
+                      onChange={(e) => setEditPhone(e.target.value)}
+                      placeholder="+256700123456"
+                      className="rounded-2xl border-slate-100 focus:ring-primary focus:border-primary font-bold h-12"
+                    />
+                  </div>
+                  <Button
+                    onClick={handleProfileUpdate}
+                    disabled={isSaving || !editName}
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10 transition-all active:scale-[0.98]"
+                  >
+                    {isSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Save className="w-4 h-4 mr-2" />
+                        Save Changes
+                      </>
+                    )}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
 
-      {/* Security / PIN */}
-      <section className="bg-card rounded-xl border p-6 mb-6">
-        <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-full bg-purple-100 flex items-center justify-center">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 relative z-10">
+            <div className="p-4 bg-slate-50/50 border border-slate-100/50 rounded-2xl transition-colors hover:bg-white hover:border-slate-200">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Full Name</p>
+              <p className="text-sm font-black text-primary tracking-tight">{profile?.full_name}</p>
+            </div>
+            <div className="p-4 bg-slate-50/50 border border-slate-100/50 rounded-2xl transition-colors hover:bg-white hover:border-slate-200">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Phone Number</p>
+              <p className="text-sm font-black text-primary tracking-tight">{profile?.phone || "Not set"}</p>
+            </div>
+            <div className="p-4 bg-slate-50/50 border border-slate-100/50 rounded-2xl transition-colors hover:bg-white hover:border-slate-200 md:col-span-2">
+              <p className="text-[8px] font-black text-slate-400 uppercase tracking-widest mb-1">Email Address</p>
+              <p className="text-sm font-black text-primary tracking-tight truncate">{user?.email}</p>
+            </div>
+          </div>
+        </motion.section>
+
+        {/* Security / PIN */}
+        <motion.section 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.2 }}
+          className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-purple-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-purple-100 flex items-center justify-center">
               <Shield className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h2 className="font-semibold text-lg">Security</h2>
-              <p className="text-sm text-muted-foreground">Manage your login PIN</p>
+              <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Security</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Manage your login PIN</p>
             </div>
           </div>
-        </div>
 
-        <div className="space-y-4">
-          {/* PIN Status */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Key className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">PIN Login</p>
-                <p className="text-sm text-muted-foreground">
-                  {hasExistingPin
-                    ? "PIN is set - use it for quick login"
-                    : "Set a 4-6 digit PIN for faster login"}
-                </p>
+          <div className="space-y-4 relative z-10">
+            {/* PIN Status */}
+            <div className="flex items-center justify-between p-4 bg-slate-50/50 rounded-2xl border border-slate-100/50">
+              <div className="flex items-center gap-3">
+                <div className="w-8 h-8 rounded-lg bg-white shadow-sm flex items-center justify-center">
+                  <Key className="w-4 h-4 text-slate-400" />
+                </div>
+                <div>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-tight">PIN Login Status</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-0.5">
+                    {hasExistingPin ? "Active & Secured" : "Not configured"}
+                  </p>
+                </div>
               </div>
-            </div>
-            <div className="flex items-center gap-2">
               {hasExistingPin && (
-                <span className="text-xs bg-green-100 text-green-700 px-2 py-1 rounded-full font-medium">
+                <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-green-100 text-green-700 text-[8px] font-black uppercase tracking-widest">
+                  <Check className="w-3 h-3" />
                   Active
                 </span>
               )}
             </div>
-          </div>
 
-          {/* PIN Action */}
-          <Dialog open={pinDialogOpen} onOpenChange={(open) => {
-            setPinDialogOpen(open);
-            if (!open) resetPinDialog();
-          }}>
-            <DialogTrigger asChild>
-              <Button variant="outline" className="w-full sm:w-auto">
-                <Key className="w-4 h-4 mr-2" />
-                {hasExistingPin ? "Change PIN" : "Set PIN"}
-              </Button>
-            </DialogTrigger>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>
-                  {hasExistingPin ? "Change Your PIN" : "Set Your PIN"}
-                </DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-2">
-                {/* Verify identity if changing PIN */}
-                {hasExistingPin && (
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-sm font-medium">Verify your identity:</span>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setUsePasswordVerify(!usePasswordVerify)}
-                        className="text-xs"
-                      >
-                        {usePasswordVerify ? "Use current PIN instead" : "Forgot PIN? Use password"}
-                      </Button>
-                    </div>
-
-                    {usePasswordVerify ? (
-                      <div>
-                        <label className="block text-sm font-medium mb-1.5">Current Password</label>
-                        <Input
-                          type="password"
-                          value={currentPassword}
-                          onChange={(e) => setCurrentPassword(e.target.value)}
-                          placeholder="Enter your password"
-                          autoComplete="current-password"
-                        />
+            <Dialog open={pinDialogOpen} onOpenChange={(open) => {
+              setPinDialogOpen(open);
+              if (!open) resetPinDialog();
+            }}>
+              <DialogTrigger asChild>
+                <Button variant="outline" className="w-full h-12 rounded-2xl border-slate-100 font-black uppercase tracking-widest text-[10px] shadow-sm hover:bg-slate-50">
+                  <Key className="w-4 h-4 mr-2 text-primary" />
+                  {hasExistingPin ? "Change Security PIN" : "Setup Login PIN"}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="rounded-[2.5rem]">
+                <DialogHeader>
+                  <DialogTitle className="font-black text-primary uppercase tracking-tight">
+                    {hasExistingPin ? "Change Security PIN" : "Setup Login PIN"}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4 pt-4">
+                  {hasExistingPin && (
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between mb-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Verify Identity</span>
+                        <Button 
+                          variant="ghost" 
+                          size="sm" 
+                          onClick={() => setUsePasswordVerify(!usePasswordVerify)}
+                          className="text-[9px] font-black uppercase text-primary p-0 h-auto"
+                        >
+                          {usePasswordVerify ? "Use PIN" : "Forgot PIN?"}
+                        </Button>
                       </div>
-                    ) : (
-                      <div>
-                        <label className="block text-sm font-medium mb-1.5">Current PIN</label>
+
+                      <div className="space-y-1.5">
+                        <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">
+                          {usePasswordVerify ? "Account Password" : "Current PIN"}
+                        </label>
                         <div className="relative">
                           <Input
-                            type={showCurrentPin ? "text" : "password"}
-                            value={currentPin}
-                            onChange={(e) => setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                            placeholder="Enter current PIN"
-                            maxLength={6}
-                            inputMode="numeric"
-                            className="pr-10 font-mono tracking-widest"
+                            type={usePasswordVerify ? "password" : (showCurrentPin ? "text" : "password")}
+                            value={usePasswordVerify ? currentPassword : currentPin}
+                            onChange={(e) => usePasswordVerify ? setCurrentPassword(e.target.value) : setCurrentPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                            placeholder={usePasswordVerify ? "Enter password" : "••••••"}
+                            className="rounded-2xl border-slate-100 focus:ring-primary font-black tracking-[0.5em] h-12 pr-10"
                           />
-                          <button
-                            type="button"
-                            onClick={() => setShowCurrentPin(!showCurrentPin)}
-                            className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                          >
-                            {showCurrentPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                          </button>
+                          {!usePasswordVerify && (
+                            <button
+                              type="button"
+                              onClick={() => setShowCurrentPin(!showCurrentPin)}
+                              className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400"
+                            >
+                              {showCurrentPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                            </button>
+                          )}
                         </div>
                       </div>
-                    )}
-                    <div className="border-t pt-3" />
-                  </div>
-                )}
+                    </div>
+                  )}
 
-                {/* New PIN */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">
-                    {hasExistingPin ? "New PIN" : "Create PIN"}
-                  </label>
-                  <div className="relative">
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">New PIN</label>
                     <Input
                       type={showNewPin ? "text" : "password"}
                       value={newPin}
                       onChange={(e) => setNewPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                      placeholder="Enter 4-6 digit PIN"
+                      placeholder="••••••"
                       maxLength={6}
-                      inputMode="numeric"
-                      className="pr-10 font-mono tracking-widest"
+                      className="rounded-2xl border-slate-100 focus:ring-primary font-black tracking-[0.5em] h-12 pr-10"
                     />
-                    <button
-                      type="button"
-                      onClick={() => setShowNewPin(!showNewPin)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
-                    >
-                      {showNewPin ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                    </button>
                   </div>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    Choose a memorable 4-6 digit number
+
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Confirm PIN</label>
+                    <Input
+                      type="password"
+                      value={confirmPin}
+                      onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
+                      placeholder="••••••"
+                      maxLength={6}
+                      className="rounded-2xl border-slate-100 focus:ring-primary font-black tracking-[0.5em] h-12"
+                    />
+                  </div>
+
+                  <Button
+                    onClick={handlePinUpdate}
+                    disabled={isSavingPin || newPin.length < 4 || newPin !== confirmPin}
+                    className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-lg shadow-primary/10"
+                  >
+                    {isSavingPin ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save Security PIN"}
+                  </Button>
+                </div>
+              </DialogContent>
+            </Dialog>
+          </div>
+        </motion.section>
+
+        {/* Notifications */}
+        <motion.section 
+          initial={{ opacity: 0, x: -10 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.3 }}
+          className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+        >
+          <div className="absolute top-0 right-0 w-32 h-32 bg-amber-50 rounded-full -mr-16 -mt-16 transition-transform group-hover:scale-110" />
+          
+          <div className="flex items-center gap-3 mb-6 relative z-10">
+            <div className="w-10 h-10 rounded-2xl bg-amber-100 flex items-center justify-center">
+              <Bell className="w-5 h-5 text-amber-600" />
+            </div>
+            <div>
+              <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Notifications</h2>
+              <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Order alerts & sound</p>
+            </div>
+          </div>
+
+          <div className="space-y-4 relative z-10">
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+              <div className="flex items-center gap-3">
+                <Volume2 className="w-4 h-4 text-slate-400" />
+                <div>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-tight">Order Alert Sound</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Play sound on new orders</p>
+                </div>
+              </div>
+              <Switch checked={soundEnabled} onCheckedChange={handleSoundToggle} />
+            </div>
+
+            <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+              <div className="flex items-center gap-3">
+                <Smartphone className="w-4 h-4 text-slate-400" />
+                <div>
+                  <p className="text-[10px] font-black text-primary uppercase tracking-tight">Push Notifications</p>
+                  <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">
+                    {permission === "granted" ? (subscribed ? "Active on this device" : "Permission granted") : "Not enabled"}
                   </p>
                 </div>
-
-                {/* Confirm PIN */}
-                <div>
-                  <label className="block text-sm font-medium mb-1.5">Confirm PIN</label>
-                  <Input
-                    type="password"
-                    value={confirmPin}
-                    onChange={(e) => setConfirmPin(e.target.value.replace(/\D/g, "").slice(0, 6))}
-                    placeholder="Re-enter your PIN"
-                    maxLength={6}
-                    inputMode="numeric"
-                    className="font-mono tracking-widest"
-                  />
-                  {confirmPin && newPin && confirmPin !== newPin && (
-                    <p className="text-xs text-red-500 mt-1">PINs do not match</p>
-                  )}
-                  {confirmPin && newPin && confirmPin === newPin && confirmPin.length >= 4 && (
-                    <p className="text-xs text-green-600 mt-1 flex items-center gap-1">
-                      <Check className="w-3 h-3" /> PINs match
-                    </p>
-                  )}
-                </div>
-
-                <Button
-                  onClick={handlePinUpdate}
-                  disabled={
-                    isSavingPin ||
-                    newPin.length < 4 ||
-                    newPin !== confirmPin ||
-                    (hasExistingPin && !usePasswordVerify && !currentPin) ||
-                    (hasExistingPin && usePasswordVerify && !currentPassword)
-                  }
-                  className="w-full"
-                >
-                  {isSavingPin ? (
-                    <Loader2 className="w-4 h-4 animate-spin mr-2" />
-                  ) : (
-                    <Key className="w-4 h-4 mr-2" />
-                  )}
-                  {hasExistingPin ? "Update PIN" : "Set PIN"}
-                </Button>
-
-                <p className="text-xs text-muted-foreground text-center">
-                  You can use this PIN for quick login instead of email/password
-                </p>
               </div>
-            </DialogContent>
-          </Dialog>
-
-          {hasExistingPin && (
-            <p className="text-xs text-muted-foreground">
-              💡 Tip: Enter your PIN on the login page for quick access
-            </p>
-          )}
-        </div>
-      </section>
-
-      {/* Notifications */}
-      <section className="bg-card rounded-xl border p-6 mb-6">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 rounded-full bg-amber-100 flex items-center justify-center">
-            <Bell className="w-5 h-5 text-amber-600" />
-          </div>
-          <h2 className="font-semibold text-lg">Notifications</h2>
-        </div>
-
-        <div className="space-y-4">
-          {/* Sound */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Volume2 className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Order Alert Sound</p>
-                <p className="text-sm text-muted-foreground">
-                  Play sound when new order arrives
-                </p>
-              </div>
-            </div>
-            <Switch checked={soundEnabled} onCheckedChange={handleSoundToggle} />
-          </div>
-
-          {/* Push */}
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <Smartphone className="w-5 h-5 text-muted-foreground" />
-              <div>
-                <p className="font-medium">Push Notifications</p>
-                <p className="text-sm text-muted-foreground">
-                  {permission === "granted"
-                    ? subscribed
-                      ? "Enabled - you'll receive order alerts on this device"
-                      : "Permission granted, click Enable to subscribe"
-                    : permission === "denied"
-                    ? "Blocked - enable in browser settings"
-                    : "Get notified when new orders arrive"}
-                </p>
-              </div>
-            </div>
-            {permission === "granted" && subscribed ? (
               <Button
                 variant="outline"
                 size="sm"
-                onClick={unsubscribe}
-                className="text-red-600 hover:text-red-700"
-              >
-                <BellOff className="w-4 h-4 mr-1" />
-                Disable
-              </Button>
-            ) : permission !== "denied" ? (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={requestPermission}
+                onClick={subscribed ? unsubscribe : requestPermission}
                 disabled={pushLoading}
+                className="rounded-xl font-black uppercase tracking-widest text-[9px] h-8"
               >
-                {pushLoading ? (
-                  <Loader2 className="w-4 h-4 animate-spin mr-1" />
-                ) : (
-                  <Bell className="w-4 h-4 mr-1" />
-                )}
-                Enable
+                {pushLoading ? <Loader2 className="w-3 h-3 animate-spin" /> : (subscribed ? "Disable" : "Enable")}
               </Button>
-            ) : (
-              <span className="text-xs text-muted-foreground">
-                Check browser settings
-              </span>
-            )}
-          </div>
-        </div>
-      </section>
-
-      {/* Printing (Admin only) */}
-      {role === "admin" && (
-        <section className="bg-card rounded-xl border p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center">
-              <Printer className="w-5 h-5 text-blue-600" />
             </div>
-            <h2 className="font-semibold text-lg">Printing</h2>
           </div>
+        </motion.section>
 
-          <div className="space-y-4">
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Auto-print Orders</p>
-                <p className="text-sm text-muted-foreground">
-                  Automatically print receipt when order is marked ready
-                </p>
+        {/* Admin sections */}
+        {role === "admin" && (
+          <>
+            {/* Printing */}
+            <motion.section 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.4 }}
+              className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-sky-100 flex items-center justify-center">
+                  <Printer className="w-5 h-5 text-sky-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Printing</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Receipt printer setup</p>
+                </div>
               </div>
-              <Switch checked={autoPrint} onCheckedChange={handleAutoPrintToggle} />
-            </div>
 
-            <div className="flex items-center justify-between">
-              <div>
-                <p className="font-medium">Print Copies</p>
-                <p className="text-sm text-muted-foreground">
-                  Number of receipt copies to print
-                </p>
+              <div className="space-y-4">
+                <div className="flex items-center justify-between p-4 bg-slate-50 rounded-2xl border border-slate-100/50">
+                  <div className="flex items-center gap-3">
+                    <Usb className="w-4 h-4 text-slate-400" />
+                    <div>
+                      <p className="text-[10px] font-black text-primary uppercase tracking-tight">Auto-print Receipts</p>
+                      <p className="text-[9px] font-black text-slate-400 uppercase tracking-widest">Print on completion</p>
+                    </div>
+                  </div>
+                  <Switch checked={autoPrint} onCheckedChange={handleAutoPrintToggle} />
+                </div>
+                <Button 
+                  variant="outline" 
+                  className="w-full h-11 rounded-2xl font-black uppercase tracking-widest text-[10px]"
+                  onClick={() => toast.info("Searching for local printers...")}
+                >
+                  <RefreshCw className="w-3.5 h-3.5 mr-2" />
+                  Re-discover Printer
+                </Button>
               </div>
-              <Select
-                value={String(printCopies)}
-                onValueChange={(v) => handlePrintCopiesChange(parseInt(v, 10))}
-              >
-                <SelectTrigger className="w-20">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {[1, 2, 3, 4, 5].map((n) => (
-                    <SelectItem key={n} value={String(n)}>{n}</SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            </motion.section>
 
-            <div className="pt-2 border-t">
-              <Button
-                variant="outline"
-                onClick={() => {
-                  window.print();
-                  toast.success("Print dialog opened");
-                }}
-                className="w-full sm:w-auto"
-              >
-                <Printer className="w-4 h-4 mr-2" />
-                Test Print
-              </Button>
-              <p className="text-xs text-muted-foreground mt-2">
-                Click to open the browser print dialog. Configure your printer in browser settings.
-              </p>
-            </div>
+            {/* Store Information */}
+            <motion.section 
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={{ delay: 0.5 }}
+              className="bg-white rounded-[2rem] border border-slate-100 p-6 shadow-sm overflow-hidden relative group"
+            >
+              <div className="flex items-center gap-3 mb-6">
+                <div className="w-10 h-10 rounded-2xl bg-rose-100 flex items-center justify-center">
+                  <Store className="w-5 h-5 text-rose-600" />
+                </div>
+                <div>
+                  <h2 className="text-lg font-black text-primary uppercase tracking-tight leading-none mb-1">Store Info</h2>
+                  <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Business details</p>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Store Name</label>
+                  <Input defaultValue="9Yards Content House" className="rounded-xl" />
+                </div>
+                <div className="space-y-1">
+                  <label className="text-[10px] font-black text-slate-400 uppercase tracking-widest ml-1">Receipt Footer</label>
+                  <textarea 
+                    className="w-full h-20 rounded-xl border border-slate-100 focus:ring-primary p-3 text-xs font-medium resize-none"
+                    defaultValue="Thank you for visiting 9Yards!"
+                  />
+                </div>
+                <Button 
+                  className="w-full h-11 bg-primary text-white rounded-xl font-black uppercase tracking-widest text-[10px]"
+                  onClick={() => toast.success("Store details updated")}
+                >
+                  Update Store Details
+                </Button>
+              </div>
+            </motion.section>
+          </>
+        )}
+
+        {/* About Section */}
+        <motion.section 
+          initial={{ opacity: 0, y: 10 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.6 }}
+          className="flex flex-col items-center justify-center pt-8 pb-12 space-y-4"
+        >
+          <div className="flex items-center gap-2 px-4 py-2 rounded-full bg-slate-100 border border-slate-200 shadow-sm">
+            <Info className="w-3.5 h-3.5 text-slate-400" />
+            <span className="text-[10px] font-black text-primary uppercase tracking-widest">Version 2.4.0 (Production)</span>
           </div>
-        </section>
-      )}
-
-      {/* Store Info (Admin only) */}
-      {role === "admin" && (
-        <section className="bg-card rounded-xl border p-6 mb-6">
-          <div className="flex items-center gap-3 mb-4">
-            <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center">
-              <Store className="w-5 h-5 text-green-600" />
-            </div>
-            <h2 className="font-semibold text-lg">Store Information</h2>
-          </div>
-
-          <div className="space-y-3 text-sm">
-            <div className="flex items-center gap-2">
-              <Clock className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">Working Hours:</span>
-              <span className="text-muted-foreground">7:00 AM - 9:00 PM</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-muted-foreground" />
-              <span className="font-medium">Location:</span>
-              <span className="text-muted-foreground">Kigo, Uganda</span>
-            </div>
-            <p className="text-muted-foreground text-xs mt-2">
-              Contact your administrator to update store settings
-            </p>
-          </div>
-        </section>
-      )}
-
-      {/* About */}
-      <section className="bg-card rounded-xl border p-6">
-        <h2 className="font-semibold text-lg mb-4">About</h2>
-        <div className="space-y-2">
-          <p className="font-medium text-secondary">9Yards Food</p>
-          <p className="text-sm text-muted-foreground">
-            Kitchen Dashboard v1.0.0
+          <p className="text-[11px] font-black text-slate-400 uppercase tracking-[0.2em] text-center">
+            &copy; {new Date().getFullYear()} 9YARDS CONTENT HOUSE • ALL RIGHTS RESERVED
           </p>
-          <p className="text-sm text-muted-foreground">
-            Powered by Supabase + React
-          </p>
-          <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
-            © {new Date().getFullYear()} 9Yards Food. All rights reserved.
-          </p>
-        </div>
-      </section>
-    </div>
+        </motion.section>
+      </div>
+    </motion.div>
   );
 }
