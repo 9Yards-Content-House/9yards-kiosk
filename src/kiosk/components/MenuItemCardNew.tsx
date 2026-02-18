@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Minus, Flame, Sparkles, ShoppingBag } from 'lucide-react';
+import { Plus, Flame, Sparkles, Image as ImageIcon } from 'lucide-react';
 import { useTranslation } from '@shared/context/LanguageContext';
 import { MenuItem } from '@shared/types';
 import { FavoriteButton } from './QuickReorder';
@@ -94,19 +94,25 @@ export default function MenuItemCardNew({
           src={item.image_url}
           alt={item.name}
           aspectRatio="4/3"
+          fallback={
+            <div className="w-full h-full bg-muted/50 flex flex-col items-center justify-center gap-2">
+              <ImageIcon className="w-10 h-10 text-muted-foreground/30" />
+              <span className="text-[10px] font-bold text-muted-foreground/40 uppercase tracking-widest">No Image</span>
+            </div>
+          }
         />
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex flex-col gap-1">
           {item.is_popular && (
-            <span className="flex items-center gap-1 bg-orange-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-              <Flame className="w-3 h-3" />
+            <span className="flex items-center gap-1 bg-secondary text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm uppercase tracking-wider">
+              <Flame className="w-3 h-3 fill-current" />
               {t('menu.popular')}
             </span>
           )}
           {item.is_new && (
-            <span className="flex items-center gap-1 bg-green-500 text-white px-2 py-1 rounded-full text-xs font-bold shadow-sm">
-              <Sparkles className="w-3 h-3" />
+            <span className="flex items-center gap-1 bg-green-500 text-white px-2.5 py-1 rounded-lg text-[10px] font-bold shadow-sm uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 fill-current" />
               {t('menu.new')}
             </span>
           )}
@@ -116,42 +122,44 @@ export default function MenuItemCardNew({
             </span>
           )}
         </div>
-
-        {/* Category pill & Favorite */}
-        <div className="absolute top-3 right-3 flex items-center gap-2">
-          {categorySlug && (
-            <span className="bg-black/60 text-white px-2 py-1 rounded-full text-xs capitalize">
-              {categorySlug.replace('-', ' ')}
-            </span>
-          )}
-          <FavoriteButton itemId={item.id} size="sm" />
-        </div>
       </div>
 
       {/* Content */}
-      <div className="p-4">
-        <h3 className="font-bold text-foreground text-sm md:text-base leading-tight mb-0.5 line-clamp-1">{item.name}</h3>
-        <p className="text-gray-600 text-xs md:text-sm line-clamp-2 mt-1 min-h-[2.5rem]">
+      <div className="p-4 flex flex-col flex-1">
+        {/* Category Lead-in */}
+        {categorySlug && (
+          <span className="text-[10px] font-bold text-muted-foreground uppercase tracking-widest mb-1.5 block">
+            {categorySlug.replace('-', ' ')}
+          </span>
+        )}
+        
+        <h3 className="font-bold text-secondary-foreground text-sm md:text-lg leading-tight mb-1 line-clamp-1">
+          {item.name}
+        </h3>
+        <p className="text-gray-500 text-xs md:text-sm line-clamp-2 mt-0.5 min-h-[2.5rem] leading-relaxed">
           {item.description}
         </p>
 
+        {/* Divider */}
+        <div className="h-px bg-gray-100 w-full my-4" />
+
         {/* Price and action */}
-        <div className="mt-3 flex items-center justify-between">
+        <div className="mt-auto flex items-center justify-between gap-4">
           {!isFree && item.price > 0 ? (
-            <div>
-              <span className="text-secondary font-bold text-base">
+            <div className="flex flex-col">
+              <span className="text-secondary font-black text-xl tracking-tight">
                 {formatPrice(displayPrice)}
               </span>
               {item.sizes && item.sizes.length > 1 && (
-                <span className="text-xs text-muted-foreground ml-1">+</span>
+                <span className="text-[10px] text-muted-foreground font-medium uppercase tracking-tighter">Multiple Sizes Available</span>
               )}
             </div>
           ) : item.item_type === 'combo_component' ? (
-            <span className="text-blue-600 font-semibold text-sm">
+            <span className="text-blue-600 font-bold text-sm uppercase tracking-wide">
               Combo Only
             </span>
           ) : (
-            <span className="text-green-600 font-semibold text-sm">
+            <span className="text-green-600 font-bold text-sm uppercase tracking-wide">
               {t('combo.includedFree')}
             </span>
           )}
@@ -159,56 +167,30 @@ export default function MenuItemCardNew({
           {/* Actions */}
           {isComboItem ? (
             <Button
-              size="sm"
+              size="lg"
               onClick={handleStartCombo}
-              className="bg-primary hover:bg-primary/90 rounded-full px-4"
+              className="bg-secondary hover:bg-secondary/90 text-white rounded-2xl px-6 h-12 font-bold shadow-md shadow-secondary/20"
             >
               {t('menu.startCombo')}
             </Button>
           ) : isIndividualItem ? (
-            <div className="flex items-center gap-2">
-              {/* Quantity controls */}
-              <div className="flex items-center gap-1 bg-muted rounded-full">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => handleQuantityChange(-1)}
-                  disabled={quantity <= 1}
-                >
-                  <Minus className="w-4 h-4" />
-                </Button>
-                <span className="w-6 text-center font-bold text-sm">
-                  {quantity}
-                </span>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-8 w-8 rounded-full"
-                  onClick={() => handleQuantityChange(1)}
-                >
-                  <Plus className="w-4 h-4" />
-                </Button>
-              </div>
-              <Button
-                size="sm"
-                onClick={handleAddToCart}
-                disabled={isAdding}
-                className={cn(
-                  'bg-secondary hover:bg-secondary/90 rounded-full px-4 gap-1',
-                  isAdding && 'bg-green-500'
-                )}
-              >
-                {isAdding ? (
-                  '✓'
-                ) : (
-                  <>
-                    <ShoppingBag className="w-4 h-4" />
-                    {t('menu.addToOrder')}
-                  </>
-                )}
-              </Button>
-            </div>
+            <Button
+              size="lg"
+              onClick={handleAddToCart}
+              disabled={isAdding}
+              className={cn(
+                'bg-secondary hover:bg-secondary/90 text-white rounded-2xl px-6 h-12 font-bold gap-2 shadow-md shadow-secondary/20 transition-all',
+                isAdding && 'bg-green-500 scale-95 shadow-none'
+              )}
+            >
+              {isAdding ? (
+                '✓'
+              ) : (
+                <>
+                  {t('menu.addToOrder')}
+                </>
+              )}
+            </Button>
           ) : null}
         </div>
       </div>

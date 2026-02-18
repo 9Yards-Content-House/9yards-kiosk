@@ -7,6 +7,7 @@ import * as z from "zod";
 import { useCategories } from "@shared/hooks/useMenu";
 import { useCreateMenuItem, useUpdateMenuItem, useDeleteMenuItem } from "@shared/hooks/useMenuMutations";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
+import { cn, formatPrice } from "@shared/lib/utils";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Switch } from "@shared/components/ui/switch";
@@ -29,8 +30,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@shared/components/ui/select";
+import MenuItemCardNew from "@kiosk/components/MenuItemCardNew";
 import { toast } from "sonner";
-import type { MenuItemType } from "@shared/types/menu";
+import type { MenuItem, MenuItemType } from "@shared/types/menu";
 
 // Define Validation Schema
 const menuItemSchema = z.object({
@@ -238,6 +240,44 @@ export default function MenuItemEdit() {
   };
 
   // Image Upload Logic
+  const resizeImage = (file: File): Promise<Blob | File> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const img = new Image();
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+          const MAX_SIZE = 1200;
+          
+          if (width > height) {
+            if (width > MAX_SIZE) {
+              height *= MAX_SIZE / width;
+              width = MAX_SIZE;
+            }
+          } else {
+            if (height > MAX_SIZE) {
+              width *= MAX_SIZE / height;
+              height = MAX_SIZE;
+            }
+          }
+          
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          
+          canvas.toBlob((blob) => {
+            resolve(blob || file);
+          }, 'image/jpeg', 0.85);
+        };
+        img.src = e.target?.result as string;
+      };
+      reader.readAsDataURL(file);
+    });
+  };
+
   const handleImageUpload = async (file: File) => {
     if (!file) return;
     const allowedTypes = ["image/jpeg", "image/png", "image/webp", "image/gif"];
@@ -245,35 +285,41 @@ export default function MenuItemEdit() {
       toast.error("Please upload an image file (JPG, PNG, WebP, or GIF)");
       return;
     }
-    if (file.size > 5 * 1024 * 1024) {
-      toast.error("Image must be smaller than 5MB");
-      return;
-    }
-
+    
     setUploading(true);
     try {
+      // Compress/Resize image before upload
+      const processedFile = await resizeImage(file);
+      
       if (USE_MOCK_DATA) {
-        const url = URL.createObjectURL(file);
-        form.setValue("image_url", url);
+        const url = URL.createObjectURL(processedFile as Blob);
+        form.setValue("image_url", url, { shouldDirty: true });
         toast.success("Image preview ready (mock mode)");
         return;
       }
 
-      const fileExt = file.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileExt = "jpg"; // We convert to jpeg in resizeImage
       const fileName = `menu/${Date.now()}-${Math.random().toString(36).substring(7)}.${fileExt}`;
 
       const { error } = await supabase.storage
         .from("images")
-        .upload(fileName, file, { cacheControl: "3600", upsert: false });
+        .upload(fileName, processedFile, { 
+          cacheControl: "3600", 
+          upsert: false,
+          contentType: 'image/jpeg' // We always optimize to JPEG in resizeImage
+        });
 
-      if (error) throw error;
+      if (error) {
+        console.error("Supabase Storage Error:", error);
+        throw error;
+      }
 
       const { data: urlData } = supabase.storage.from("images").getPublicUrl(fileName);
-      form.setValue("image_url", urlData.publicUrl);
-      toast.success("Image uploaded successfully!");
+      form.setValue("image_url", urlData.publicUrl, { shouldDirty: true });
+      toast.success("Image uploaded and optimized!");
     } catch (err) {
       console.error("Upload error:", err);
-      toast.error("Failed to upload image. You can enter the URL manually.");
+      toast.error("Failed to upload image.");
     } finally {
       setUploading(false);
     }
@@ -297,6 +343,40 @@ export default function MenuItemEdit() {
 
   const isPending = createMenuItem.isPending || updateMenuItem.isPending || form.formState.isSubmitting;
   const showPreparationsAndSizes = watchedItemType === 'combo_driver';
+  const watchedAll = form.watch();
+
+  // Handle unsaved changes warning
+  useEffect(() => {
+    const handleBeforeUnload = (e: BeforeUnloadEvent) => {
+      if (form.formState.isDirty) {
+        e.preventDefault();
+        e.returnValue = "";
+      }
+    };
+    window.addEventListener("beforeunload", handleBeforeUnload);
+    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
+  }, [form.formState.isDirty]);
+
+  // Transform form values into MenuItem type for preview
+  const previewItem: MenuItem = {
+    id: id || 'preview',
+    name: watchedAll.name || 'Item Name',
+    description: watchedAll.description || 'Description goes here...',
+    price: watchedAll.price || 0,
+    category_id: watchedAll.category_id,
+    image_url: watchedAll.image_url,
+    available: watchedAll.available,
+    sort_order: watchedAll.sort_order,
+    is_popular: watchedAll.is_popular,
+    is_new: watchedAll.is_new,
+    item_type: watchedAll.item_type as MenuItemType,
+    preparations: watchedAll.preparations?.length ? watchedAll.preparations.map(p => ({ ...p, priceModifier: p.priceModifier || 0 })) : null,
+    sizes: watchedAll.sizes?.length ? watchedAll.sizes : null,
+    created_at: new Date().toISOString(),
+    updated_at: new Date().toISOString(),
+  };
+
+  const selectedCategory = categories?.find(c => c.id === watchedAll.category_id);
 
   if (loading) {
     return (
@@ -307,8 +387,8 @@ export default function MenuItemEdit() {
   }
 
   return (
-    <div className="p-4 md:p-6 max-w-2xl">
-      <div className="flex items-center justify-between mb-6">
+    <div className="p-4 md:p-6 max-w-7xl mx-auto">
+      <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <Button variant="ghost" size="icon" onClick={() => navigate("/menu")}>
             <ArrowLeft className="w-5 h-5" />
@@ -349,23 +429,24 @@ export default function MenuItemEdit() {
         )}
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-24">
-        <Tabs defaultValue="general" className="w-full">
-          <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="general" className="relative">
+      <div className="flex flex-col lg:flex-row gap-8 items-start">
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-24 flex-1 w-full max-w-2xl">
+          <Tabs defaultValue="general" className="w-full">
+            <TabsList className="flex w-full overflow-x-auto overflow-y-hidden bg-muted/50 p-1 h-auto no-scrollbar">
+              <TabsTrigger value="general" className="relative flex-1 py-2 px-3">
               General
               {(form.formState.errors.name || form.formState.errors.category_id) && (
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="media">Media</TabsTrigger>
-            <TabsTrigger value="pricing" className="relative">
+            <TabsTrigger value="media" className="flex-1 py-2 px-3">Media</TabsTrigger>
+            <TabsTrigger value="pricing" className="relative flex-1 py-2 px-3">
               Pricing
               {(form.formState.errors.price || form.formState.errors.sizes) && (
                 <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
               )}
             </TabsTrigger>
-            <TabsTrigger value="settings">Settings</TabsTrigger>
+            <TabsTrigger value="settings" className="flex-1 py-2 px-3">Settings</TabsTrigger>
           </TabsList>
 
           {/* GENERAL TAB */}
@@ -465,7 +546,10 @@ export default function MenuItemEdit() {
                   ) : (
                     <div
                       onClick={() => fileInputRef.current?.click()}
-                      className="w-full h-64 rounded-lg border-2 border-dashed border-muted-foreground/25 hover:border-muted-foreground/50 flex flex-col items-center justify-center cursor-pointer bg-muted/30 transition-colors"
+                      className={cn(
+                        "w-full h-64 rounded-xl border-2 border-dashed flex flex-col items-center justify-center cursor-pointer transition-all duration-200",
+                        uploading ? "bg-muted border-muted-foreground/10" : "border-muted-foreground/20 hover:border-secondary/50 hover:bg-secondary/5 bg-muted/20"
+                      )}
                     >
                       {uploading ? (
                         <Loader2 className="w-8 h-8 animate-spin text-muted-foreground" />
@@ -531,9 +615,18 @@ export default function MenuItemEdit() {
                       </div>
                       <div className="space-y-2">
                          {preparationFields.map((field, index) => (
-                           <div key={field.id} className="flex gap-2">
-                             <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" />
-                             <Button type="button" variant="ghost" size="icon" onClick={() => removePrep(index)}>
+                           <div key={field.id} className="flex gap-2 items-center">
+                             <Input {...form.register(`preparations.${index}.name` as const)} placeholder="Name (e.g. Fried)" className="flex-1" />
+                             <div className="flex items-center gap-2 bg-muted/50 rounded-lg px-3 border w-36 overflow-hidden focus-within:ring-2 focus-within:ring-ring transition-all">
+                               <span className="text-[10px] font-bold text-muted-foreground shrink-0 uppercase tracking-tighter">UGX</span>
+                               <Input 
+                                 type="number" 
+                                 {...form.register(`preparations.${index}.priceModifier` as const)} 
+                                 placeholder="0" 
+                                 className="h-9 border-none bg-transparent text-sm focus-visible:ring-0 p-0 shadow-none"
+                               />
+                             </div>
+                             <Button type="button" variant="ghost" size="icon" onClick={() => removePrep(index)} className="shrink-0">
                                <X className="w-4 h-4" />
                              </Button>
                            </div>
@@ -640,6 +733,38 @@ export default function MenuItemEdit() {
           </Button>
         </div>
       </form>
+
+        {/* PREVIEW PANEL */}
+        <aside className="hidden xl:block w-[360px] sticky top-8 space-y-6 shrink-0">
+          <div className="flex items-center justify-between px-2">
+            <h3 className="font-semibold text-xs uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+              Kiosk Preview
+              <span className="h-1.5 w-1.5 rounded-full bg-green-500 animate-pulse" />
+            </h3>
+            <span className="text-[10px] bg-muted px-2 py-0.5 rounded text-muted-foreground font-medium">LIVE</span>
+          </div>
+          
+          <div className="p-6 bg-muted/40 rounded-[2.5rem] border-2 border-dashed border-muted-foreground/20 flex items-center justify-center min-h-[480px]">
+             <div className="w-full transform scale-110 xl:scale-100 origin-top transition-transform duration-300">
+                <MenuItemCardNew 
+                  item={previewItem} 
+                  categorySlug={selectedCategory?.slug}
+                />
+             </div>
+          </div>
+          
+          <div className="bg-blue-50/50 border border-blue-100 rounded-2xl p-4 backdrop-blur-sm">
+             <div className="flex gap-3">
+               <div className="h-5 w-5 rounded-full bg-blue-100 text-blue-600 flex items-center justify-center shrink-0 mt-0.5">
+                 <span className="text-[10px] font-bold">i</span>
+               </div>
+               <p className="text-xs text-blue-700 leading-relaxed">
+                 This is a 1:1 preview of how the item appears on the kiosk screen. Changes update instantly.
+               </p>
+             </div>
+          </div>
+        </aside>
+      </div>
     </div>
   );
 }

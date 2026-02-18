@@ -30,6 +30,7 @@ export default defineConfig({
       "@": path.resolve(__dirname, "./src"),
       "@shared": path.resolve(__dirname, "./src/shared"),
       "@dashboard": path.resolve(__dirname, "./src/dashboard"),
+      "@kiosk": path.resolve(__dirname, "./src/kiosk"),
     },
     dedupe: ["react", "react-dom", "react-router-dom", "@tanstack/react-query"],
   },

@@ -10,6 +10,7 @@ interface OptimizedImageProps {
   containerClassName?: string;
   aspectRatio?: 'square' | '4/3' | '16/9' | 'auto';
   fallbackSrc?: string;
+  fallback?: React.ReactNode;
   showLoader?: boolean;
   onLoad?: () => void;
   onError?: () => void;
@@ -22,6 +23,7 @@ export function OptimizedImage({
   containerClassName,
   aspectRatio = '4/3',
   fallbackSrc = '/images/placeholder.jpg',
+  fallback,
   showLoader = true,
   onLoad,
   onError,
@@ -81,9 +83,11 @@ export function OptimizedImage({
       </AnimatePresence>
 
       {hasError && !isLoading ? (
-        <div className="absolute inset-0 flex items-center justify-center bg-muted">
-          <ImageOff className="w-8 h-8 text-muted-foreground" />
-        </div>
+        fallback || (
+          <div className="absolute inset-0 flex items-center justify-center bg-muted">
+            <ImageOff className="w-8 h-8 text-muted-foreground" />
+          </div>
+        )
       ) : (
         <motion.img
           src={imageSrc}

@@ -39,8 +39,8 @@ export function useCreateMenuItem() {
         const newItem: MenuItem = {
           id: `item-${Date.now()}`,
           ...payload,
-          preparations: null,
-          sizes: null,
+          preparations: payload.preparations || null,
+          sizes: payload.sizes || null,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
         };
@@ -75,7 +75,11 @@ export function useUpdateMenuItem() {
         // Find in mock store and update
         const item = mockMenuItems.find(i => i.id === id);
         if (item) {
-          Object.assign(item, updates, { updated_at: new Date().toISOString() });
+          Object.assign(item, updates, { 
+            updated_at: new Date().toISOString(),
+            preparations: updates.preparations !== undefined ? updates.preparations : item.preparations,
+            sizes: updates.sizes !== undefined ? updates.sizes : item.sizes
+          });
         }
         console.log("📦 Mock: Updated menu item:", id);
         return item;
