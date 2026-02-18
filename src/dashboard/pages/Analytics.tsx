@@ -9,9 +9,7 @@ import {
   ShoppingBag,
   Clock,
   Calendar,
-  ArrowUp,
   ArrowDown,
-  Download,
   PieChart,
   BarChart3,
   Users,
@@ -26,7 +24,6 @@ import { Button } from '@shared/components/ui/button';
 import { DateRangePicker } from '@shared/components/ui/date-range-picker';
 import { Skeleton } from '@shared/components/ui/skeleton';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@shared/components/ui/tabs';
-import { exportAnalyticsSummary, type AnalyticsSummary } from '@shared/lib/export';
 import type { Order, OrderItem } from '@shared/types/orders';
 
 // Extended OrderItem type for analytics (includes optional menu_item relationship)
@@ -290,24 +287,6 @@ export default function Analytics() {
   }, [orders]);
 
 
-  const handleExport = () => {
-    if (!orders || orders.length === 0) return;
-    const summary: AnalyticsSummary = {
-      totalOrders: metrics.totalOrders, totalRevenue: metrics.totalRevenue,
-      avgOrderValue: metrics.avgOrderValue, avgPrepTime: metrics.avgPrepTime,
-      topItems: metrics.topItems,
-      categoryBreakdown: metrics.categoryBreakdown.map(c => ({ category: c.name, count: c.count, revenue: c.revenue })),
-      paymentMethods: Object.entries(metrics.paymentBreakdown).map(([method, data]) => ({
-        method, count: data.count, percent: (data.amount / metrics.totalRevenue) * 100,
-      })),
-      dateRange: {
-        start: dateRange?.from?.toLocaleDateString() || 'All time',
-        end: dateRange?.to?.toLocaleDateString() || 'Now',
-      },
-    };
-    exportAnalyticsSummary(summary);
-  };
-
   if (authLoading) {
     return <div className="p-6 flex justify-center"><div className="w-6 h-6 animate-spin border-2 border-primary border-t-transparent rounded-full" /></div>;
   }
@@ -372,10 +351,6 @@ export default function Analytics() {
         </div>
         <div className="flex flex-col sm:flex-row gap-2 items-start sm:items-center">
           <DateRangePicker value={dateRange} onChange={setDateRange} />
-          <Button variant="outline" onClick={handleExport} disabled={!orders || orders.length === 0}>
-            <Download className="w-4 h-4 mr-2" />
-            Export
-          </Button>
         </div>
       </div>
       
