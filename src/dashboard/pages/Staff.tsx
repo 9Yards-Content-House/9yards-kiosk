@@ -130,18 +130,12 @@ export default function Staff() {
         return mockStaffStore;
       }
       
-      console.log("📡 Fetching staff from Supabase...");
       const { data, error } = await supabase
         .from("profiles")
         .select("*")
         .order("created_at", { ascending: false });
       
-      if (error) {
-        console.error("❌ Error fetching staff:", error);
-        throw error;
-      }
-      
-      console.log("✅ Fetched staff:", data?.length, "members");
+      if (error) throw error;
       return data;
     },
   });
@@ -195,7 +189,6 @@ export default function Staff() {
   const inviteMutation = useMutation({
     mutationFn: async () => {
       if (USE_MOCK_DATA) {
-        // Mock: just add to local store
         const newStaff: Profile = {
           id: `user-${Date.now()}`,
           full_name: inviteName,
@@ -205,13 +198,11 @@ export default function Staff() {
           created_at: new Date().toISOString(),
         };
         mockStaffStore = [newStaff, ...mockStaffStore];
-        console.log("📦 Mock: Added staff member:", inviteName);
         return;
       }
+
+      if (!canManage) throw new Error("Unauthorized to create staff");
       
-      // Create user via Supabase Auth API
-      // Note: This requires the service role key for admin operations
-      // For now, we create via signUp and update profile
       const { data: authData, error: authError } = await supabase.auth.signUp({
         email: inviteEmail,
         password: invitePassword,
@@ -225,7 +216,6 @@ export default function Staff() {
       
       if (authError) throw authError;
       
-      // Update the profile with additional info
       if (authData.user) {
         const { error: profileError } = await supabase
           .from("profiles")
@@ -236,9 +226,7 @@ export default function Staff() {
           })
           .eq("id", authData.user.id);
         
-        if (profileError) {
-          console.warn("Profile update failed:", profileError);
-        }
+        if (profileError) throw profileError;
       }
     },
     onSuccess: () => {
@@ -261,13 +249,12 @@ export default function Staff() {
     mutationFn: async ({ id, updates }: { id: string; updates: Partial<Profile> }) => {
       if (USE_MOCK_DATA) {
         const member = mockStaffStore.find(s => s.id === id);
-        if (member) {
-          Object.assign(member, updates);
-        }
-        console.log(`📦 Mock: Updated staff ${id}`);
+        if (member) Object.assign(member, updates);
         return;
       }
       
+      if (!canManage) throw new Error("Unauthorized to edit staff");
+
       const { error } = await supabase
         .from("profiles")
         .update(updates)
@@ -288,13 +275,13 @@ export default function Staff() {
     mutationFn: async ({ id, active }: { id: string; active: boolean }) => {
       if (USE_MOCK_DATA) {
         const member = mockStaffStore.find(s => s.id === id);
-        if (member) {
-          member.active = active;
-        }
-        console.log(`📦 Mock: Toggled staff ${id} active to: ${active}`);
+        if (member) member.active = active;
         return;
       }
       
+      if (!canManage) throw new Error("Unauthorized to change status");
+      if (id === user?.id) throw new Error("You cannot deactivate yourself");
+
       const { error } = await supabase
         .from("profiles")
         .update({ active })
@@ -310,38 +297,27 @@ export default function Staff() {
     mutationFn: async (id: string) => {
       if (USE_MOCK_DATA) {
         mockStaffStore = mockStaffStore.filter(s => s.id !== id);
-        console.log(`📦 Mock: Deleted staff ${id}`);
         return;
       }
       
-      console.log(`🗑️ Attempting to delete profile: ${id}`);
+      if (!canManage) throw new Error("Unauthorized to remove staff");
+      if (id === user?.id) throw new Error("You cannot remove yourself");
       
-      // First try to delete from profiles
-      const { data, error, count } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .delete()
         .eq("id", id)
         .select();
       
-      if (error) {
-        console.error("❌ Delete error:", error);
-        throw new Error(error.message || "Failed to delete profile");
-      }
+      if (error) throw error;
       
-      console.log("✅ Delete result:", { data, count });
-      
-      // If no rows were affected, the delete might have been blocked by RLS
       if (!data || data.length === 0) {
-        // Instead of failing, mark as inactive
-        console.log("⚠️ Delete returned no rows, marking as inactive instead");
         const { error: updateError } = await supabase
           .from("profiles")
           .update({ active: false })
           .eq("id", id);
         
-        if (updateError) {
-          throw new Error("Could not delete or deactivate user");
-        }
+        if (updateError) throw new Error("Could not delete or deactivate user");
       }
     },
     onSuccess: () => {
@@ -472,7 +448,14 @@ export default function Staff() {
               </div>
               <Button
                 onClick={() => inviteMutation.mutate()}
-                disabled={inviteMutation.isPending || !inviteName || !inviteEmail || !invitePassword || invitePassword.length < 6}
+                disabled={
+                  inviteMutation.isPending || 
+                  !inviteName || 
+                  !inviteEmail || 
+                  !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(inviteEmail) ||
+                  !invitePassword || 
+                  invitePassword.length < 6
+                }
                 className="w-full bg-secondary h-12 rounded-xl font-bold text-white mt-2 shadow-sm active:scale-[0.98] transition-all"
               >
                 {inviteMutation.isPending ? (
