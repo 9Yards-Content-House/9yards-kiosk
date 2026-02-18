@@ -99,13 +99,13 @@ export function generateInsights(orders: Order[]): Insight[] {
     : 0;
 
   // 1. Revenue trend insight
-  if (weekOverWeekChange > 10) {
+  if (weekOverWeekChange > 5) {
     insights.push({
       id: "revenue-up",
       type: "success",
       icon: TrendingUp,
       title: "Revenue is Growing!",
-      description: `This week's revenue is up ${weekOverWeekChange.toFixed(0)}% compared to last week`,
+      description: `This week's revenue is up ${weekOverWeekChange.toFixed(0)}% compared to last week. Demand is high!`,
       metric: formatPrice(thisWeekRevenue),
       trend: "up",
       priority: 10,
@@ -116,17 +116,18 @@ export function generateInsights(orders: Order[]): Insight[] {
       type: "warning",
       icon: TrendingDown,
       title: "Revenue Decline Detected",
-      description: `This week's revenue is down ${Math.abs(weekOverWeekChange).toFixed(0)}% compared to last week`,
+      description: `This week's revenue is down ${Math.abs(weekOverWeekChange).toFixed(0)}% compared to last week. Consider a promotion.`,
       metric: formatPrice(thisWeekRevenue),
       trend: "down",
       priority: 10,
     });
   }
 
-  // 2. Peak hours detection
+  // 2. Peak hours detection - Using Uganda Time (+3)
   const hourCounts: Record<number, number> = {};
   orders.forEach(o => {
-    const hour = new Date(o.created_at).getHours();
+    const date = new Date(o.created_at);
+    const hour = (date.getUTCHours() + 3) % 24;
     hourCounts[hour] = (hourCounts[hour] || 0) + 1;
   });
   
@@ -143,13 +144,14 @@ export function generateInsights(orders: Order[]): Insight[] {
       type: "info",
       icon: Clock,
       title: "Peak Hour Detected",
-      description: `Most orders come in around ${hourLabel}. Consider extra staffing during this time.`,
+      description: `Most orders come in around ${hourLabel}. Ensure kitchen staff is ready for the surge.`,
       metric: `${peakHour[1]} orders`,
       priority: 7,
+      actionable: "Optimize staff shifts",
     });
   }
 
-  // 3. Order source distribution (kiosk / website / app)
+  // 3. Order source distribution
   const sourceCounts: Record<string, number> = {};
   orders.forEach((o) => {
     const key = o.source || "unknown";
@@ -157,32 +159,36 @@ export function generateInsights(orders: Order[]): Insight[] {
   });
 
   const topSource = Object.entries(sourceCounts).sort((a, b) => b[1] - a[1])[0];
-  if (topSource && orders.length > 0) {
+  if (topSource && orders.length > 5) {
     const [source, count] = topSource;
+    const sourceLabel = source === 'kiosk' ? 'In-Store Kiosk' : source === 'app' ? 'Mobile App' : source;
     insights.push({
       id: "top-source",
       type: "info",
       icon: Users,
       title: "Top Order Source",
-      description: `Most orders are coming from ${source}.`,
+      description: `Most orders are coming from the ${sourceLabel}.`,
       metric: `${((count / orders.length) * 100).toFixed(0)}% of orders`,
       priority: 5,
     });
   }
 
   // 4. Average order value insight
-  insights.push({
-    id: "avg-order",
-    type: "info",
-    icon: DollarSign,
-    title: "Average Order Value",
-    description: avgOrderValue > 30000 
-      ? "Great average order value! Upselling is working well."
-      : "Consider upselling to increase average order value.",
-    metric: formatPrice(avgOrderValue),
-    trend: avgOrderValue > 30000 ? "up" : "neutral",
-    priority: 6,
-  });
+  if (orders.length >= 5) {
+    insights.push({
+      id: "avg-order",
+      type: "info",
+      icon: DollarSign,
+      title: "Average Order Value",
+      description: avgOrderValue > 35000 
+        ? "Excellent volume per order! Your premium combos are performing well."
+        : "Consider suggesting side dishes or drinks to increase average order value.",
+      metric: formatPrice(avgOrderValue),
+      trend: avgOrderValue > 35000 ? "up" : "neutral",
+      priority: 6,
+      actionable: avgOrderValue <= 35000 ? "Add cross-sell prompts" : undefined,
+    });
+  }
 
   // 5. Payment method trends
   const momoCount = orders.filter(o => o.payment_method === "mobile_money").length;
@@ -200,23 +206,33 @@ export function generateInsights(orders: Order[]): Insight[] {
     });
   }
 
-  // 6. Today's performance prediction - more accurate
-  const currentHour = now.getHours();
-  const remainingHours = 22 - currentHour; // Assuming restaurant closes at 10 PM
+  // 6. Today's performance prediction - Weighted for Lunch/Dinner peaks
+  // Current hour in Uganda (UTC+3)
+  const ugandaHour = (now.getUTCHours() + 3) % 24;
+  const remainingHours = 22 - ugandaHour; // Closing at 10 PM
   
-  if (remainingHours > 0 && currentHour >= 8 && todayOrders.length > 0) {
-    const hoursOpen = currentHour - 8;
-    const hourlyRate = todayOrders.length / Math.max(hoursOpen, 1);
+  if (remainingHours > 0 && ugandaHour >= 8 && todayOrders.length > 0) {
+    const hoursOpen = ugandaHour - 8;
+    let hourlyRate = todayOrders.length / Math.max(hoursOpen, 1);
+    
+    // Weighted adjustment: If we haven't hit lunch (12-2pm) or dinner (6-8pm) peaks yet, 
+    // the linear average might be too low.
+    const hasHitLunch = ugandaHour > 14;
+    const hasHitDinner = ugandaHour > 20;
+    
+    if (!hasHitLunch) hourlyRate *= 1.25; // Boost for upcoming lunch
+    else if (!hasHitDinner && ugandaHour < 18) hourlyRate *= 1.15; // Boost for upcoming dinner
+    
     const predictedTotal = Math.round(todayOrders.length + (hourlyRate * remainingHours));
     const avgOrderVal = todayRevenue / todayOrders.length;
-    const predictedRevenue = Math.round(todayOrders.length * avgOrderVal + (hourlyRate * remainingHours * avgOrderVal));
+    const predictedRevenue = predictedTotal * avgOrderVal;
     
     insights.push({
       id: "daily-prediction",
       type: "prediction",
       icon: Lightbulb,
       title: "Today's Projection",
-      description: `Based on current trends, expect ~${predictedTotal} orders today`,
+      description: `Based on current velocity, we expect ~${predictedTotal} orders by close.`,
       metric: formatPrice(predictedRevenue),
       priority: 10,
     });
@@ -226,28 +242,28 @@ export function generateInsights(orders: Order[]): Insight[] {
   const prepStats = getAvgPrepTime(orders);
   if (prepStats.avg > 0) {
     const avgMins = Math.round(prepStats.avg);
-    if (avgMins <= 12) {
+    if (avgMins <= 15) {
       insights.push({
         id: "prep-time-good",
         type: "success",
         icon: ChefHat,
-        title: "Fast Kitchen",
-        description: "Preparation times are excellent. Keep up the great work!",
-        metric: `${avgMins} min avg`,
+        title: "Optimal Kitchen Speed",
+        description: "Kitchen is operating at peak efficiency. Customer wait times are minimal.",
+        metric: `${avgMins}m avg`,
         trend: "up",
         priority: 6,
       });
-    } else if (avgMins >= 20) {
+    } else if (avgMins >= 25) {
       insights.push({
         id: "prep-time-slow",
         type: "warning",
         icon: Clock,
-        title: "Review Prep Times",
-        description: "Average preparation time is higher than usual. Consider optimizing kitchen workflow.",
-        metric: `${avgMins} min avg`,
+        title: "Prep Time Alert",
+        description: "Wait times are climbing. Consider streamlining the assembly line.",
+        metric: `${avgMins}m avg`,
         trend: "down",
-        priority: 8,
-        actionable: "Check kitchen workflow",
+        priority: 9,
+        actionable: "Audit prep workflow",
       });
     }
   }
@@ -325,15 +341,15 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
   if (insights.length === 0) {
     return (
       <div className="bg-card rounded-2xl p-6 shadow-sm border border-slate-100">
-        <div className="flex items-center gap-3 mb-4">
-          <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
-            <Sparkles className="w-5 h-5 text-secondary" />
-          </div>
-          <div>
-            <h3 className="font-black text-[#212282] uppercase tracking-tight">AI Insights</h3>
-            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Business Intelligence</p>
-          </div>
+      <div className="flex items-center gap-3 mb-4">
+        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center border border-primary/10">
+          <Sparkles className="w-5 h-5 text-secondary" />
         </div>
+        <div>
+          <h3 className="font-black text-primary uppercase tracking-tight">AI Insights</h3>
+          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Business Intelligence</p>
+        </div>
+      </div>
         <div className="flex flex-col items-center justify-center py-12 gap-3">
           <div className="p-4 bg-slate-50 rounded-full">
             <Zap className="w-8 h-8 text-slate-200" />
@@ -364,14 +380,14 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
     info: {
       bg: "bg-white",
       border: "border-slate-100",
-      iconBg: "bg-blue-50",
-      iconColor: "text-blue-500",
-      metricColor: "text-blue-600",
+      iconBg: "bg-primary/5",
+      iconColor: "text-primary",
+      metricColor: "text-primary",
     },
     prediction: {
       bg: "bg-white",
       border: "border-slate-100",
-      iconBg: "bg-orange-50",
+      iconBg: "bg-secondary/5",
       iconColor: "text-secondary",
       metricColor: "text-secondary",
     },
@@ -380,11 +396,11 @@ export default function AIInsightsPanel({ orders }: AIInsightsPanelProps) {
   return (
     <div className="bg-card rounded-2xl p-6 shadow-sm border border-slate-100">
       <div className="flex items-center gap-3 mb-6">
-        <div className="w-10 h-10 bg-slate-50 rounded-xl flex items-center justify-center border border-slate-100">
+        <div className="w-10 h-10 bg-primary/5 rounded-xl flex items-center justify-center border border-primary/10">
           <Sparkles className="w-5 h-5 text-secondary" />
         </div>
         <div>
-          <h3 className="font-black text-[#212282] uppercase tracking-tight">AI Insights</h3>
+          <h3 className="font-black text-primary uppercase tracking-tight">AI Insights</h3>
           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest">Business Intelligence</p>
         </div>
       </div>
