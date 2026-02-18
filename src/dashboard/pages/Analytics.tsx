@@ -145,40 +145,35 @@ export default function Analytics() {
   
   const [showComparison, setShowComparison] = useState(false);
 
-  const { data: orders, isLoading } = useQuery<Order[]>({
+  const { data: allOrders, isLoading } = useQuery<Order[]>({
     queryKey: ['analytics', 'orders', dateRange?.from?.toISOString(), dateRange?.to?.toISOString()],
     queryFn: async () => {
+      // Calculate comparison range: fetch 2x the period to allow for period-over-period comparison
+      const from = dateRange?.from || subDays(new Date(), 29);
+      const to = dateRange?.to || new Date();
+      const periodDays = differenceInDays(to, from) + 1;
+      const fetchFrom = subDays(from, periodDays);
+
       if (USE_MOCK_DATA) {
-        console.log("📦 Mock mode: returning mock analytics orders");
-        if (!dateRange?.from) return MOCK_ANALYTICS_ORDERS;
         return MOCK_ANALYTICS_ORDERS.filter(o => {
           const orderDate = new Date(o.created_at);
-          return orderDate >= (dateRange.from || new Date(0)) && 
-                 orderDate <= (dateRange.to || new Date());
+          return orderDate >= fetchFrom && orderDate <= endOfDay(to);
         });
       }
       
-      // Query orders with their items - order_items stores item names directly, not via FK
       let query = supabase
         .from('orders')
         .select('*, order_items(*)')
         .neq('status', 'cancelled')
+        .gte('created_at', startOfDay(fetchFrom).toISOString())
+        .lte('created_at', endOfDay(to).toISOString())
         .order('created_at', { ascending: true });
-
-      if (dateRange?.from) {
-        query = query.gte('created_at', startOfDay(dateRange.from).toISOString());
-      }
-      if (dateRange?.to) {
-        // Use end of day to include all orders from the selected end date
-        query = query.lte('created_at', endOfDay(dateRange.to).toISOString());
-      }
 
       const { data, error } = await query;
       if (error) {
         console.error("Analytics query error:", error);
         throw error;
       }
-      
       
       return (data || []).map(order => ({
         ...order,
@@ -187,6 +182,15 @@ export default function Analytics() {
     },
     enabled: canView,
   });
+
+  // Filter orders for the SPECIFIC selected period for top-level metrics
+  const orders = useMemo(() => {
+    if (!allOrders || !dateRange?.from || !dateRange?.to) return allOrders || [];
+    return allOrders.filter(o => {
+      const d = new Date(o.created_at);
+      return d >= startOfDay(dateRange.from!) && d <= endOfDay(dateRange.to!);
+    });
+  }, [allOrders, dateRange]);
 
   const metrics = useMemo(() => {
     if (!orders || orders.length === 0) {
@@ -289,22 +293,15 @@ export default function Analytics() {
       count: prepTimes.filter(t => t >= range.min && t < range.max).length,
     }));
 
-    const midPoint = Math.floor(orders.length / 2);
-    const firstHalf = orders.slice(0, midPoint);
-    const secondHalf = orders.slice(midPoint);
-    const firstRevenue = firstHalf.reduce((sum, o) => sum + o.total, 0);
-    const secondRevenue = secondHalf.reduce((sum, o) => sum + o.total, 0);
-    const revenueChange = firstRevenue > 0 ? ((secondRevenue - firstRevenue) / firstRevenue) * 100 : 0;
-    const ordersChange = firstHalf.length > 0 ? ((secondHalf.length - firstHalf.length) / firstHalf.length) * 100 : 0;
 
     return {
       totalOrders: orders.length,
       totalRevenue: orders.reduce((sum, o) => sum + o.total, 0),
-      avgOrderValue: Math.round(orders.reduce((sum, o) => sum + o.total, 0) / orders.length),
+      avgOrderValue: orders.length > 0 ? Math.round(orders.reduce((sum, o) => sum + o.total, 0) / orders.length) : 0,
       todayOrders: todayOrders.length,
       todayRevenue: todayOrders.reduce((sum, o) => sum + o.total, 0),
       ordersByHour, ordersByDay, topItems, categoryBreakdown, paymentBreakdown,
-      peakHour, avgPrepTime, repeatCustomers, revenueChange, ordersChange, prepTimeDistribution,
+      peakHour, avgPrepTime, repeatCustomers, prepTimeDistribution,
     };
   }, [orders]);
 
@@ -325,10 +322,10 @@ export default function Analytics() {
       return orderDate >= dateRange.from! && orderDate <= dateRange.to!;
     });
 
-    // Check if we have data from previous period (only works if date range is recent)
-    const prevPeriodOrders = orders.filter(o => {
+    // Use allOrders which contains comparison data
+    const prevPeriodOrders = (allOrders || []).filter(o => {
       const orderDate = new Date(o.created_at);
-      return orderDate >= prevPeriodStart && orderDate <= prevPeriodEnd;
+      return orderDate >= startOfDay(prevPeriodStart) && orderDate <= endOfDay(prevPeriodEnd);
     });
 
     if (prevPeriodOrders.length === 0) {
@@ -418,8 +415,8 @@ export default function Analytics() {
       label: 'Total Orders', 
       value: metrics.totalOrders.toString(), 
       icon: ShoppingBag, 
-      change: showComparison && comparison ? comparison.orders.change : metrics.ordersChange,
-      previousValue: showComparison && comparison ? comparison.orders.previous.toString() : undefined,
+      change: comparison ? comparison.orders.change : undefined,
+      previousValue: comparison ? comparison.orders.previous.toString() : undefined,
       color: 'text-blue-600', 
       bg: 'bg-blue-50' 
     },
@@ -427,8 +424,8 @@ export default function Analytics() {
       label: 'Revenue', 
       value: formatPrice(metrics.totalRevenue), 
       icon: DollarSign, 
-      change: showComparison && comparison ? comparison.revenue.change : metrics.revenueChange,
-      previousValue: showComparison && comparison ? formatPrice(comparison.revenue.previous) : undefined,
+      change: comparison ? comparison.revenue.change : undefined,
+      previousValue: comparison ? formatPrice(comparison.revenue.previous) : undefined,
       color: 'text-green-600', 
       bg: 'bg-green-50' 
     },
@@ -436,8 +433,8 @@ export default function Analytics() {
       label: 'Avg Order', 
       value: formatPrice(metrics.avgOrderValue), 
       icon: TrendingUp, 
-      change: showComparison && comparison ? comparison.avgOrder.change : undefined,
-      previousValue: showComparison && comparison ? formatPrice(comparison.avgOrder.previous) : undefined,
+      change: comparison ? comparison.avgOrder.change : undefined,
+      previousValue: comparison ? formatPrice(comparison.avgOrder.previous) : undefined,
       color: 'text-purple-600', 
       bg: 'bg-purple-50' 
     },
@@ -445,16 +442,16 @@ export default function Analytics() {
       label: 'Avg Prep Time', 
       value: metrics.avgPrepTime > 0 ? `${metrics.avgPrepTime} min` : 'N/A', 
       icon: Clock, 
-      change: showComparison && comparison && comparison.prepTime.current > 0 ? comparison.prepTime.change : undefined,
-      previousValue: showComparison && comparison && comparison.prepTime.previous > 0 ? `${Math.round(comparison.prepTime.previous)} min` : undefined,
+      change: comparison && comparison.prepTime.current > 0 ? comparison.prepTime.change : undefined,
+      previousValue: comparison && comparison.prepTime.previous > 0 ? `${Math.round(comparison.prepTime.previous)} min` : undefined,
       color: 'text-amber-600', 
       bg: 'bg-amber-50',
       invertedChange: true,
     },
     { 
       label: 'Peak Hour', 
-      value: `${metrics.peakHour}:00`, 
-      icon: TrendingUp, 
+      value: metrics.totalOrders > 0 ? `${metrics.peakHour}:00` : 'N/A', 
+      icon: Clock, 
       color: 'text-orange-600', 
       bg: 'bg-orange-50',
       subValue: 'Highest Demand'
