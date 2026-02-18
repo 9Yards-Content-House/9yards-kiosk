@@ -367,7 +367,26 @@ export function useReorderCategories() {
 
       await Promise.all(updates);
     },
-    onSuccess: () => {
+    onMutate: async (orderedIds) => {
+      await queryClient.cancelQueries({ queryKey: ["categories"] });
+      const previousCategories = queryClient.getQueryData<Category[]>(["categories"]);
+      if (previousCategories) {
+        const optimisticallySorted = [...previousCategories].sort((a, b) => {
+          const indexA = orderedIds.indexOf(a.id);
+          const indexB = orderedIds.indexOf(b.id);
+          return indexA - indexB;
+        }).map((cat, index) => ({ ...cat, sort_order: index + 1 }));
+        queryClient.setQueryData(["categories"], optimisticallySorted);
+      }
+      return { previousCategories };
+    },
+    onError: (err, _variables, context) => {
+      if (context?.previousCategories) {
+        queryClient.setQueryData(["categories"], context.previousCategories);
+      }
+      toast.error("Failed to save new order");
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] });
       queryClient.invalidateQueries({ queryKey: ["grouped_menu"] });
     },

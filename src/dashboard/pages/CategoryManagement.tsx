@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown, ShieldCheck, Lock } from "lucide-react";
+import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown, ShieldCheck, Lock, Unlock, Search } from "lucide-react";
 import { useCategories, useAllMenuItems } from "@shared/hooks/useMenu";
 import {
   useCreateCategory,
@@ -9,6 +9,7 @@ import {
 } from "@shared/hooks/useMenuMutations";
 import { useAuth } from "../context/AuthContext";
 import { hasPermission } from "@shared/types/auth";
+import { cn } from "@shared/lib/utils";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Badge } from "@shared/components/ui/badge";
@@ -61,13 +62,30 @@ export default function CategoryManagement() {
   const [newCategorySlug, setNewCategorySlug] = useState("");
   const [editName, setEditName] = useState("");
   const [editSlug, setEditSlug] = useState("");
+  const [searchQuery, setSearchQuery] = useState("");
+  const [unlockedCategories, setUnlockedCategories] = useState<Record<string, boolean>>({});
 
   const canEdit = role ? hasPermission(role, "menu:update") : false;
   const canCreate = role ? hasPermission(role, "menu:create") : false;
   const canDelete = role ? hasPermission(role, "menu:delete") : false;
 
   // Sort categories by sort_order
-  const sortedCategories = [...categories].sort((a, b) => a.sort_order - b.sort_order);
+  // Filter and sort categories
+  const filteredCategories = useMemo(() => {
+    let result = [...categories];
+    
+    if (searchQuery.trim()) {
+      const q = searchQuery.toLowerCase().trim();
+      result = result.filter(c => 
+        c.name.toLowerCase().includes(q) || 
+        c.slug.toLowerCase().includes(q)
+      );
+    }
+
+    return result.sort((a, b) => a.sort_order - b.sort_order);
+  }, [categories, searchQuery]);
+
+  const sortedCategories = filteredCategories;
 
   // Count items per category
   const itemCountByCategory = useMemo(() => {
@@ -182,9 +200,21 @@ export default function CategoryManagement() {
   };
 
   const openEditDialog = (category: Category) => {
+    if (isProtectedSlug(category.slug) && !unlockedCategories[category.id]) {
+      toast.error("Unlock this category first to edit");
+      return;
+    }
     setEditingCategory(category);
     setEditName(category.name);
     setEditSlug(category.slug);
+  };
+
+  const toggleLock = (categoryId: string) => {
+    setUnlockedCategories(prev => ({
+      ...prev,
+      [categoryId]: !prev[categoryId]
+    }));
+    toast.info("Safety lock toggled");
   };
 
   if (isLoading) {
@@ -210,16 +240,28 @@ export default function CategoryManagement() {
           </div>
         </div>
         {canCreate && (
-          <Button onClick={() => setIsAddDialogOpen(true)}>
-            <Plus className="w-4 h-4 mr-2" />
-            Add Category
-          </Button>
+          <div className="flex items-center gap-2">
+            <div className="relative flex-1 sm:w-64">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search categories..."
+                className="pl-9 h-10"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+              />
+            </div>
+            <Button onClick={() => setIsAddDialogOpen(true)} className="h-10">
+              <Plus className="w-4 h-4 mr-2" />
+              <span className="hidden sm:inline">Add Category</span>
+              <span className="sm:hidden">Add</span>
+            </Button>
+          </div>
         )}
       </div>
 
       {/* Category List */}
       <div className="bg-card rounded-xl border overflow-hidden">
-        <div className="hidden md:grid grid-cols-[40px_1fr_200px_120px_100px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
+        <div className="hidden lg:grid grid-cols-[40px_1fr_200px_130px_180px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
           <span></span>
           <span>Name</span>
           <span>Slug</span>
@@ -242,124 +284,152 @@ export default function CategoryManagement() {
             )}
           </div>
         ) : (
-          sortedCategories.map((category, index) => (
-            <div
-              key={category.id}
-              className="flex items-center justify-between md:grid md:grid-cols-[40px_1fr_200px_120px_100px] gap-2 md:gap-4 px-4 py-3 border-b hover:bg-muted/30 transition-colors"
-            >
-              {/* Drag handle / Position */}
-              <div className="hidden md:flex items-center gap-1 text-muted-foreground">
-                <GripVertical className="w-4 h-4" />
-                <span className="text-xs">{index + 1}</span>
-              </div>
-
-              {/* Name */}
-              <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center">
-                  <FolderOpen className="w-5 h-5 text-secondary" />
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:block">
+            {sortedCategories.map((category, index) => (
+              <div
+                key={category.id}
+                className="flex flex-col lg:flex-row lg:items-center justify-between lg:grid lg:grid-cols-[40px_1fr_200px_130px_180px] gap-2 lg:gap-4 px-4 py-4 lg:py-3 border-b hover:bg-muted/30 transition-colors"
+              >
+                {/* Drag handle / Position */}
+                <div className="hidden lg:flex items-center gap-1 text-muted-foreground">
+                  <GripVertical className="w-4 h-4" />
+                  <span className="text-xs">{index + 1}</span>
                 </div>
-                <div>
-                  <p className="font-medium flex items-center gap-1.5">
-                    {category.name}
-                    {isProtectedSlug(category.slug) && (
-                      <ShieldCheck className="w-3.5 h-3.5 text-blue-500" title="System Category" />
+
+                {/* Name */}
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
+                    <FolderOpen className="w-5 h-5 text-secondary" />
+                  </div>
+                  <div className="min-w-0">
+                    <p className="font-medium flex items-center gap-1.5 truncate">
+                      {category.name}
+                      {isProtectedSlug(category.slug) && (
+                        <ShieldCheck className="w-3.5 h-3.5 text-blue-500" title="System Category" />
+                      )}
+                    </p>
+                    <p className="text-xs text-muted-foreground lg:hidden truncate">{category.slug}</p>
+                    {getCategoryItemCount(category.id) === 0 && (
+                      <Badge variant="secondary" className="lg:hidden mt-1 bg-amber-50 text-amber-600 border-amber-200 text-[10px] px-1.5 py-0 h-4">Empty</Badge>
                     )}
-                  </p>
-                  <p className="text-xs text-muted-foreground md:hidden">{category.slug}</p>
+                  </div>
                 </div>
-              </div>
 
-              {/* Slug */}
-              <div className="hidden md:block">
-                <Badge variant="outline" className="font-mono text-xs">
-                  {category.slug}
-                </Badge>
-              </div>
+                {/* Slug */}
+                <div className="hidden lg:block truncate">
+                  <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                    {category.slug}
+                  </Badge>
+                </div>
 
-              {/* Item Count */}
-              <div className="hidden md:block">
-                <span className="text-sm font-medium">
-                  {itemCountByCategory[category.id] || 0}
-                </span>
-              </div>
+                {/* Item Count */}
+                <div className="hidden lg:flex items-center gap-2">
+                  <span className="text-sm font-medium">
+                    {getCategoryItemCount(category.id)}
+                  </span>
+                  {getCategoryItemCount(category.id) === 0 && (
+                    <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200">Empty</Badge>
+                  )}
+                </div>
 
-              {/* Actions */}
-              <div className="flex items-center gap-0.5">
-                {canEdit && (
-                  <>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      onClick={() => handleMoveUp(index)}
-                      disabled={index === 0 || reorderCategories.isPending}
-                    >
-                      <ChevronUp className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-                      onClick={() => handleMoveDown(index)}
-                      disabled={index === sortedCategories.length - 1 || reorderCategories.isPending}
-                    >
-                      <ChevronDown className="w-4 h-4" />
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-primary/10 transition-colors"
-                      onClick={() => openEditDialog(category)}
-                    >
-                      <Edit2 className="w-4 h-4" />
-                    </Button>
-                  </>
-                )}
-                {canDelete && (
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
+                {/* Actions */}
+                <div className="flex items-center justify-end gap-1 mt-2 lg:mt-0">
+                  {canEdit && (
+                    <>
+                      {isProtectedSlug(category.slug) && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className={cn(
+                            "h-8 w-8 transition-colors",
+                            unlockedCategories[category.id] ? "text-amber-500 hover:text-amber-600 bg-amber-50" : "text-muted-foreground hover:text-blue-500 hover:bg-blue-50"
+                          )}
+                          onClick={() => toggleLock(category.id)}
+                          title={unlockedCategories[category.id] ? "Lock category" : "Unlock to edit"}
+                        >
+                          {unlockedCategories[category.id] ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                        </Button>
+                      )}
+                      <div className="flex items-center bg-muted/30 rounded-md px-1">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          onClick={() => handleMoveUp(index)}
+                          disabled={index === 0 || reorderCategories.isPending}
+                        >
+                          <ChevronUp className="w-4 h-4" />
+                        </Button>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          onClick={() => handleMoveDown(index)}
+                          disabled={index === sortedCategories.length - 1 || reorderCategories.isPending}
+                        >
+                          <ChevronDown className="w-4 h-4" />
+                        </Button>
+                      </div>
                       <Button
                         variant="ghost"
                         size="icon"
-                        className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
-                        disabled={isProtectedSlug(category.slug)}
-                        title={isProtectedSlug(category.slug) ? "Protected category cannot be deleted" : "Delete category"}
+                        className={cn(
+                          "h-8 w-8 text-muted-foreground transition-colors",
+                          isProtectedSlug(category.slug) && !unlockedCategories[category.id] ? "opacity-30 cursor-not-allowed" : "hover:text-primary hover:bg-primary/10"
+                        )}
+                        onClick={() => openEditDialog(category)}
+                        disabled={isProtectedSlug(category.slug) && !unlockedCategories[category.id]}
                       >
-                        <Trash2 className="w-4 h-4" />
+                        <Edit2 className="w-4 h-4" />
                       </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Delete Category?</AlertDialogTitle>
-                        <AlertDialogDescription asChild>
-                          <div className="space-y-2">
-                            <p>
-                              This will permanently delete "{category.name}". This action cannot be undone.
-                            </p>
-                            {getCategoryItemCount(category.id) > 0 && (
-                              <p className="text-destructive font-medium">
-                                ⚠️ This category has {getCategoryItemCount(category.id)} menu item(s). 
-                                Deleting will also remove all associated items!
-                              </p>
-                            )}
-                          </div>
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction
-                          onClick={() => handleDeleteCategory(category.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                    </>
+                  )}
+                  {canDelete && (
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          disabled={isProtectedSlug(category.slug)}
+                          title={isProtectedSlug(category.slug) ? "Protected category cannot be deleted" : "Delete category"}
                         >
-                          Delete
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
-                )}
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Delete Category?</AlertDialogTitle>
+                          <AlertDialogDescription asChild>
+                            <div className="space-y-2">
+                              <p>
+                                This will permanently delete "{category.name}". This action cannot be undone.
+                              </p>
+                              {getCategoryItemCount(category.id) > 0 && (
+                                <p className="text-destructive font-bold bg-destructive/5 p-2 rounded-lg border border-destructive/20 text-xs">
+                                  ⚠️ DANGER: This category contains {getCategoryItemCount(category.id)} menu item(s). 
+                                  You must move or delete these items first, or they will be removed from the system!
+                                </p>
+                              )}
+                            </div>
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction
+                            onClick={() => handleDeleteCategory(category.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Delete
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  )}
+                </div>
               </div>
-            </div>
-          ))
+            ))}
+          </div>
         )}
       </div>
 
