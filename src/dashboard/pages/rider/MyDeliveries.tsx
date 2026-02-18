@@ -1,12 +1,12 @@
 import { useState } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { Package, MapPin, CheckCircle2, Phone, Clock, AlertCircle, UserPlus, Truck } from "lucide-react";
+import { motion, AnimatePresence } from "framer-motion";
 import { supabase, USE_MOCK_DATA } from "@shared/lib/supabase";
 import { useAuth } from "../../context/AuthContext";
 import { useUpdateOrderStatus } from "@shared/hooks/useOrders";
-import { formatPrice, timeAgo } from "@shared/lib/utils";
+import { formatPrice, timeAgo, cn } from "@shared/lib/utils";
 import { Button } from "@shared/components/ui/button";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@shared/components/ui/tabs";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -142,6 +142,66 @@ const handleCallCustomer = (phone: string | null) => {
     window.location.href = `tel:${phone}`;
   }
 };
+
+function DeliveryStatCard({ 
+  label, 
+  value, 
+  icon: Icon, 
+  color, 
+  isActive, 
+  onClick, 
+  delay = 0 
+}: { 
+  label: string; 
+  value: number; 
+  icon: typeof Package; 
+  color: string;
+  isActive: boolean;
+  onClick: () => void;
+  delay?: number;
+}) {
+  return (
+    <motion.button
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay }}
+      onClick={onClick}
+      className={cn(
+        "flex-1 text-left rounded-2xl border p-3 md:p-4 transition-all relative overflow-hidden group",
+        isActive 
+          ? "bg-white border-primary shadow-md ring-1 ring-primary/20" 
+          : "bg-slate-50/50 border-slate-100 hover:bg-white hover:border-slate-200"
+      )}
+    >
+      {isActive && (
+        <motion.div 
+          layoutId="active-bg"
+          className="absolute inset-0 bg-gradient-to-br from-primary/5 to-transparent pointer-events-none" 
+        />
+      )}
+      <div className="flex items-center justify-between mb-2 relative z-10">
+        <p className={cn(
+          "text-[8px] md:text-[10px] font-black uppercase tracking-widest leading-none",
+          isActive ? "text-primary" : "text-slate-400"
+        )}>
+          {label}
+        </p>
+        <div className={cn(
+          "w-6 h-6 md:w-8 md:h-8 rounded-lg flex items-center justify-center shrink-0 transition-colors",
+          isActive ? color : "bg-slate-100 text-slate-400 group-hover:bg-slate-200"
+        )}>
+          <Icon className="w-3.5 h-3.5 md:w-4 md:h-4" />
+        </div>
+      </div>
+      <p className={cn(
+        "text-xl md:text-2xl font-black tracking-tight leading-none relative z-10",
+        isActive ? "text-primary" : "text-slate-400"
+      )}>
+        {value}
+      </p>
+    </motion.button>
+  );
+}
 
 export default function MyDeliveries() {
   const { user } = useAuth();
@@ -337,244 +397,366 @@ export default function MyDeliveries() {
   }
 
   return (
-    <div className="p-4 md:p-6">
-      <div className="mb-6">
-        <h1 className="text-2xl font-bold mb-2">My Deliveries</h1>
-        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-          <span className="flex items-center gap-1">
-            <Package className="w-4 h-4" />
-            {availableOrders?.length || 0} available
-          </span>
-          <span className="flex items-center gap-1">
-            <Truck className="w-4 h-4" />
-            {myOrders?.length || 0} in progress
-          </span>
-          <span className="flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4" />
-            {deliveredOrders?.length || 0} delivered today
-          </span>
+    <div className="p-4 md:p-6 max-w-5xl mx-auto">
+      <div className="mb-8">
+        <h1 className="text-xl md:text-2xl font-black text-primary uppercase tracking-tight flex items-center gap-2 mb-6">
+          <Truck className="w-6 h-6 md:w-7 md:h-7" />
+          My Deliveries
+        </h1>
+        
+        <div className="flex gap-2 md:gap-4">
+          <DeliveryStatCard
+            label="Available"
+            value={availableOrders?.length || 0}
+            icon={Package}
+            color="bg-primary/10 text-primary"
+            isActive={activeTab === "available"}
+            onClick={() => setActiveTab("available")}
+            delay={0.1}
+          />
+          <DeliveryStatCard
+            label="Mine"
+            value={myOrders?.length || 0}
+            icon={Truck}
+            color="bg-secondary/10 text-secondary"
+            isActive={activeTab === "mine"}
+            onClick={() => setActiveTab("mine")}
+            delay={0.2}
+          />
+          <DeliveryStatCard
+            label="Today"
+            value={deliveredOrders?.length || 0}
+            icon={CheckCircle2}
+            color="bg-green-100 text-green-600"
+            isActive={activeTab === "delivered"}
+            onClick={() => setActiveTab("delivered")}
+            delay={0.3}
+          />
         </div>
       </div>
 
-      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as typeof activeTab)}>
-        <TabsList className="mb-4">
-          <TabsTrigger value="available" className="flex items-center gap-2">
-            <Package className="w-4 h-4" />
-            Available ({availableOrders?.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="mine" className="flex items-center gap-2">
-            <Truck className="w-4 h-4" />
-            My Deliveries ({myOrders?.length || 0})
-          </TabsTrigger>
-          <TabsTrigger value="delivered" className="flex items-center gap-2">
-            <CheckCircle2 className="w-4 h-4" />
-            Completed ({deliveredOrders?.length || 0})
-          </TabsTrigger>
-        </TabsList>
-
-        {/* Available Orders */}
-        <TabsContent value="available">
-          {availableOrders && availableOrders.length > 0 ? (
-            <div className="space-y-3">
-              {availableOrders.map((order) => (
-                <div
-                  key={order.id}
-                  className="bg-card rounded-xl border p-4"
-                >
-                  <div className="flex items-start justify-between mb-3">
-                    <div>
-                      <p className="font-bold text-lg">{order.order_number}</p>
-                      <p className="text-sm text-muted-foreground">
-                        {order.customer_name} • Ordered {timeAgo(order.created_at)}
-                      </p>
-                    </div>
-                    <StatusBadge status={order.status} />
-                  </div>
-
-                  {order.customer_location && (
-                    <div className="flex items-center gap-2 text-sm mb-3">
-                      <MapPin className="w-4 h-4 text-muted-foreground" />
-                      {order.customer_location}
-                    </div>
-                  )}
-
-                  <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                    <Package className="w-4 h-4" />
-                    {order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items • {formatPrice(order.total)}
-                    {order.payment_status === "pending" && (
-                      <span className="ml-2 px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-xs font-medium">
-                        Collect {formatPrice(order.total)}
-                      </span>
-                    )}
-                  </div>
-
-                  <Button
-                    onClick={() => claimOrder.mutate(order.id)}
-                    disabled={claimOrder.isPending}
-                    className="w-full bg-blue-600 hover:bg-blue-700"
-                  >
-                    <UserPlus className="w-4 h-4 mr-2" />
-                    Claim This Delivery
-                  </Button>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl">
-              <Package className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No orders being prepared</p>
-              <p className="text-sm">Orders ready for delivery will appear here</p>
-            </div>
+      <div className="min-h-[400px]">
+        <AnimatePresence mode="wait">
+          {activeTab === "available" && (
+            <motion.div
+              key="available-list"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <AvailableList orders={availableOrders || []} claimOrder={claimOrder} />
+            </motion.div>
           )}
-        </TabsContent>
 
-        {/* My Deliveries */}
-        <TabsContent value="mine">
-          {myOrders && myOrders.length > 0 ? (
-            <div className="space-y-3">
-              {myOrders.map((order) => {
-                const waitTime = getWaitTime(order.ready_at);
-                const urgent = isUrgent(order.ready_at);
-                return (
-                  <div
-                    key={order.id}
-                    className={`bg-card rounded-xl border p-4 ${urgent ? "border-red-500/50" : ""}`}
-                  >
-                    <div className="flex items-start justify-between mb-3">
-                      <div>
-                        <div className="flex items-center gap-2">
-                          <p className="font-bold text-lg">{order.order_number}</p>
-                          {urgent && (
-                            <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-100 text-red-700 text-xs font-medium">
-                              <AlertCircle className="w-3 h-3" />
-                              Urgent
-                            </span>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground">
-                          {order.customer_name} • {timeAgo(order.created_at)}
-                        </p>
-                      </div>
-                      <StatusBadge status={order.status} />
-                    </div>
-
-                    {waitTime && (
-                      <div className={`flex items-center gap-2 text-sm mb-3 ${urgent ? "text-red-600" : "text-amber-600"}`}>
-                        <Clock className="w-4 h-4" />
-                        {waitTime}
-                      </div>
-                    )}
-
-                    {order.customer_location && (
-                      <div className="flex items-center gap-2 text-sm mb-3">
-                        <MapPin className="w-4 h-4 text-muted-foreground" />
-                        {order.customer_location}
-                      </div>
-                    )}
-
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground mb-3">
-                      <Package className="w-4 h-4" />
-                      {order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items • {formatPrice(order.total)}
-                      {order.payment_status === "pending" && (
-                        <span className="ml-2 px-2 py-0.5 rounded bg-amber-100 text-amber-700 text-xs font-medium">
-                          Collect {formatPrice(order.total)}
-                        </span>
-                      )}
-                    </div>
-
-                    {order.special_instructions && (
-                      <div className="bg-muted/50 rounded-lg p-2 mb-3 text-sm">
-                        <span className="font-medium">Note:</span> {order.special_instructions}
-                      </div>
-                    )}
-
-                    <div className="flex gap-2">
-                      {order.customer_phone && (
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleCallCustomer(order.customer_phone)}
-                        >
-                          <Phone className="w-4 h-4" />
-                        </Button>
-                      )}
-                      <Button
-                        className={`flex-1 ${urgent ? "bg-red-600 hover:bg-red-700" : "bg-green-600 hover:bg-green-700"}`}
-                        onClick={() => setConfirmOrder(order)}
-                        disabled={updateStatus.isPending}
-                      >
-                        <CheckCircle2 className="w-4 h-4 mr-2" />
-                        Mark Delivered
-                      </Button>
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl">
-              <Truck className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No active deliveries</p>
-              <p className="text-sm">Claim orders from the Available tab</p>
-            </div>
+          {activeTab === "mine" && (
+            <motion.div
+              key="mine-list"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <MineList 
+                orders={myOrders || []} 
+                setConfirmOrder={setConfirmOrder} 
+                isPending={updateStatus.isPending} 
+              />
+            </motion.div>
           )}
-        </TabsContent>
 
-        {/* Delivered */}
-        <TabsContent value="delivered">
-          {deliveredOrders && deliveredOrders.length > 0 ? (
-            <div className="space-y-2">
-              {deliveredOrders.map((order) => (
-                <div key={order.id} className="bg-card rounded-xl border p-3 opacity-70">
-                  <div className="flex items-center justify-between">
-                    <div>
-                      <span className="font-medium">{order.order_number}</span>
-                      <span className="text-sm text-muted-foreground ml-2">
-                        {order.customer_name}
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                      <span>{formatPrice(order.total)}</span>
-                      <StatusBadge status={order.status} />
-                    </div>
-                  </div>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <div className="text-center py-12 text-muted-foreground bg-muted/30 rounded-xl">
-              <CheckCircle2 className="w-12 h-12 mx-auto mb-3 opacity-30" />
-              <p>No deliveries completed today</p>
-            </div>
+          {activeTab === "delivered" && (
+            <motion.div
+              key="delivered-list"
+              initial={{ opacity: 0, x: -10 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: 10 }}
+              transition={{ duration: 0.2 }}
+            >
+              <DeliveredList orders={deliveredOrders || []} />
+            </motion.div>
           )}
-        </TabsContent>
-      </Tabs>
+        </AnimatePresence>
+      </div>
 
       {/* Confirmation Dialog */}
-      <AlertDialog open={!!confirmOrder} onOpenChange={(open) => !open && setConfirmOrder(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Confirm Delivery</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to mark order <span className="font-semibold">{confirmOrder?.order_number}</span> as delivered to {confirmOrder?.customer_name}?
-              {confirmOrder?.payment_status === "pending" && (
-                <span className="block mt-2 text-amber-600 font-medium">
-                  Remember to collect {formatPrice(confirmOrder?.total || 0)} (Cash)
-                </span>
-              )}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={() => confirmOrder && handleDeliver(confirmOrder)}
-              className="bg-green-600 hover:bg-green-700"
-            >
-              Confirm Delivered
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmationDialog 
+        confirmOrder={confirmOrder} 
+        setConfirmOrder={setConfirmOrder} 
+        handleDeliver={handleDeliver} 
+      />
     </div>
   );
 }
+
+/* ─── Shared Components ─── */
+
+function ConfirmationDialog({ confirmOrder, setConfirmOrder, handleDeliver }: any) {
+  return (
+    <AlertDialog open={!!confirmOrder} onOpenChange={(open) => !open && setConfirmOrder(null)}>
+      <AlertDialogContent>
+        <AlertDialogHeader>
+          <AlertDialogTitle>Confirm Delivery</AlertDialogTitle>
+          <AlertDialogDescription>
+            Are you sure you want to mark order <span className="font-semibold">{confirmOrder?.order_number}</span> as delivered to {confirmOrder?.customer_name}?
+            {confirmOrder?.payment_status === "pending" && (
+              <span className="block mt-2 text-amber-600 font-medium">
+                Remember to collect {formatPrice(confirmOrder?.total || 0)} (Cash)
+              </span>
+            )}
+          </AlertDialogDescription>
+        </AlertDialogHeader>
+        <AlertDialogFooter>
+          <AlertDialogCancel>Cancel</AlertDialogCancel>
+          <AlertDialogAction
+            onClick={() => confirmOrder && handleDeliver(confirmOrder)}
+            className="bg-green-600 hover:bg-green-700"
+          >
+            Confirm Delivered
+          </AlertDialogAction>
+        </AlertDialogFooter>
+      </AlertDialogContent>
+    </AlertDialog>
+  );
+}
+/* ─── Sub-components for better organization ─── */
+
+function AvailableList({ orders, claimOrder }: { orders: Order[], claimOrder: any }) {
+  if (orders.length === 0) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-20 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200"
+      >
+        <Package className="w-12 h-12 mx-auto mb-4 text-slate-200" />
+        <h3 className="text-lg font-black text-primary uppercase tracking-tight">No orders ready</h3>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">New deliveries will appear here as they are prepared</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      <AnimatePresence mode="popLayout">
+        {orders.map((order, idx) => (
+          <motion.div
+            key={order.id}
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.95 }}
+            transition={{ delay: Math.min(idx * 0.05, 0.4) }}
+            className="bg-white rounded-[2rem] border border-slate-100 p-5 shadow-sm overflow-hidden"
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <p className="font-black text-primary text-lg tracking-tight leading-none mb-1">{order.order_number}</p>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                  {order.customer_name} • {timeAgo(order.created_at)}
+                </p>
+              </div>
+              <StatusBadge status={order.status} className="rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest" />
+            </div>
+
+            <div className="space-y-3 mb-5">
+              {order.customer_location && (
+                <div className="flex items-start gap-2.5 min-w-0">
+                  <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-slate-600 leading-snug">{order.customer_location}</p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2.5">
+                <Package className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                  <span>{order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-200" />
+                  <span className="text-primary">{formatPrice(order.total)}</span>
+                </div>
+                {order.payment_status === "pending" && (
+                  <div className="ml-auto px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[8px] font-black uppercase tracking-widest border border-secondary/20">
+                    Cash Collection
+                  </div>
+                )}
+              </div>
+            </div>
+
+            <Button
+              onClick={() => claimOrder.mutate(order.id)}
+              disabled={claimOrder.isPending}
+              className="w-full h-12 bg-primary hover:bg-primary/90 text-white rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md transition-all active:scale-[0.98]"
+            >
+              <UserPlus className="w-4 h-4 mr-2" />
+              Claim Delivery
+            </Button>
+          </motion.div>
+        ))}
+      </AnimatePresence>
+    </div>
+  );
+}
+
+function MineList({ orders, setConfirmOrder, isPending }: { orders: Order[], setConfirmOrder: any, isPending: boolean }) {
+  if (orders.length === 0) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-20 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200"
+      >
+        <Truck className="w-12 h-12 mx-auto mb-4 text-slate-200" />
+        <h3 className="text-lg font-black text-primary uppercase tracking-tight">No active deliveries</h3>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Claim orders from the Available tab to start delivering</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-4">
+      {orders.map((order, idx) => {
+        const waitTime = getWaitTime(order.ready_at);
+        const urgent = isUrgent(order.ready_at);
+        return (
+          <motion.div
+            key={order.id}
+            initial={{ opacity: 0, scale: 0.95 }}
+            animate={{ opacity: 1, scale: 1 }}
+            transition={{ delay: idx * 0.05 }}
+            className={cn(
+              "bg-white rounded-[2rem] border p-5 shadow-sm overflow-hidden transition-colors",
+              urgent ? "border-red-200 bg-red-50/10" : "border-slate-100"
+            )}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="flex items-center gap-2 mb-1">
+                  <p className="font-black text-primary text-lg tracking-tight leading-none">{order.order_number}</p>
+                  {urgent && (
+                    <span className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-red-500 text-white text-[8px] font-black uppercase tracking-widest animate-pulse">
+                      <AlertCircle className="w-2.5 h-2.5" />
+                      Urgent
+                    </span>
+                  )}
+                </div>
+                <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                  {order.customer_name} • {timeAgo(order.created_at)}
+                </p>
+              </div>
+              <StatusBadge status={order.status} className="rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest" />
+            </div>
+
+            <div className="space-y-3 mb-5">
+              {waitTime && (
+                <div className={cn(
+                  "flex items-center gap-2.5 text-[10px] font-black uppercase tracking-widest",
+                  urgent ? "text-red-600" : "text-secondary"
+                )}>
+                  <Clock className="w-4 h-4 shrink-0" />
+                  {waitTime}
+                </div>
+              )}
+
+              {order.customer_location && (
+                <div className="flex items-start gap-2.5">
+                  <MapPin className="w-4 h-4 text-primary shrink-0 mt-0.5" />
+                  <p className="text-xs font-bold text-slate-600 leading-snug">{order.customer_location}</p>
+                </div>
+              )}
+
+              <div className="flex items-center gap-2.5">
+                <Package className="w-4 h-4 text-primary shrink-0" />
+                <div className="flex items-center gap-1.5 text-xs font-bold text-slate-500">
+                  <span>{order.items?.reduce((sum, item) => sum + item.quantity, 0) || 0} items</span>
+                  <span className="w-1 h-1 rounded-full bg-slate-200" />
+                  <span className="text-primary">{formatPrice(order.total)}</span>
+                </div>
+                {order.payment_status === "pending" && (
+                  <div className="ml-auto px-2 py-0.5 rounded-full bg-secondary/10 text-secondary text-[8px] font-black uppercase tracking-widest border border-secondary/20">
+                    Cash Collection
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {order.special_instructions && (
+              <div className="bg-slate-50 border border-slate-100 rounded-2xl p-4 mb-5">
+                 <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1.5 flex items-center gap-1.5">
+                   <AlertCircle className="w-3 h-3 text-secondary" />
+                   Special Instructions
+                 </p>
+                 <p className="text-sm font-bold text-slate-600 leading-relaxed italic">"{order.special_instructions}"</p>
+              </div>
+            )}
+
+            <div className="flex gap-2">
+              {order.customer_phone && (
+                <Button
+                  variant="outline"
+                  onClick={() => handleCallCustomer(order.customer_phone)}
+                  className="h-12 w-12 rounded-2xl border-slate-100 bg-white shadow-sm shrink-0 flex items-center justify-center p-0"
+                >
+                  <Phone className="w-5 h-5 text-primary" />
+                </Button>
+              )}
+              <Button
+                onClick={() => setConfirmOrder(order)}
+                disabled={isPending}
+                className={cn(
+                  "flex-1 h-12 rounded-2xl font-black uppercase tracking-widest text-[10px] shadow-md transition-all active:scale-[0.98]",
+                  urgent ? "bg-red-600 hover:bg-red-700 text-white" : "bg-green-600 hover:bg-green-700 text-white"
+                )}
+              >
+                <CheckCircle2 className="w-4 h-4 mr-2" />
+                Complete Delivery
+              </Button>
+            </div>
+          </motion.div>
+        );
+      })}
+    </div>
+  );
+}
+
+function DeliveredList({ orders }: { orders: Order[] }) {
+  if (orders.length === 0) {
+    return (
+      <motion.div 
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        className="text-center py-20 bg-slate-50/50 rounded-3xl border border-dashed border-slate-200"
+      >
+        <CheckCircle2 className="w-12 h-12 mx-auto mb-4 text-slate-200" />
+        <h3 className="text-lg font-black text-primary uppercase tracking-tight">No completions yet</h3>
+        <p className="text-[10px] font-black text-slate-400 uppercase tracking-widest mt-2">Finished deliveries for today will appear here</p>
+      </motion.div>
+    );
+  }
+
+  return (
+    <div className="space-y-3">
+      {orders.map((order, idx) => (
+        <motion.div 
+          key={order.id} 
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 0.7 }}
+          transition={{ delay: idx * 0.03 }}
+          className="bg-white rounded-2xl border border-slate-100 p-4 shadow-sm"
+        >
+          <div className="flex items-center justify-between">
+            <div>
+              <span className="font-black text-primary text-sm tracking-tight leading-none truncate block mb-1">{order.order_number}</span>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest leading-none">
+                {order.customer_name}
+              </span>
+            </div>
+            <div className="flex items-center gap-3">
+              <span className="text-xs font-bold text-primary">{formatPrice(order.total)}</span>
+              <StatusBadge status={order.status} className="rounded-full px-3 py-1 text-[8px] font-black uppercase tracking-widest" />
+            </div>
+          </div>
+        </motion.div>
+      ))}
+    </div>
+  );
+}
+
