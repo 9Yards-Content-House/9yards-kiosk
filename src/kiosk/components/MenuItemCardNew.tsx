@@ -28,7 +28,7 @@ export default function MenuItemCardNew({
   // Use item_type for combo/standalone determination (preferred over slugs)
   const isComboItem = item.item_type === 'combo_driver' || item.item_type === 'combo_component';
   const isIndividualItem = item.item_type === 'standalone' || !item.item_type;
-  const isFree = item.price === 0;
+  const isFree = item.price === 0 && item.item_type !== 'combo_component';
   const displayPrice = item.sizes?.[0]?.price || item.price;
 
   const handleQuantityChange = useCallback((delta: number) => {
@@ -137,7 +137,7 @@ export default function MenuItemCardNew({
 
         {/* Price and action */}
         <div className="mt-3 flex items-center justify-between">
-          {!isFree ? (
+          {!isFree && item.price > 0 ? (
             <div>
               <span className="text-secondary font-bold text-base">
                 {formatPrice(displayPrice)}
@@ -146,6 +146,10 @@ export default function MenuItemCardNew({
                 <span className="text-xs text-muted-foreground ml-1">+</span>
               )}
             </div>
+          ) : item.item_type === 'combo_component' ? (
+            <span className="text-blue-600 font-semibold text-sm">
+              Combo Only
+            </span>
           ) : (
             <span className="text-green-600 font-semibold text-sm">
               {t('combo.includedFree')}

@@ -84,8 +84,16 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
 
           {/* Mobile-only: price + category */}
           <div className="flex items-center gap-2 mt-1 md:hidden">
-            <span className={cn("text-sm font-semibold", item.price === 0 && "text-green-600")}>
-              {item.price > 0 ? formatPrice(item.price) : "Free"}
+            <span className={cn(
+              "text-sm font-semibold",
+              item.price === 0 && item.item_type === 'combo_component' ? "text-blue-600" :
+              item.price === 0 ? "text-green-600" : ""
+            )}>
+              {item.price > 0
+                ? formatPrice(item.price)
+                : item.item_type === 'combo_component'
+                  ? "Combo Only"
+                  : "Free"}
             </span>
             <span className="text-muted-foreground text-xs">•</span>
             <span className="text-xs text-muted-foreground truncate max-w-[100px]">
@@ -184,9 +192,14 @@ export default function MenuItemRow({ item, category, canEdit, onEdit }: MenuIte
       {/* ── Column 3: Price (tablet + desktop) ───────────────────── */}
       <span className={cn(
         "hidden md:flex text-sm font-medium items-center shrink-0",
-        item.price === 0 && "text-green-600"
+        item.price === 0 && item.item_type === 'combo_component' ? "text-blue-600" :
+        item.price === 0 ? "text-green-600" : ""
       )}>
-        {item.price > 0 ? formatPrice(item.price) : "Free"}
+        {item.price > 0
+          ? formatPrice(item.price)
+          : item.item_type === 'combo_component'
+            ? "Combo Only"
+            : "Free"}
       </span>
 
       {/* ── Column 4: Badge toggles (lg+ only) ───────────────────── */}
