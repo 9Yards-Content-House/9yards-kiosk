@@ -22,6 +22,13 @@ import {
   AlertDialogTrigger,
 } from "@shared/components/ui/alert-dialog";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@shared/components/ui/tabs";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@shared/components/ui/select";
 import { toast } from "sonner";
 import type { MenuItemType } from "@shared/types/menu";
 
@@ -342,12 +349,22 @@ export default function MenuItemEdit() {
         )}
       </div>
 
-      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+      <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6 pb-24">
         <Tabs defaultValue="general" className="w-full">
           <TabsList className="grid w-full grid-cols-4">
-            <TabsTrigger value="general">General</TabsTrigger>
+            <TabsTrigger value="general" className="relative">
+              General
+              {(form.formState.errors.name || form.formState.errors.category_id) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="media">Media</TabsTrigger>
-            <TabsTrigger value="variants">Variants</TabsTrigger>
+            <TabsTrigger value="pricing" className="relative">
+              Pricing
+              {(form.formState.errors.price || form.formState.errors.sizes) && (
+                <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-red-500" />
+              )}
+            </TabsTrigger>
             <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
 
@@ -355,7 +372,7 @@ export default function MenuItemEdit() {
           <TabsContent value="general" className="space-y-4 py-4">
              <div className="bg-card rounded-xl border p-6 space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1.5">Name</label>
+                  <label className="block text-sm font-medium mb-1.5">Name <span className="text-red-500">*</span></label>
                   <Input {...form.register("name")} placeholder="Item name" />
                   {form.formState.errors.name && (
                     <p className="text-red-500 text-xs mt-1">{form.formState.errors.name.message}</p>
@@ -373,17 +390,20 @@ export default function MenuItemEdit() {
 
                 <div className="grid grid-cols-2 gap-4">
                    <div>
-                     <label className="block text-sm font-medium mb-1.5">Category</label>
-                     <select
-                       {...form.register("category_id")}
-                       onChange={(e) => handleCategoryChange(e.target.value)}
-                       className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                     <label className="block text-sm font-medium mb-1.5">Category <span className="text-red-500">*</span></label>
+                     <Select
+                       value={form.watch("category_id")}
+                       onValueChange={(value) => handleCategoryChange(value)}
                      >
-                       <option value="">Select category</option>
-                       {categories?.map((cat) => (
-                         <option key={cat.id} value={cat.id}>{cat.name}</option>
-                       ))}
-                     </select>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select category" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         {categories?.map((cat) => (
+                           <SelectItem key={cat.id} value={cat.id}>{cat.name}</SelectItem>
+                         ))}
+                       </SelectContent>
+                     </Select>
                      {form.formState.errors.category_id && (
                        <p className="text-red-500 text-xs mt-1">{form.formState.errors.category_id.message}</p>
                      )}
@@ -391,15 +411,19 @@ export default function MenuItemEdit() {
                    
                    <div>
                      <label className="block text-sm font-medium mb-1.5">Item Type</label>
-                     <select
-                       {...form.register("item_type")}
-                       onChange={(e) => handleItemTypeChange(e.target.value as MenuItemType)}
-                       className="w-full h-10 px-3 rounded-md border bg-background text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                     <Select
+                       value={form.watch("item_type")}
+                       onValueChange={(value) => handleItemTypeChange(value as MenuItemType)}
                      >
-                       <option value="standalone">Standalone</option>
-                       <option value="combo_component">Combo Component</option>
-                       <option value="combo_driver">Combo Driver (Sauce)</option>
-                     </select>
+                       <SelectTrigger>
+                         <SelectValue placeholder="Select type" />
+                       </SelectTrigger>
+                       <SelectContent>
+                         <SelectItem value="standalone">Standalone</SelectItem>
+                         <SelectItem value="combo_component">Combo Component</SelectItem>
+                         <SelectItem value="combo_driver">Combo Driver (Sauce)</SelectItem>
+                       </SelectContent>
+                     </Select>
                    </div>
                 </div>
              </div>
@@ -472,8 +496,8 @@ export default function MenuItemEdit() {
              </div>
           </TabsContent>
 
-          {/* VARIANTS TAB */}
-          <TabsContent value="variants" className="py-4 space-y-4">
+          {/* PRICING TAB */}
+          <TabsContent value="pricing" className="py-4 space-y-4">
              <div className="bg-card rounded-xl border p-6 space-y-6">
                 <div>
                    <label className="block text-sm font-medium mb-1.5">Base Price (UGX)</label>
