@@ -200,11 +200,11 @@ export default function Reception() {
                     : "border-green-200 bg-white"
                 )}
               >
-                <CardHeader className="pb-3 border-b border-border/50">
+                <CardHeader className="p-3 md:p-4 border-b border-border/50">
                   <div className="flex items-center justify-between">
                     <CardTitle
                       className={cn(
-                        "text-2xl font-bold tracking-tight",
+                        "text-xl md:text-2xl font-bold tracking-tight",
                         isWaitingLong(order) ? "text-red-600" : "text-foreground"
                       )}
                     >
@@ -213,7 +213,7 @@ export default function Reception() {
                     <Badge
                       variant="outline"
                       className={cn(
-                        "font-mono",
+                        "font-mono text-[10px] md:text-xs",
                         isWaitingLong(order) 
                           ? "bg-red-100 text-red-700 border-red-200" 
                           : "bg-green-50 text-green-700 border-green-200"
@@ -224,32 +224,31 @@ export default function Reception() {
                   </div>
                 </CardHeader>
                 
-                <CardContent className="space-y-4 pt-4">
+                <CardContent className="p-3 md:p-4 space-y-4">
                   {/* Customer Info */}
                   <div className="flex items-start justify-between gap-2">
-                    <div className="flex flex-col">
-                      <div className="flex items-center gap-2 text-foreground font-semibold">
-                        <User className="w-4 h-4 text-muted-foreground" />
-                        <span className="truncate max-w-[150px]">{order.customer_name}</span>
+                    <div className="flex flex-col min-w-0">
+                      <div className="flex items-center gap-2 text-foreground font-semibold text-sm md:text-base">
+                        <User className="w-3.5 h-3.5 md:w-4 md:h-4 text-muted-foreground shrink-0" />
+                        <span className="truncate">{order.customer_name}</span>
                       </div>
                       {order.customer_phone && (
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground mt-1">
-                          <Phone className="w-3.5 h-3.5" />
+                        <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mt-0.5 md:mt-1">
+                          <Phone className="w-3 h-3 md:w-3.5 md:h-3.5 shrink-0" />
                           <span className="font-mono">{formatPhoneDisplay(order.customer_phone)}</span>
                         </div>
                       )}
                     </div>
-                    <div className="text-lg font-bold text-primary whitespace-nowrap">
+                    <div className="text-base md:text-lg font-bold text-primary whitespace-nowrap">
                       {formatPrice(order.total)}
                     </div>
                   </div>
 
                   {/* Order Items Summary */}
-                  <div className="bg-slate-50 rounded-lg p-3 border border-slate-100 space-y-2">
-                    <p className="text-[10px] font-bold text-muted-foreground uppercase tracking-wider">Items</p>
-                    <div className="space-y-1.5">
+                  <div className="bg-slate-50/80 rounded-lg p-2.5 md:p-3 border border-slate-100 space-y-1.5 md:space-y-2">
+                    <p className="text-[9px] md:text-[10px] font-bold text-muted-foreground uppercase tracking-widest">Items</p>
+                    <div className="space-y-1 md:space-y-1.5 max-h-[100px] overflow-y-auto pr-1">
                       {order.items?.map((item, idx) => {
-                         // Smart Item Logic
                          const hasMainDish = item.main_dishes && item.main_dishes.length > 0;
                          let mainTitle = "Item";
                          if (hasMainDish) mainTitle = item.main_dishes.join(" + ");
@@ -257,9 +256,9 @@ export default function Reception() {
                          else if (item.side_dish) mainTitle = item.side_dish;
 
                          return (
-                          <div key={idx} className="text-sm flex items-start gap-2">
-                            <span className="font-semibold text-foreground min-w-[20px]">{item.quantity}x</span>
-                            <span className="text-slate-700 leading-tight">{mainTitle}</span>
+                          <div key={idx} className="text-xs md:text-sm flex items-start gap-2">
+                            <span className="font-bold text-foreground min-w-[18px]">{item.quantity}x</span>
+                            <span className="text-slate-700 leading-tight line-clamp-2">{mainTitle}</span>
                           </div>
                         );
                       })}
@@ -268,26 +267,26 @@ export default function Reception() {
 
                   {/* Special Instructions */}
                   {order.special_instructions && (
-                    <div className="bg-yellow-50 rounded-xl p-3 border border-yellow-100 italic text-sm text-yellow-800">
-                      "{order.special_instructions}"
+                    <div className="bg-amber-50/50 rounded-lg p-2.5 md:p-3 border border-amber-100/50 italic text-[11px] md:text-xs text-amber-900 line-clamp-2">
+                      “{order.special_instructions}”
                     </div>
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex flex-col gap-2 pt-2">
+                  <div className="flex flex-col gap-2 pt-1 md:pt-2">
                     {!order.picked_up_at ? (
                       <>
                         <Button
-                          className="w-full bg-green-600 hover:bg-green-700"
+                          className="w-full bg-green-600 hover:bg-green-700 h-11 md:h-10 text-sm font-semibold shadow-sm"
                           onClick={() => handleMarkPickedUp(order)}
                         >
                           <Check className="w-4 h-4 mr-2" />
-                          Mark as Picked Up
+                          Mark Picked Up
                         </Button>
                         
                         <Button
-                          variant="outline"
-                          className="w-full"
+                          variant="ghost"
+                          className="w-full h-11 md:h-10 text-sm text-slate-600 hover:bg-slate-100"
                           onClick={() => handleContactCustomer(order.customer_phone)}
                         >
                           <Phone className="w-4 h-4 mr-2" />
@@ -295,9 +294,9 @@ export default function Reception() {
                         </Button>
                       </>
                     ) : (
-                      <Badge variant="secondary" className="justify-center py-2">
-                        <Check className="w-4 h-4 mr-1" />
-                        Picked Up
+                      <Badge variant="secondary" className="justify-center py-2.5 md:py-2 text-sm">
+                        <Check className="w-4 h-4 mr-1.5" />
+                        Completed Pickup
                       </Badge>
                     )}
                   </div>

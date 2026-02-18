@@ -6,6 +6,7 @@ import { cn } from "@shared/lib/utils";
 import { Button } from "./button";
 import { Calendar } from "./calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "./popover";
+import { useMediaQuery } from "@shared/hooks/useMediaQuery";
 
 interface DateRangePickerProps {
   value: DateRange | undefined;
@@ -38,6 +39,7 @@ export function DateRangePicker({
   className,
 }: DateRangePickerProps) {
   const [open, setOpen] = React.useState(false);
+  const isDesktop = useMediaQuery("(min-width: 768px)");
   
   // Default to today if no value
   const defaultMonth = value?.from || new Date();
@@ -50,7 +52,7 @@ export function DateRangePicker({
             id="date"
             variant="outline"
             className={cn(
-              "w-[280px] justify-start text-left font-normal",
+              "w-full sm:w-[280px] justify-start text-left font-normal",
               !value && "text-muted-foreground"
             )}
           >
@@ -70,15 +72,21 @@ export function DateRangePicker({
           </Button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0" align="start">
-          <div className="flex">
-            {/* Presets sidebar */}
-            <div className="border-r p-2 space-y-1 min-w-[120px]">
+          <div className="flex flex-col md:flex-row">
+            {/* Presets sidebar / topbar */}
+            <div className={cn(
+              "p-2 space-y-1 md:min-w-[120px]",
+              isDesktop ? "border-r" : "border-b flex flex-wrap gap-2 space-y-0"
+            )}>
               {presets.map((preset) => (
                 <Button
                   key={preset.label}
                   variant="ghost"
                   size="sm"
-                  className="w-full justify-start text-xs"
+                  className={cn(
+                    "justify-start text-xs",
+                    isDesktop ? "w-full" : "h-8 px-2"
+                  )}
                   onClick={() => {
                     onChange(preset.value());
                     setOpen(false);
@@ -100,7 +108,7 @@ export function DateRangePicker({
                     setOpen(false);
                   }
                 }}
-                numberOfMonths={2}
+                numberOfMonths={isDesktop ? 2 : 1}
                 autoFocus
               />
             </div>

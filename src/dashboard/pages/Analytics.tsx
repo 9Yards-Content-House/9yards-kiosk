@@ -498,7 +498,7 @@ export default function Analytics() {
       )}
 
       {!isLoading && (
-        <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
           {stats.map((stat, idx) => {
             const Icon = stat.icon;
             // For inverted metrics (like prep time), lower is better so we flip the color logic
@@ -507,30 +507,39 @@ export default function Analytics() {
               : (stat.change !== undefined && stat.change > 0);
             
             return (
-              <motion.div key={stat.label} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: idx * 0.1 }} className="bg-card rounded-xl border p-4">
-                <div className={cn('w-10 h-10 rounded-lg flex items-center justify-center mb-3', stat.bg)}>
-                  <Icon className={cn('w-5 h-5', stat.color)} />
-                </div>
-                <p className="text-xs text-muted-foreground font-medium">{stat.label}</p>
-                <p className="text-xl font-bold">{stat.value}</p>
-                
-                {/* Show previous value when comparison is enabled */}
-                {showComparison && stat.previousValue && (
-                  <p className="text-xs text-muted-foreground">
-                    was {stat.previousValue}
-                  </p>
-                )}
-                
-                {stat.change !== undefined && stat.change !== 0 && (
-                  <div className={cn(
-                    'flex items-center gap-1 text-xs mt-1', 
-                    isPositive ? 'text-green-600' : 'text-red-600'
-                  )}>
-                    {stat.change > 0 ? <ArrowUp className="w-3 h-3" /> : <ArrowDown className="w-3 h-3" />}
-                    {Math.abs(stat.change).toFixed(1)}%
-                    {showComparison && comparison ? '' : ' vs prev period'}
+              <motion.div 
+                key={stat.label} 
+                initial={{ opacity: 0, y: 20 }} 
+                animate={{ opacity: 1, y: 0 }} 
+                transition={{ delay: idx * 0.1 }} 
+                className="bg-card rounded-xl border p-3 md:p-4 flex flex-col justify-between"
+              >
+                <div>
+                  <div className={cn('w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center mb-2 md:mb-3', stat.bg)}>
+                    <Icon className={cn('w-4 h-4 md:w-5 md:h-5', stat.color)} />
                   </div>
-                )}
+                  <p className="text-[10px] md:text-xs text-muted-foreground font-medium uppercase tracking-wider">{stat.label}</p>
+                  <p className="text-lg md:text-xl font-bold truncate">{stat.value}</p>
+                </div>
+                
+                <div className="mt-2 group">
+                  {/* Show previous value when comparison is enabled */}
+                  {showComparison && stat.previousValue && (
+                    <p className="text-[10px] text-muted-foreground line-clamp-1">
+                      was {stat.previousValue}
+                    </p>
+                  )}
+                  
+                  {stat.change !== undefined && stat.change !== 0 && (
+                    <div className={cn(
+                      'flex items-center gap-1 text-[10px] md:text-xs font-semibold', 
+                      isPositive ? 'text-green-600' : 'text-red-600'
+                    )}>
+                      {stat.change > 0 ? <ArrowUp className="w-2.5 h-2.5 md:w-3 md:h-3" /> : <ArrowDown className="w-2.5 h-2.5 md:w-3 md:h-3" />}
+                      {Math.abs(stat.change).toFixed(1)}%
+                    </div>
+                  )}
+                </div>
               </motion.div>
             );
           })}
@@ -538,53 +547,61 @@ export default function Analytics() {
       )}
 
       <Tabs defaultValue="overview" className="space-y-4">
-        <TabsList>
-          <TabsTrigger value="overview"><BarChart3 className="w-4 h-4 mr-2" />Overview</TabsTrigger>
-          <TabsTrigger value="categories"><PieChart className="w-4 h-4 mr-2" />Categories</TabsTrigger>
+        <TabsList className="w-full justify-start md:w-auto h-auto p-1 bg-muted/50 overflow-x-auto no-scrollbar">
+          <TabsTrigger value="overview" className="flex-1 md:flex-none py-2 px-4 whitespace-nowrap"><BarChart3 className="w-4 h-4 mr-2" />Overview</TabsTrigger>
+          <TabsTrigger value="categories" className="flex-1 md:flex-none py-2 px-4 whitespace-nowrap"><PieChart className="w-4 h-4 mr-2" />Categories</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="space-y-6">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <div className="bg-card rounded-xl border p-4">
               <h3 className="font-semibold text-lg mb-4">Revenue Trend</h3>
-              <RevenueChart orders={orders || []} />
+              <div className="h-[250px] md:h-[300px]">
+                <RevenueChart orders={orders || []} />
+              </div>
             </div>
             <div className="bg-card rounded-xl border p-4">
               <h3 className="font-semibold text-lg mb-4">Orders by Hour</h3>
-              <div className="flex items-end gap-1 h-40">
-                {metrics.ordersByHour.map(({ hour, count }) => {
-                  const maxCount = Math.max(...metrics.ordersByHour.map((h) => h.count)) || 1;
-                  const height = (count / maxCount) * 100;
-                  const isPeak = hour === metrics.peakHour;
-                  return (
-                    <div key={hour} className="flex-1 flex flex-col items-center" title={`${hour}:00 - ${count} orders`}>
-                      <div className={cn('w-full rounded-t transition-all', isPeak ? 'bg-primary' : 'bg-muted')} style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }} />
-                      {hour % 4 === 0 && <span className="text-[10px] text-muted-foreground mt-1">{hour}h</span>}
-                    </div>
-                  );
-                })}
+              <div className="overflow-x-auto no-scrollbar pb-2">
+                <div className="flex items-end gap-1 h-40 min-w-[500px] md:min-w-0">
+                  {metrics.ordersByHour.map(({ hour, count }) => {
+                    const maxCount = Math.max(...metrics.ordersByHour.map((h) => h.count)) || 1;
+                    const height = (count / maxCount) * 100;
+                    const isPeak = hour === metrics.peakHour;
+                    return (
+                      <div key={hour} className="flex-1 flex flex-col items-center" title={`${hour}:00 - ${count} orders`}>
+                        <div className={cn('w-full rounded-t transition-all', isPeak ? 'bg-primary shadow-[0_0_15px_rgba(var(--primary),0.3)]' : 'bg-muted')} style={{ height: `${height}%`, minHeight: count > 0 ? '4px' : '0' }} />
+                        {hour % 2 === 0 && <span className="text-[9px] md:text-[10px] text-muted-foreground mt-2 font-medium">{hour}h</span>}
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-3 text-center">Peak hour: <span className="font-medium text-foreground">{metrics.peakHour}:00</span></p>
+              <p className="text-xs text-muted-foreground mt-4 text-center bg-muted/30 py-1.5 rounded-full">Peak demand usually starts at <span className="font-bold text-foreground">{metrics.peakHour}:00</span></p>
             </div>
           </div>
 
           {metrics.avgPrepTime > 0 && (
             <div className="bg-card rounded-xl border p-4">
               <h3 className="font-semibold text-lg mb-4">Preparation Time Distribution</h3>
-              <div className="flex items-end gap-2 h-32">
-                {metrics.prepTimeDistribution.map(({ range, count }) => {
-                  const maxCount = Math.max(...metrics.prepTimeDistribution.map(p => p.count)) || 1;
-                  const height = (count / maxCount) * 100;
-                  return (
-                    <div key={range} className="flex-1 flex flex-col items-center">
-                      <span className="text-xs text-muted-foreground mb-1">{count}</span>
-                      <div className="w-full bg-primary/80 rounded-t transition-all" style={{ height: `${height}%`, minHeight: count > 0 ? '8px' : '0' }} />
-                      <span className="text-[10px] text-muted-foreground mt-2 text-center">{range}</span>
-                    </div>
-                  );
-                })}
+              <div className="overflow-x-auto no-scrollbar">
+                <div className="flex items-end gap-3 h-32 min-w-[300px] md:min-w-0 px-2 lg:px-4">
+                  {metrics.prepTimeDistribution.map(({ range, count }) => {
+                    const maxCount = Math.max(...metrics.prepTimeDistribution.map(p => p.count)) || 1;
+                    const height = (count / maxCount) * 100;
+                    return (
+                      <div key={range} className="flex-1 flex flex-col items-center">
+                        <span className="text-[10px] font-bold text-muted-foreground mb-1.5">{count}</span>
+                        <div className="w-full bg-secondary/80 rounded-t-lg transition-all" style={{ height: `${height}%`, minHeight: count > 0 ? '8px' : '0' }} />
+                        <span className="text-[10px] text-muted-foreground mt-2.5 font-bold uppercase tracking-tighter opacity-70">{range}</span>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
-              <p className="text-sm text-muted-foreground mt-4 text-center">Average: <span className="font-medium text-foreground">{metrics.avgPrepTime} minutes</span></p>
+              <p className="text-xs text-muted-foreground mt-6 text-center border-t pt-3 italic">
+                Our target is under 15 minutes. Average: <span className="font-black text-foreground">{metrics.avgPrepTime}m</span>
+              </p>
             </div>
           )}
 

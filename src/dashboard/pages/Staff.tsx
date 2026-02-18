@@ -26,7 +26,21 @@ import {
   AlertDialogTitle,
   AlertDialogTrigger,
 } from "@shared/components/ui/alert-dialog";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@shared/components/ui/dropdown-menu";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@shared/components/ui/select";
 import { toast } from "sonner";
+import { MoreVertical } from "lucide-react";
 
 // Role badge colors
 const ROLE_COLORS: Record<UserRole, string> = {
@@ -412,15 +426,17 @@ export default function Staff() {
               </div>
               <div>
                 <label className="block text-sm font-medium mb-1.5">Role</label>
-                <select
-                  value={inviteRole}
-                  onChange={(e) => setInviteRole(e.target.value as UserRole)}
-                  className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-                >
-                  <option value="kitchen">Kitchen Staff</option>
-                  <option value="rider">Rider</option>
-                  <option value="admin">Admin</option>
-                </select>
+                <Select value={inviteRole} onValueChange={(v) => setInviteRole(v as UserRole)}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Select role" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="kitchen">Kitchen Staff</SelectItem>
+                    <SelectItem value="rider">Rider</SelectItem>
+                    <SelectItem value="reception">Reception</SelectItem>
+                    <SelectItem value="admin">Admin</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
               <Button
                 onClick={() => inviteMutation.mutate()}
@@ -444,20 +460,22 @@ export default function Staff() {
           <Input
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search by name, phone, or email..."
+            placeholder="Search team members..."
             className="pl-10"
           />
         </div>
-        <select
-          value={roleFilter}
-          onChange={(e) => setRoleFilter(e.target.value as UserRole | "all")}
-          className="h-10 px-3 rounded-md border bg-background text-sm min-w-[140px]"
-        >
-          <option value="all">All Roles</option>
-          <option value="admin">Admin</option>
-          <option value="kitchen">Kitchen</option>
-          <option value="rider">Rider</option>
-        </select>
+        <Select value={roleFilter} onValueChange={(v) => setRoleFilter(v as UserRole | "all")}>
+          <SelectTrigger className="w-full sm:w-[160px]">
+            <SelectValue placeholder="All Roles" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All Roles</SelectItem>
+            <SelectItem value="admin">Admin</SelectItem>
+            <SelectItem value="kitchen">Kitchen</SelectItem>
+            <SelectItem value="rider">Rider</SelectItem>
+            <SelectItem value="reception">Reception</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Edit Dialog */}
@@ -484,15 +502,17 @@ export default function Staff() {
             </div>
             <div>
               <label className="block text-sm font-medium mb-1.5">Role</label>
-              <select
-                value={editRole}
-                onChange={(e) => setEditRole(e.target.value as UserRole)}
-                className="w-full h-10 px-3 rounded-md border bg-background text-sm"
-              >
-                <option value="kitchen">Kitchen Staff</option>
-                <option value="rider">Rider</option>
-                <option value="admin">Admin</option>
-              </select>
+              <Select value={editRole} onValueChange={(v) => setEditRole(v as UserRole)}>
+                <SelectTrigger>
+                  <SelectValue placeholder="Select role" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="kitchen">Kitchen Staff</SelectItem>
+                  <SelectItem value="rider">Rider</SelectItem>
+                  <SelectItem value="reception">Reception</SelectItem>
+                  <SelectItem value="admin">Admin</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
             <Button
               onClick={handleEditSave}
@@ -598,60 +618,119 @@ export default function Staff() {
                 </div>
 
                 {/* Actions */}
-                <div className="flex items-center gap-1 justify-end md:justify-start absolute top-4 right-4 md:static">
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
-                    disabled={isCurrentUser}
-                    title={member.active ? "Deactivate" : "Activate"}
-                    className="h-8 w-8 p-0 md:w-auto md:px-3 md:h-9"
-                  >
-                    {member.active ? (
-                      <UserX className="w-4 h-4" />
-                    ) : (
-                      <UserCheck className="w-4 h-4" />
-                    )}
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => openEditDialog(member)}
-                    title="Edit"
-                    className="h-8 w-8 p-0 md:w-auto md:px-3 md:h-9"
-                  >
-                    <Edit2 className="w-4 h-4" />
-                  </Button>
-                  <AlertDialog>
-                    <AlertDialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        disabled={isCurrentUser}
-                        className="text-destructive hover:text-destructive h-8 w-8 p-0 md:w-auto md:px-3 md:h-9"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-4 h-4" />
-                      </Button>
-                    </AlertDialogTrigger>
-                    <AlertDialogContent>
-                      <AlertDialogHeader>
-                        <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
-                        <AlertDialogDescription>
-                          This will remove {member.full_name} from the system. They will no longer be able to access the dashboard.
-                        </AlertDialogDescription>
-                      </AlertDialogHeader>
-                      <AlertDialogFooter>
-                        <AlertDialogCancel>Cancel</AlertDialogCancel>
-                        <AlertDialogAction 
-                          onClick={() => deleteMutation.mutate(member.id)}
-                          className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                <div className="flex items-center gap-1 absolute top-4 right-2 md:static">
+                  {/* Mobile Actions */}
+                  <div className="md:hidden">
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                          <MoreVertical className="w-4 h-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuItem 
+                          onClick={() => openEditDialog(member)}
+                          className="flex items-center gap-2"
                         >
-                          Remove
-                        </AlertDialogAction>
-                      </AlertDialogFooter>
-                    </AlertDialogContent>
-                  </AlertDialog>
+                          <Edit2 className="w-4 h-4" /> Edit Details
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
+                          disabled={isCurrentUser}
+                          className="flex items-center gap-2"
+                        >
+                          {member.active ? (
+                            <><UserX className="w-4 h-4 text-orange-500" /> Deactivate</>
+                          ) : (
+                            <><UserCheck className="w-4 h-4 text-green-500" /> Activate</>
+                          )}
+                        </DropdownMenuItem>
+                        <DropdownMenuItem 
+                          className="text-destructive focus:text-destructive flex items-center gap-2"
+                          onSelect={(e) => e.preventDefault()}
+                          disabled={isCurrentUser}
+                        >
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <div className="flex items-center gap-2 w-full">
+                                <Trash2 className="w-4 h-4" /> Remove Staff
+                              </div>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This will remove {member.full_name} from the system. They will no longer be able to access the dashboard.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction 
+                                  onClick={() => deleteMutation.mutate(member.id)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Remove
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+
+                  {/* Desktop Actions */}
+                  <div className="hidden md:flex items-center gap-1">
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => toggleActive.mutate({ id: member.id, active: !member.active })}
+                      disabled={isCurrentUser}
+                      title={member.active ? "Deactivate" : "Activate"}
+                      className="px-3 h-9"
+                    >
+                      {member.active ? <UserX className="w-4 h-4" /> : <UserCheck className="w-4 h-4" />}
+                    </Button>
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => openEditDialog(member)}
+                      title="Edit"
+                      className="px-3 h-9"
+                    >
+                      <Edit2 className="w-4 h-4" />
+                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          disabled={isCurrentUser}
+                          className="text-destructive hover:text-destructive px-3 h-9"
+                          title="Delete"
+                        >
+                          <Trash2 className="w-4 h-4" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>Remove Staff Member?</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            This will remove {member.full_name} from the system. They will no longer be able to access the dashboard.
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                          <AlertDialogAction 
+                            onClick={() => deleteMutation.mutate(member.id)}
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                          >
+                            Remove
+                          </AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
+                  </div>
                 </div>
               </div>
             );

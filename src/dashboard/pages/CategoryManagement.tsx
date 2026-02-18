@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown, ShieldCheck, Lock, Unlock, Search } from "lucide-react";
+import { Plus, Edit2, Trash2, GripVertical, Loader2, Save, FolderOpen, AlertTriangle, ChevronUp, ChevronDown, ShieldCheck, Lock, Unlock, Search, MoreVertical } from "lucide-react";
 import { useCategories, useAllMenuItems } from "@shared/hooks/useMenu";
 import {
   useCreateCategory,
@@ -13,6 +13,12 @@ import { cn } from "@shared/lib/utils";
 import { Button } from "@shared/components/ui/button";
 import { Input } from "@shared/components/ui/input";
 import { Badge } from "@shared/components/ui/badge";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@shared/components/ui/dropdown-menu";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -226,47 +232,52 @@ export default function CategoryManagement() {
   }
 
   return (
-    <div className="p-4 md:p-6">
+    <div className="p-3 md:p-6 space-y-4 md:space-y-6">
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-6">
-        <div>
-          <h1 className="text-2xl font-bold">Category Management</h1>
-          <p className="text-muted-foreground text-sm mt-1">
-            Manage menu categories. Categories determine how items are grouped in the kiosk.
-          </p>
-          <div className="flex items-center gap-2 mt-3 text-[11px] font-bold uppercase tracking-wider text-red-600 bg-red-50 dark:bg-red-950/30 rounded-lg px-3 py-2 border border-red-100 dark:border-red-900/50 w-full sm:w-fit shadow-sm">
-            <Lock className="w-4 h-4" />
-            <span>CRITICAL: Protected slugs (main-dishes, sauces, etc.) must NOT be changed to keep Kiosk working</span>
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+          <div>
+            <h1 className="text-xl md:text-2xl font-bold text-[#212282]">Category Management</h1>
+            <p className="text-muted-foreground text-xs md:text-sm mt-0.5">
+              Organize kiosk menu grouping and sorting.
+            </p>
           </div>
-        </div>
-        {canCreate && (
-          <div className="flex items-center gap-2">
-            <div className="relative flex-1 sm:w-64">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input
-                placeholder="Search categories..."
-                className="pl-9 h-10"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-              />
+          {canCreate && (
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1 sm:w-64">
+                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+                <Input
+                  placeholder="Search..."
+                  className="pl-9 h-11 md:h-10 text-sm"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                />
+              </div>
+              <Button onClick={() => setIsAddDialogOpen(true)} className="h-11 md:h-10 px-4">
+                <Plus className="w-4 h-4 mr-2" />
+                <span>Add Category</span>
+              </Button>
             </div>
-            <Button onClick={() => setIsAddDialogOpen(true)} className="h-10">
-              <Plus className="w-4 h-4 mr-2" />
-              <span className="hidden sm:inline">Add Category</span>
-              <span className="sm:hidden">Add</span>
-            </Button>
-          </div>
-        )}
+          )}
+        </div>
+
+        {/* Warning Banner - More compact on mobile */}
+        <div className="flex items-start gap-3 text-[10px] md:text-[11px] font-bold uppercase tracking-wider text-red-600 bg-red-50/50 dark:bg-red-950/20 rounded-xl px-3 py-2.5 border border-red-100 dark:border-red-900/40 shadow-sm overflow-hidden">
+          <AlertTriangle className="w-4 h-4 md:w-5 md:h-5 shrink-0 mt-0.5" />
+          <p className="leading-relaxed">
+            CRITICAL: <span className="opacity-80">Protected slugs (main-dishes, sauces, etc.) must NOT be changed to keep Kiosk working.</span>
+          </p>
+        </div>
       </div>
 
       {/* Category List */}
       <div className="bg-card rounded-xl border overflow-hidden">
-        <div className="hidden lg:grid grid-cols-[40px_1fr_200px_130px_180px] gap-4 px-4 py-3 border-b bg-muted/50 text-sm font-medium text-muted-foreground">
-          <span></span>
-          <span>Name</span>
-          <span>Slug</span>
-          <span>Items</span>
-          <span>Actions</span>
+        <div className="hidden lg:grid grid-cols-[60px_1fr_1fr_120px_220px] gap-4 px-6 py-3.5 border-b bg-muted/30 text-[11px] uppercase tracking-wider font-bold text-muted-foreground">
+          <span className="pl-2">#</span>
+          <span>Category Name</span>
+          <span>System Slug</span>
+          <span className="text-center">Item Count</span>
+          <span className="text-right pr-4">Management Actions</span>
         </div>
 
         {sortedCategories.length === 0 ? (
@@ -284,56 +295,150 @@ export default function CategoryManagement() {
             )}
           </div>
         ) : (
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:block">
+          <div className="grid grid-cols-1 gap-px bg-border/40">
             {sortedCategories.map((category, index) => (
               <div
                 key={category.id}
-                className="flex flex-col lg:flex-row lg:items-center justify-between lg:grid lg:grid-cols-[40px_1fr_200px_130px_180px] gap-2 lg:gap-4 px-4 py-4 lg:py-3 border-b hover:bg-muted/30 transition-colors"
+                className="flex flex-col lg:flex-row lg:items-center justify-between lg:grid lg:grid-cols-[60px_1fr_1fr_120px_220px] gap-2 lg:gap-4 px-4 lg:px-6 py-4 lg:py-5 bg-card hover:bg-slate-50/80 transition-all group"
               >
                 {/* Drag handle / Position */}
-                <div className="hidden lg:flex items-center gap-1 text-muted-foreground">
-                  <GripVertical className="w-4 h-4" />
-                  <span className="text-xs">{index + 1}</span>
+                <div className="hidden lg:flex items-center gap-2 text-muted-foreground/40 group-hover:text-primary/60 transition-colors">
+                  <GripVertical className="w-4 h-4 cursor-grab active:cursor-grabbing" />
+                  <span className="text-[11px] font-mono font-bold w-4">{index + 1}</span>
                 </div>
 
-                {/* Name */}
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-lg bg-secondary/10 flex items-center justify-center shrink-0">
-                    <FolderOpen className="w-5 h-5 text-secondary" />
+                {/* Name & Slug & Items (Mobile) */}
+                <div className="flex items-start lg:items-center justify-between gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <div className="w-10 h-10 md:w-11 md:h-11 rounded-xl bg-primary/5 border border-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/10 transition-colors">
+                      <FolderOpen className="w-5 h-5 md:w-6 md:h-6 text-primary/70" />
+                    </div>
+                    <div className="min-w-0">
+                      <div className="flex items-center gap-1.5 overflow-hidden">
+                        <p className="font-bold text-sm md:text-base text-slate-800 truncate">
+                          {category.name}
+                        </p>
+                        {isProtectedSlug(category.slug) && (
+                          <ShieldCheck className="w-4 h-4 text-blue-500 shrink-0" title="System Category" />
+                        )}
+                      </div>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <Badge variant="outline" className="font-mono text-[9px] md:text-[10px] px-1.5 py-0 h-4 md:h-5 lg:hidden bg-slate-50">
+                          {category.slug}
+                        </Badge>
+                        <span className="text-[10px] md:text-xs text-muted-foreground font-medium lg:hidden">
+                          {getCategoryItemCount(category.id)} items
+                        </span>
+                        {getCategoryItemCount(category.id) === 0 && (
+                          <Badge variant="secondary" className="lg:hidden bg-amber-50 text-amber-600 border-amber-200 text-[9px] px-1.5 py-0 h-4">Empty</Badge>
+                        )}
+                      </div>
+                    </div>
                   </div>
-                  <div className="min-w-0">
-                    <p className="font-medium flex items-center gap-1.5 truncate">
-                      {category.name}
-                      {isProtectedSlug(category.slug) && (
-                        <ShieldCheck className="w-3.5 h-3.5 text-blue-500" title="System Category" />
-                      )}
-                    </p>
-                    <p className="text-xs text-muted-foreground lg:hidden truncate">{category.slug}</p>
-                    {getCategoryItemCount(category.id) === 0 && (
-                      <Badge variant="secondary" className="lg:hidden mt-1 bg-amber-50 text-amber-600 border-amber-200 text-[10px] px-1.5 py-0 h-4">Empty</Badge>
+
+                  {/* Actions (Mobile Dropdown) */}
+                  <div className="flex lg:hidden items-center gap-1">
+                    <div className="flex items-center bg-muted/50 rounded-lg p-0.5">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-muted-foreground"
+                        onClick={() => handleMoveUp(index)}
+                        disabled={index === 0 || reorderCategories.isPending}
+                      >
+                        <ChevronUp className="w-5 h-5" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="h-9 w-9 text-muted-foreground"
+                        onClick={() => handleMoveDown(index)}
+                        disabled={index === sortedCategories.length - 1 || reorderCategories.isPending}
+                      >
+                        <ChevronDown className="w-5 h-5" />
+                      </Button>
+                    </div>
+
+                    {canEdit && (
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-9 w-9 hover:bg-muted">
+                            <MoreVertical className="w-5 h-5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end" className="w-48">
+                          {isProtectedSlug(category.slug) && (
+                            <DropdownMenuItem onClick={() => toggleLock(category.id)}>
+                              {unlockedCategories[category.id] ? (
+                                <>
+                                  <Lock className="w-3.5 h-3.5 mr-2" /> Lock Slug
+                                </>
+                              ) : (
+                                <>
+                                  <Unlock className="w-3.5 h-3.5 mr-2" /> Unlock Slug
+                                </>
+                              )}
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuItem 
+                            onClick={() => openEditDialog(category)}
+                            disabled={isProtectedSlug(category.slug) && !unlockedCategories[category.id]}
+                          >
+                            <Edit2 className="w-3.5 h-3.5 mr-2" /> Edit Details
+                          </DropdownMenuItem>
+                          {canDelete && !isProtectedSlug(category.slug) && (
+                             <AlertDialog>
+                               <AlertDialogTrigger asChild>
+                                 <button className="relative flex cursor-default select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-destructive hover:text-destructive-foreground focus:bg-accent focus:text-accent-foreground data-[disabled]:pointer-events-none data-[disabled]:opacity-50 w-full text-left text-destructive font-medium">
+                                   <Trash2 className="w-3.5 h-3.5 mr-2" /> Delete Category
+                                 </button>
+                               </AlertDialogTrigger>
+                               <AlertDialogContent>
+                                 <AlertDialogHeader>
+                                   <AlertDialogTitle>Delete Category?</AlertDialogTitle>
+                                   <AlertDialogDescription>
+                                     This will permanently delete "{category.name}". This action cannot be undone.
+                                     {getCategoryItemCount(category.id) > 0 && (
+                                       <span className="block mt-2 font-bold text-destructive">
+                                         ⚠️ This category contains {getCategoryItemCount(category.id)} items.
+                                       </span>
+                                     )}
+                                   </AlertDialogDescription>
+                                 </AlertDialogHeader>
+                                 <AlertDialogFooter>
+                                   <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                   <AlertDialogAction onClick={() => handleDeleteCategory(category.id)} className="bg-destructive text-destructive-foreground">Delete</AlertDialogAction>
+                                 </AlertDialogFooter>
+                               </AlertDialogContent>
+                             </AlertDialog>
+                          )}
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     )}
                   </div>
                 </div>
 
-                {/* Slug */}
-                <div className="hidden lg:block truncate">
-                  <Badge variant="outline" className="font-mono text-[10px] px-1.5 py-0">
+                {/* Slug (Desktop) */}
+                <div className="hidden lg:block">
+                  <code className="text-[11px] font-mono py-1 px-2.5 rounded bg-slate-100 text-slate-600 border border-slate-200/50">
                     {category.slug}
-                  </Badge>
+                  </code>
                 </div>
 
-                {/* Item Count */}
-                <div className="hidden lg:flex items-center gap-2">
-                  <span className="text-sm font-medium">
-                    {getCategoryItemCount(category.id)}
-                  </span>
-                  {getCategoryItemCount(category.id) === 0 && (
-                    <Badge variant="outline" className="text-[10px] bg-amber-50 text-amber-600 border-amber-200">Empty</Badge>
-                  )}
+                {/* Item Count (Desktop) */}
+                <div className="hidden lg:flex items-center justify-center gap-2">
+                  <div className="flex items-center gap-2 bg-slate-50 border px-3 py-1 rounded-full">
+                    <span className="text-sm font-bold text-slate-700">
+                      {getCategoryItemCount(category.id)}
+                    </span>
+                    {getCategoryItemCount(category.id) === 0 && (
+                      <Badge variant="secondary" className="text-[9px] uppercase tracking-tighter bg-amber-100/50 text-amber-700 border-amber-200/50 px-1 py-0 h-3.5">Empty</Badge>
+                    )}
+                  </div>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center justify-end gap-1 mt-2 lg:mt-0">
+                {/* Actions (Desktop Only) */}
+                <div className="hidden lg:flex items-center justify-end gap-1.5 pr-2">
                   {canEdit && (
                     <>
                       {isProtectedSlug(category.slug) && (
@@ -341,31 +446,33 @@ export default function CategoryManagement() {
                           variant="ghost"
                           size="icon"
                           className={cn(
-                            "h-8 w-8 transition-colors",
-                            unlockedCategories[category.id] ? "text-amber-500 hover:text-amber-600 bg-amber-50" : "text-muted-foreground hover:text-blue-500 hover:bg-blue-50"
+                            "h-9 w-9 rounded-lg transition-all",
+                            unlockedCategories[category.id] ? "text-amber-500 bg-amber-50 border-amber-100 shadow-sm" : "text-muted-foreground/60 hover:text-blue-500 hover:bg-blue-50 border border-transparent"
                           )}
                           onClick={() => toggleLock(category.id)}
-                          title={unlockedCategories[category.id] ? "Lock category" : "Unlock to edit"}
+                          title={unlockedCategories[category.id] ? "Lock category slug" : "Unlock slug for editing"}
                         >
                           {unlockedCategories[category.id] ? <Unlock className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
                         </Button>
                       )}
-                      <div className="flex items-center bg-muted/30 rounded-md px-1">
+                      <div className="flex items-center bg-slate-100/80 p-0.5 rounded-lg border border-slate-200/40">
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-white hover:shadow-sm"
                           onClick={() => handleMoveUp(index)}
                           disabled={index === 0 || reorderCategories.isPending}
+                          title="Move up"
                         >
                           <ChevronUp className="w-4 h-4" />
                         </Button>
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-foreground hover:bg-muted/50"
+                          className="h-8 w-8 text-muted-foreground hover:text-primary hover:bg-white hover:shadow-sm"
                           onClick={() => handleMoveDown(index)}
                           disabled={index === sortedCategories.length - 1 || reorderCategories.isPending}
+                          title="Move down"
                         >
                           <ChevronDown className="w-4 h-4" />
                         </Button>
@@ -374,11 +481,14 @@ export default function CategoryManagement() {
                         variant="ghost"
                         size="icon"
                         className={cn(
-                          "h-8 w-8 text-muted-foreground transition-colors",
-                          isProtectedSlug(category.slug) && !unlockedCategories[category.id] ? "opacity-30 cursor-not-allowed" : "hover:text-primary hover:bg-primary/10"
+                          "h-9 w-9 rounded-lg transition-all border border-transparent",
+                          isProtectedSlug(category.slug) && !unlockedCategories[category.id] 
+                            ? "opacity-20 cursor-not-allowed" 
+                            : "text-muted-foreground hover:text-primary hover:bg-primary/5 hover:border-primary/10"
                         )}
                         onClick={() => openEditDialog(category)}
                         disabled={isProtectedSlug(category.slug) && !unlockedCategories[category.id]}
+                        title="Edit category details"
                       >
                         <Edit2 className="w-4 h-4" />
                       </Button>
@@ -390,9 +500,9 @@ export default function CategoryManagement() {
                         <Button
                           variant="ghost"
                           size="icon"
-                          className="h-8 w-8 text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
+                          className="h-9 w-9 rounded-lg text-muted-foreground/60 hover:text-destructive hover:bg-destructive/5 hover:border-destructive/10 border border-transparent transition-all"
                           disabled={isProtectedSlug(category.slug)}
-                          title={isProtectedSlug(category.slug) ? "Protected category cannot be deleted" : "Delete category"}
+                          title={isProtectedSlug(category.slug) ? "Protected category (cannot delete)" : "Delete category"}
                         >
                           <Trash2 className="w-4 h-4" />
                         </Button>
@@ -401,26 +511,32 @@ export default function CategoryManagement() {
                         <AlertDialogHeader>
                           <AlertDialogTitle>Delete Category?</AlertDialogTitle>
                           <AlertDialogDescription asChild>
-                            <div className="space-y-2">
-                              <p>
-                                This will permanently delete "{category.name}". This action cannot be undone.
+                            <div className="space-y-3 pt-2">
+                              <p className="text-sm">
+                                This will permanently delete <span className="font-bold text-foreground">"{category.name}"</span>. This action cannot be undone.
                               </p>
                               {getCategoryItemCount(category.id) > 0 && (
-                                <p className="text-destructive font-bold bg-destructive/5 p-2 rounded-lg border border-destructive/20 text-xs">
-                                  ⚠️ DANGER: This category contains {getCategoryItemCount(category.id)} menu item(s). 
-                                  You must move or delete these items first, or they will be removed from the system!
-                                </p>
+                                <div className="bg-destructive/5 p-3 rounded-xl border border-destructive/20">
+                                   <div className="flex items-center gap-2 text-destructive font-bold text-xs mb-1">
+                                      <AlertTriangle className="w-4 h-4" />
+                                      DANGER ZONE
+                                   </div>
+                                   <p className="text-xs text-destructive leading-relaxed">
+                                      This category contains <span className="font-bold underline">{getCategoryItemCount(category.id)} menu item(s)</span>. 
+                                      You must move or delete these items first, or they will be unlinked from the system!
+                                   </p>
+                                </div>
                               )}
                             </div>
                           </AlertDialogDescription>
                         </AlertDialogHeader>
-                        <AlertDialogFooter>
-                          <AlertDialogCancel>Cancel</AlertDialogCancel>
+                        <AlertDialogFooter className="mt-4">
+                          <AlertDialogCancel className="rounded-lg">Cancel</AlertDialogCancel>
                           <AlertDialogAction
                             onClick={() => handleDeleteCategory(category.id)}
-                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                            className="bg-destructive text-destructive-foreground hover:bg-destructive/90 rounded-lg px-6"
                           >
-                            Delete
+                            Delete Forever
                           </AlertDialogAction>
                         </AlertDialogFooter>
                       </AlertDialogContent>
